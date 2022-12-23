@@ -1,0 +1,12 @@
+FROM node
+WORKDIR /app/banking
+
+COPY package.json ./
+COPY tsconfig.json ./
+COPY src ./src
+
+RUN npm install
+# COPY . .
+EXPOSE 8001
+CMD ["npm", "start"]
+

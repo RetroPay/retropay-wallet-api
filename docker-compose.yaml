@@ -1,0 +1,44 @@
+version: "3"
+services:
+  # nosql-db:
+  #   image: mongo
+  #   ports:
+  #     - "27018:27017"
+  #   container_name: nosql-db
+  #   volumes:
+  #     - ./db/:/data/db+
+  account:
+    build:
+      dockerfile: Dockerfile
+      context: ./accounts
+    container_name: account
+    ports:
+      - "8002:8002"
+    restart: always
+    volumes:
+      - .:/app
+      - /app/account/node_modules
+    # env_file:
+    #   - ./accounts/.env.dev
+  banking:
+    build:
+      dockerfile: Dockerfile
+      context: ./banking
+    container_name: banking
+    ports:
+      - "8002:8001"
+    restart: always
+    volumes:
+      - .:/app
+      - /app/banking/node_modules
+    # env_file:
+    #   - ./banking/.env.dev
+  nginx-proxy:
+    build:
+      dockerfile: Dockerfile
+      context: ./proxy
+    depends_on:
+      - banking
+      - account
+    ports:
+      - 80:80
