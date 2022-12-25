@@ -96,8 +96,9 @@ class UserService {
         }
     }
 
-    public async setTransactionPin(userId: string, pin: string): Promise<IUser | null> {
+    public async setTransactionPin(userId: string, pin: string, confirmPin: string): Promise<IUser | null> {
         try {
+            if(pin !== confirmPin) throw new Error("Pin does not match.")
             const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(pin, 10)}, { new: true})
             if(!updatedUser) throw new Error("Unable to set transaction pin.")
 
@@ -184,17 +185,20 @@ class UserService {
 
     public async verifyEmail(userId: string, token: string): Promise<IUser | null> {
         try {
-            const foundUser: any = await userModel.findById(userId).select("emailVerification")
+            const foundUser: any = await userModel.findById(userId)
+            console.log(foundUser, "found user")
             if(!foundUser) throw new Error("Unable to verify email.")
+            if(foundUser.isEmailVerified == true) throw new Error("Email already verified")
 
             const { emailVerification } = foundUser
             if((Date.now() > new Date(emailVerification.expires).getTime()) || emailVerification.token != token) {
                 throw new Error("Invalid or expired token.")
             }
 
-            const updatedUser = await userModel.findOneAndUpdate({ id: userId }, {
-                isEmailVerified: true
-            }, { new: true })
+            const updatedUser = await userModel.findByIdAndUpdate(userId, { $set: 
+                { isEmailVerified: true }
+            }, { new: true })     
+            console.log(updatedUser, "updated")
             return updatedUser
         } catch (error) {
             console.log(translateError(error))
@@ -204,33 +208,37 @@ class UserService {
 
     public async generatePhoneToken(userId: string, phoneNumber: string): Promise<object | null> {
         try {
-            const foundUser = await userModel.findById(userId)
+            const foundUser = await userModel.findById(userId).select("firstname lastname email isPhoneVerified")
             if(!foundUser) throw new Error("Unable to send verification sms.")
+            if(foundUser.isPhoneVerified == true) throw new Error("Phone number already verified")
 
             const payload = {
                 "length": 5,
                 "customer": { 
-                    "name": foundUser.firstname + ' ' + foundUser.firstname, 
+                    "name": foundUser.firstname + ' ' + foundUser.lastname, 
                     "email": foundUser.email, 
                     "phone": phoneNumber
                 },
                 "sender": "Retro Pay",
                 "send": true,
-                "medium": ["email", 
-                    // "sms", "whatsapp"
+                "medium": [
+                    "email",
+                    // "sms"
                 ],
                 "expiry": 5
             }
             const response = await flw.Otp.create(payload)
 
             if(!response) throw new Error("Unable to send verification sms.")
+
             console.log(response)
             const phoneVerification = {
                 token: response.data[0].otp,
                 expires: moment(new Date).add(5, 'm').toDate(),
             }
 
-            const updatedUser: any = await userModel.findOneAndUpdate({id: userId}, { phoneVerification, phoneNumber }, { new: true })
+            const updatedUser: IUser | null = await userModel.findByIdAndUpdate(userId, { phoneVerification, phoneNumber }, { new: true })
+            console.log(updatedUser)
             if(!updatedUser) throw new Error("Unable to send verification sms.")
     
             return { otp: phoneVerification.token, firstname: updatedUser.firstname, phoneNumber }
@@ -240,33 +248,36 @@ class UserService {
         }
     }
 
-    // public async verifyPhoneNumber(userId: string, token: string): Promise<IUser | null> {
-    //     try {
-    //         const foundUser: any = await userModel.findById(userId).select("phoneVerification email firstname lastname phoneNumber")
-    //         if(!foundUser) throw new Error("Unable to verify phone nummber.")
+    public async verifyPhoneNumber(userId: string, token: string): Promise<IUser | null> {
+        try {
+            const foundUser: any = await userModel.findById(userId).select("phoneVerification email firstname lastname phoneNumber isPhoneVerified")
+            console.log(foundUser)
+            if(!foundUser) throw new Error("Unable to verify phone nummber.")
 
-    //         const { phoneVerification, email, firstname, lastname, phoneNumber } = foundUser
-    //         if((Date.now() > new Date(phoneVerification.expires).getTime()) || phoneVerification.token != token) {
-    //             throw new Error("Invalid or expired token.")
-    //         }
-    //         console.log(phoneNumber)
-    //         const createdCustomer = await Paystack.customer.create({
-    //             email: email,
-    //             first_name: firstname,
-    //             last_name: lastname,
-    //             phone: '+' + phoneNumber,
-    //         })
-    //         console.log(createdCustomer)
-    //         const updatedUser = await userModel.findOneAndUpdate({ id: userId }, {
-    //             isPhoneVerified: true,
-    //             customerCode: createdCustomer.data.customer_code 
-    //         }, { new: true })
-    //         return updatedUser
-    //     } catch (error) {
-    //         console.log(translateError(error))
-    //         throw new Error(translateError(error)[0] || 'Unable to verify phone number.')
-    //     }
-    // }
+            if(foundUser.isPhoneVerified == true) throw new Error("Phone number already verified")
+
+            const { phoneVerification } = foundUser
+            if((Date.now() > new Date(phoneVerification.expires).getTime()) || phoneVerification.token != token) {
+                throw new Error("Invalid or expired token.")
+            }
+            // const createdCustomer = await Paystack.customer.create({
+            //     email: email,
+            //     first_name: firstname,
+            //     last_name: lastname,
+            //     phone: '+' + phoneNumber,
+            // })
+            // console.log(createdCustomer)
+            const updatedUser = await userModel.findByIdAndUpdate(userId, {$set: {
+                    isPhoneVerified: true,
+                // customerCode: createdCustomer.data.customer_code 
+                }
+            }, { new: true })
+            return updatedUser
+        } catch (error) {
+            console.log(translateError(error))
+            throw new Error(translateError(error)[0] || 'Unable to verify phone number.')
+        }
+    }
 
     public async chackTagAvailability(username: string): Promise<boolean> {
         try {
@@ -325,73 +336,23 @@ class UserService {
             throw new Error("Unable to resolve account details.")
         }
     }
-    
-    // public async verifyIdentity(reqData: { accountNumber: string, BVN: string, bankCode: string }, id: string): Promise<any> {
-    //     try {
-    //         const foundUser = await userModel.findById(id).exec()
 
-    //         if(!foundUser) throw new Error("unable to verify user identity.")
-
-    //         const result = await Paystack.customer.validate({
-    //             country: "NG",
-    //             type: "bank_account",
-    //             account_number: reqData.accountNumber,
-    //             bvn: reqData.BVN,
-    //             bank_code: reqData.bankCode,
-    //             first_name: foundUser.firstname,
-    //             last_name: foundUser.lastname,
-    //             id: foundUser.customerCode,
-    //             value: id
-    //         })
-    //         if(!result) throw new Error("unable to verify user identity.")
-
-    //         return result
-            
-    //     } catch (error: any) {
-    //         console.log(translateError(error.error))
-    //         throw new Error(translateError(error.error)[0] || translateError(error)[0] || 'unable to verify user identity.')
-    //     }
-    // }
-
-    // public async createNuban(userId: string): Promise<any | void> {
-    //     try {
-    //         const foundUser = await userModel.findById(userId)
-    //         if(!foundUser) throw new Error("Unable to create nuban account.")
-            
-    //         if(!foundUser?.isIdentityVerified == false) throw new Error("Unable to create nuban account. Verify your identity first.")
-
-    //         const createdAccount = await Paystack.nuban.create({
-    //             customer: foundUser.customerCode,
-    //             preferred_bank: 'test-bank',
-    //             phone: foundUser.phoneNumber,
-    //             subaccount: process.env.GATEWAY_SUB_ACCT,
-    //             split_code: process.env.GATEWAY_SPLIT_CODE
-    //         })
-
-    //         if(!createdAccount) throw new Error("Unable to create nuban account.")
-
-    //         await userModel.findOneAndUpdate({id: userId}, {
-    //             nubanAccountDetails: createdAccount.data
-    //         }, {new : true })
-            
-    //         return createdAccount
-    //     } catch (error: any) {
-    //         console.log(translateError(error.error))
-    //         throw new Error(translateError(error.error)[0] || translateError(error)[0] || 'unable to verify user identity.') 
-    //     }
-    // }
-
-    public async addToFavoritedRecipients(userId: string, recipientTag: string): Promise<void> {
+    public async addToFavoritedRecipients(userId: string, username: string): Promise<IUser | null> {
         try {
-            const foundRecipient = await userModel.findOne({id: userId}).select("username")
+            const foundRecipient = await userModel.findOne({ username })
             if(!foundRecipient) throw new Error("Invalid recipient tag.")
+            console.log(foundRecipient)
 
-            const updatedUser = await userModel.findByIdAndUpdate(userId, {$push: {favoritedRecipients: recipientTag}})
+            const checkId: any = await userModel.findById(userId)
+            const { favoritedRecipients } = checkId
+
+            if(favoritedRecipients && favoritedRecipients.includes(foundRecipient.id)) throw new Error("Recipient already added to favorites.")
+
+            const updatedUser = await userModel.findByIdAndUpdate(userId, {$push: { favoritedRecipients: foundRecipient.id }}, { new: true})
             if(!updatedUser) throw new Error("Unable to add to favourites.")
 
-            return
+            return updatedUser
         } catch (error: any) {
-            console.log(translateError(error.error))
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
         }
     }
@@ -446,7 +407,34 @@ class UserService {
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || "Unable to verify identity")
         }
-    }
+    }    
+    
+    // public async verifyIdentity(reqData: { accountNumber: string, BVN: string, bankCode: string }, id: string): Promise<any> {
+    //     try {
+    //         const foundUser = await userModel.findById(id).exec()
+
+    //         if(!foundUser) throw new Error("unable to verify user identity.")
+
+    //         const result = await Paystack.customer.validate({
+    //             country: "NG",
+    //             type: "bank_account",
+    //             account_number: reqData.accountNumber,
+    //             bvn: reqData.BVN,
+    //             bank_code: reqData.bankCode,
+    //             first_name: foundUser.firstname,
+    //             last_name: foundUser.lastname,
+    //             id: foundUser.customerCode,
+    //             value: id
+    //         })
+    //         if(!result) throw new Error("unable to verify user identity.")
+
+    //         return result
+            
+    //     } catch (error: any) {
+    //         console.log(translateError(error.error))
+    //         throw new Error(translateError(error.error)[0] || translateError(error)[0] || 'unable to verify user identity.')
+    //     }
+    // }
 }
 
 export default UserService

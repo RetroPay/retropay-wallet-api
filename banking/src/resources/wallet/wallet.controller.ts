@@ -80,7 +80,7 @@ class WalletController implements IController {
             'july', 'august', 'september', 'october', 'november', 'december']
 
             const monthNumber = months.indexOf(month.toLowerCase())
-            if(monthNumber == -1) throw new Error("Invalid month.")
+            if(monthNumber == -1) throw new Error("Invalid request.")
 
             const result = await this.walletService.getTransactionsByMonth(monthNumber + 1, year, req.user)
             res.status(200).json({

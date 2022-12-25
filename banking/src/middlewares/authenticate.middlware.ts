@@ -26,7 +26,7 @@ async function authenticatedMiddleware(
             return next(new HttpException(401, 'Unauthorised'))
         }
 
-        const user = await UserModel.findById(payload.id).select('username email').exec()
+        const user = await UserModel.findOne({referenceId: payload.id}).select('username email').exec()
 
         if (!user) {
             return next(new HttpException(401, 'Unauthorised'))

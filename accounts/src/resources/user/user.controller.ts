@@ -121,7 +121,14 @@ class UserController implements IController {
 
     private setPin = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            await this.UserService.setTransactionPin(req.user, req.body.pin)
+            const updatedUser: IUser | any = await this.UserService.setTransactionPin(req.user, req.body.pin, req.body.confirmPin)
+            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'USER_CREATE_PIN',
+                data: {
+                    id: req.user,
+                    pin: updatedUser.pin
+                }
+            }));
             res.status(201).json({
                 success: true,
                 message: "Transaction pin set successfully",
@@ -133,7 +140,7 @@ class UserController implements IController {
 
     private changePassword = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            const updatedUser = await this.UserService.changePassword(req.body, req.user)
+            await this.UserService.changePassword(req.body, req.user)
             res.status(200).json({
                 success: true,
                 message: "Password changed successfully",
@@ -215,22 +222,23 @@ class UserController implements IController {
     private sendVerifyPhoneToken = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const result = await this.UserService.generatePhoneToken(req.user, req.body.phoneNumber)
-            // if(result) {
+            if(result) {
+                console.log(result)
                 // const smsInstance = new smsService
                 // await smsInstance.sendSms(result.phoneNumber, `Hi There, here's a one-time code to use to verify your phone number. Code: ${result.otp}. \n`)
-            // }
+            }
             res.status(200).json({
                 success: true,
                 message: "Phone verification token sent.",
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, 'Unable to send verification sms.'))
+            return next(new HttpExeception(400, error.message || 'Unable to send verification sms.'))
         }
     }
 
     private verifyPhone = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            // const updatedUser = await this.UserService.verifyPhoneNumber(req.user, req.body.token)
+            const updatedUser = await this.UserService.verifyPhoneNumber(req.user, req.body.token)
             res.status(200).json({
                 success: true,
                 message: "Phone number verification succesful",
@@ -283,11 +291,13 @@ class UserController implements IController {
 
     private uploadProfilePhoto = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
+            console.log(req)
             //Parse multi-part form data with formidable
             const form = formidable({ multiples: true });
 
             form.parse(req, async (err, fields, files) => {
                 if (err) {
+                    console.log(err)
                     return next(new HttpExeception(400, 'Unable to upload photo.'))
                 }
                 // get image file (object)
@@ -321,6 +331,14 @@ class UserController implements IController {
         }
     }
 
+    private softDeleteUserAccount = async(req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
+        try {
+            
+        } catch (error) {
+            
+        }
+    }
+
     // private verifyUserIdentity = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
     //     try {
     //         const verificationStatus = await this.UserService.verifyIdentity(req.body, req.user)
@@ -345,6 +363,7 @@ class UserController implements IController {
                 }
             })
         } catch (error: any) {
+            console.log(error)
             return next(new HttpExeception(400, error.message))
         }
     }

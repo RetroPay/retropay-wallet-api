@@ -51,7 +51,7 @@ const verifyIdentity = Joi.object({
 
 const sertPin = Joi.object({
     pin: Joi.string().required().min(4).max(4),
-    confirmPin: Joi.ref('pin')
+    confirmPin: Joi.string().required().min(4).max(4)
 })
 
 const addFavorites = Joi.object({

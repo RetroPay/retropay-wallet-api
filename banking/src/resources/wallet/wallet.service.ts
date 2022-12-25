@@ -173,7 +173,7 @@ class WalletService {
       `)
 
       if(!foundTransaction) throw new Error("Transaction not found.")
-      console.log(foundTransaction)
+      
       if(foundTransaction.fundRecipientAccount != userId && foundTransaction.fundOriginatorAccount != userId) throw new Error("Unauthorized")
       
       return foundTransaction
