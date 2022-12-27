@@ -6,12 +6,19 @@ import DemoController from "@/resources/status/status.controller"
 import UserController from "@/resources/user/user.controller"
 import WalletController from "@/resources/wallet/wallet.controller"
 import {createChannel} from "@/utils/broker"
+import { createClient } from "redis"
 
 validateEnv()
 
-const brokerChannel = createChannel()
-console.log(brokerChannel)
-export default brokerChannel
+export const brokerChannel = createChannel()
+export const redisClient = createClient()
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+
+
+export default {
+    brokerChannel,
+    redisClient
+}
 
 const app = new App([
     new DemoController, 

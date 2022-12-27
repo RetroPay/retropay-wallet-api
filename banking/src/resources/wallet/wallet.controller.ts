@@ -6,8 +6,9 @@ import WalletService from "./wallet.service"
 import authenticatedMiddleware from "@/middlewares/authenticate.middlware"
 import validationMiddleware from "@/middlewares/validation.middleware"
 import validate from "./wallet.validation"
-import channel from "../../server"
+import {brokerChannel} from "../../server"
 import { publishMessage } from "@/utils/broker"
+import kudaTokenHandler from "@/middlewares/kudaToken.middleware"
 
 class WalletController implements IController {
     public path = '/wallet'
@@ -30,13 +31,13 @@ class WalletController implements IController {
         this.router.post("/wallet/transfer", authenticatedMiddleware, validationMiddleware(validate.transferFunds), this.transferFunds)
         //wallet withdrawals
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), this.resolveBankAccount)
-        this.router.get("/wallet/banks/list", authenticatedMiddleware, this.getBankList)
+        this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
     }
 
     private fundWallet = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             // const checkout = await this.walletService.initializePaystackCheckout(req.body.amount, req.user, "NGN")
-            publishMessage(await channel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
                 event: 'USER_INITIALISE_FUND_WALLET',
                 // data: checkout,
                 data: 'It went through'
@@ -160,7 +161,7 @@ class WalletController implements IController {
 
     private getBankList = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
-            const banks = await this.walletService.getBankList()
+            const banks = await this.walletService.getBankList(req.k_token)
             res.status(200).json({
                 success: true,
                 message: "Bank list retrieved succesfully",

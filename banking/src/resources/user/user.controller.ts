@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express"
 import IController from "@/utils/interfaces/controller.interface";
 import UserService  from "@/resources/user/user.service"
-import channel from "../../server"
+import { brokerChannel } from "../../server"
 import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class UserController implements IController {
@@ -14,7 +14,7 @@ class UserController implements IController {
     }
     
     public async subscribeBroker () {
-        await subscribeMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, this.UserService)
+        await subscribeMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, this.UserService)
     }
 
 }

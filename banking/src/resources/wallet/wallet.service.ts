@@ -5,6 +5,8 @@ import userModel from "../user/user.model"
 import IWallet from "./wallet.interface"
 import translateError from "@/helpers/mongod.helper"
 import mongoose from "mongoose"
+import axios from "axios"
+import { redisClient } from "../../server"
 
 class WalletService {
 
@@ -289,19 +291,26 @@ class WalletService {
     }
   }
 
-  public async getBankList(): Promise<any> {
+  public async getBankList(k_token: string): Promise<any> {
     try {
-      const banks = await Paystack.misc.list_banks({
-        country: 'nigeria',
-        use_cursor: true,
-        perPage: 100,
-      });
+      const response = await axios({
+        method: 'post',
+        url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+        data: {
+          "serviceType": "BANK_LIST",
+          "requestRef": v4()
+        },
+        headers: {
+          "Authorization": `Bearer ${k_token}`
+        }
+      })
 
-      if(!banks) throw new Error("Unable to retrieve list of banks.")
+      if(!response) throw new Error("Unable to retrieve list of banks.")
 
-      return banks.data
+      return response.data.data.banks
     } catch (error: any) {
-      throw new Error(translateError(error.error)[0] || translateError(error)[0] || "Unable to retrieve list of banks.")
+      console.log(error)
+      throw new Error("Unable to retrieve list of banks.")
     }
   }
 

@@ -28,6 +28,11 @@ function validateEnv(): void {
         MESSAGE_BROKER_URL: str(),
         BANKING_BINDING_KEY: str(),
         QUEUE_NAME: str(),
+        KUDA_MAIL: str(),
+        KUDA_PRIVATE_KEY: str(),
+        KUDA_TEST_URI: str(),
+        KUDA_TEST_TOKEN_URI: str(),
+        KUDA_PROD_URI: str()
     })
 }
 
