@@ -53,6 +53,8 @@ class App {
         const account_host = process.env.ACCOUNTS_HOST
         const banking_host = process.env.BANKING_HOST
 
+        console.log(account_host, banking_host)
+
         this.express.use("/banking", proxy(banking_host != undefined ? banking_host : "http://localhost:4001", {
             proxyErrorHandler: function(err, res, next) {
                 console.log(err, "error here")
