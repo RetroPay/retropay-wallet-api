@@ -5,10 +5,10 @@ services:
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
     plan: free
-    rootDir: /gateway
+    rootDir: ./gateway
     buildFilter: 
       paths: 
-        - /gateway/**
+        - ./gateway/**
     healthCheckPath: /
     buildCommand: npm i && npm build --filter=gateway
     startCommand: cd app/gateway; npm start
@@ -21,10 +21,10 @@ services:
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
     plan: free
-    rootDir: /accounts
+    rootDir: ./accounts
     buildFilter: 
       paths: 
-        - /accounts/**
+        - ./accounts/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=accounts
     startCommand: cd app/acounts; npm start
@@ -44,10 +44,10 @@ services:
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
     plan: free
-    rootDir: /accounts
+    rootDir: ./accounts
     buildFilter: 
       paths: 
-        - /accounts/**
+        - ./accounts/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=accounts
     startCommand: cd app/acounts; npm start
@@ -67,10 +67,10 @@ services:
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
     plan: free
-    rootDir: /banking
+    rootDir: ./banking
     buildFilter: 
       paths: 
-        - /banking/**
+        - ./banking/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=banking
     startCommand: cd app/banking; npm start
@@ -90,10 +90,10 @@ services:
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
     plan: free
-    rootDir: /banking
+    rootDir: ./banking
     buildFilter: 
       paths: 
-        - /banking/**
+        - ./banking/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=banking
     startCommand: cd app/banking; npm start
