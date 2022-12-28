@@ -20,7 +20,7 @@ services:
           type: web
           name: retropay-wallet-banking-serivce-staging
           property: host
-    buildCommand: npm ci && npm build
+    buildCommand: npm i && npm build
     startCommand: npm start
 
   - type: web
@@ -34,7 +34,7 @@ services:
       paths: 
         - ./accounts/**
     healthCheckPath: /status
-    buildCommand: npm ci && npm build
+    buildCommand: npm i && npm build
     startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
@@ -55,7 +55,7 @@ services:
       paths: 
         - ./accounts/**
     healthCheckPath: /status
-    buildCommand: npm ci && npm build
+    buildCommand: npm i && npm build
     startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
@@ -76,7 +76,7 @@ services:
       paths: 
         - ./banking/**
     healthCheckPath: /status
-    buildCommand: npm ci && npm build
+    buildCommand: npm i && npm build
     startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
@@ -97,7 +97,7 @@ services:
       paths: 
         - ./banking/**
     healthCheckPath: /status
-    buildCommand: npm ci && npm build
+    buildCommand: npm i && npm build
     startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
