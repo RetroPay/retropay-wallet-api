@@ -8,7 +8,7 @@ services:
     rootDir: /gateway
     buildFilter: 
       path: 
-        - apps/gateway/**
+        - app/gateway/**
     healthCheckPath: /
     buildCommand: npm i && npm build --filter=gateway
     startCommand: cd app/gateway; npm start
@@ -24,7 +24,7 @@ services:
     rootDir: /accounts
     buildFilter: 
       path: 
-        - apps/accounts/**
+        - accounts/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=accounts
     startCommand: cd app/acounts; npm start
@@ -47,7 +47,7 @@ services:
     rootDir: /accounts
     buildFilter: 
       path: 
-        - apps/accounts/**
+        - accounts/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=accounts
     startCommand: cd app/acounts; npm start
@@ -70,7 +70,7 @@ services:
     rootDir: /banking
     buildFilter: 
       path: 
-        - apps/banking/**
+        - banking/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=banking
     startCommand: cd app/banking; npm start
@@ -93,7 +93,7 @@ services:
     rootDir: /banking
     buildFilter: 
       path: 
-        - apps/banking/**
+        - banking/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=banking
     startCommand: cd app/banking; npm start
