@@ -58,26 +58,12 @@ class App {
         this.express.use("/banking", proxy(banking_host != undefined ? banking_host : "http://localhost:4001", {
             proxyErrorHandler: function(err, res, next) {
                 console.log(err, "error here")
-                switch (err && err.code) {
-                  case 'ECONNRESET':    { return res.status(405).send('504 became 405'); }
-                  case 'ECONNREFUSED':  { return res.status(503).send('Service Unavailable'); }
-                  default: { next(err); }
-                }
+                return res.status(503).send('Service Unavailable');
             }
         }))
         this.express.use("/account", proxy(account_host != undefined ? account_host : "http://localhost:4002", {
             proxyErrorHandler: function(err, res, next) {
                 console.log(err, "error here")
-                return res.status(503).send('Service Unavailable');
-            }
-        }))
-        this.express.use("/account/status", proxy(account_host != undefined ? account_host : "http://localhost:4002", {
-            proxyErrorHandler: function(err, res, next) {
-                return res.status(503).send('Service Unavailable');
-            }
-        }))
-        this.express.use("/accounts/status", proxy(banking_host != undefined ? banking_host : "http://localhost:4002", {
-            proxyErrorHandler: function(err, res, next) {
                 return res.status(503).send('Service Unavailable');
             }
         }))
