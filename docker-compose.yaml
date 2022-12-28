@@ -19,23 +19,23 @@ services:
       - .:/app
       - /app/account/node_modules
     env_file:
-      - accounts.env
+      - ./accounts.env
   banking:
     build:
       dockerfile: Dockerfile
       context: ./banking
     container_name: banking
     ports:
-      - "8002:8001"
+      - "8001:8001"
     restart: always
     volumes:
       - .:/app
       - /app/banking/node_modules
     env_file:
-      - banking.env
+      - ./banking.env
   nginx-proxy:
     build:
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
       context: ./proxy
     depends_on:
       - banking

@@ -25,6 +25,9 @@ class UserService {
                 break;
             case 'USER_CREATE_PIN': await this.setTransactionPin(data)
                 break;
+            case 'DEACTIVATE_USER_ACOUNT': await this.deactivateUserAccount(data)
+                break;
+            case 'ADD_FAVORITE_RECIPIENT': await this.addToFavoritedRecipients(data)
             default: throw new Error("=== Invalid event ===")
                 break;
         }
@@ -81,17 +84,22 @@ class UserService {
         }
     }
 
-    public async addToFavoritedRecipients(userId: string, recipientTag: string): Promise<void> {
+    public async addToFavoritedRecipients(reqData: { id: string, recipientId: string }): Promise<void> {
         try {
-            const foundRecipient = await userModel.findOne({id: userId}).select("username")
-            if(!foundRecipient) throw new Error("Invalid recipient tag.")
-
-            const updatedUser = await userModel.findByIdAndUpdate(userId, {$push: {favoritedRecipients: recipientTag}})
+            const updatedUser = await userModel.findOneAndUpdate({referenceId: reqData.id}, {$push: {favoritedRecipients: reqData.recipientId}})
             if(!updatedUser) throw new Error("Unable to add to favourites.")
-
-            return
         } catch (error: any) {
-            console.log(translateError(error.error))
+            throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+        }
+    }
+
+    public async deactivateUserAccount(reqData: { id: string }): Promise<void> {
+        try {
+            const { id } = reqData
+            const foundUser = await userModel.findOneAndUpdate({ referenceId: id }, {$set: {isAccountActive: false}}, { new: true })
+            console.log(foundUser)
+            if(!foundUser) throw new Error("Unable to delete user account.")
+        } catch (error: any) {
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
         }
     }

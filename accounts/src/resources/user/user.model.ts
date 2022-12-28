@@ -45,6 +45,7 @@ const UserSchema = new Schema({
     customerCode: { type: String, },
     nubanAccountDetails: Object,
     favoritedRecipients: { type: Array },
+    isAccountActive: { type: Boolean, default: true }
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {

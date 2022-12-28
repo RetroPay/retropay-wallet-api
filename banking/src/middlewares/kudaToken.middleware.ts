@@ -12,7 +12,7 @@ async function kudaTokenHandler(
         await redisClient.connect()
         const k_token = await redisClient.get("K_TOKEN")
 
-        if(!k_token) {
+        if(k_token == null) {
             const response = await axios({
                 method: 'POST',
                 url: 'http://kuda-openapi-uat.kudabank.com/v2/Account/GetToken',

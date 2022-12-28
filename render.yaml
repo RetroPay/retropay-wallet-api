@@ -1,0 +1,112 @@
+services:
+  - type: web
+    name: retropay-wallet-proxy
+    env: node
+    repo: https://github.com/RetroPay/retropay-wallet-api.git
+    branch: master
+    plan: free
+    rootDir: /gateway
+    buildFilter: 
+      path: 
+        - apps/gateway/**
+    healthCheckPath: /
+    buildCommand: npm i && npm build --filter=gateway
+    startCommand: cd app/gateway; npm start
+    domains: 
+      - api-retropay-wlt.render.com
+
+  - type: web
+    name: retropay-wallet-accounts-serivce-prod
+    env: node
+    repo: https://github.com/RetroPay/retropay-wallet-api.git
+    branch: master
+    plan: free
+    rootDir: /accounts
+    buildFilter: 
+      path: 
+        - apps/accounts/**
+    healthCheckPath: /status
+    buildCommand: npm i && npm build --filter=account
+    startCommand: cd app/acounts; npm start
+    domains: 
+      - retropay-wlt-accounts-api-prod.render.com
+    envVars: 
+      - key: REDIS_CONNECTION_STRING
+        fromService:
+          type: redis
+          name: retropay-wallet-redis
+          property: connectionString
+      - fromGroup: retropay-wallet-account-envs
+
+  - type: web
+    name: retropay-wallet-accounts-serivce-staging
+    env: node
+    repo: https://github.com/RetroPay/retropay-wallet-api.git
+    branch: staging
+    plan: free
+    rootDir: /accounts
+    buildFilter: 
+      path: 
+        - apps/accounts/**
+    healthCheckPath: /status
+    buildCommand: npm i && npm build --filter=accounts
+    startCommand: cd app/acounts; npm start
+    domains:
+      - retropay-wlt-accounts-api-staging.render.com
+    envVars: 
+      - key: REDIS_CONNECTION_STRING
+        fromService:
+          type: redis
+          name: retropay-wallet-redis
+          property: connectionString
+      - fromGroup: retropay-wallet-account-envs
+
+  - type: web
+    name: retropay-wallet-banking-serivce-staging
+    env: node
+    repo: https://github.com/RetroPay/retropay-wallet-api.git
+    branch: staging
+    plan: free
+    rootDir: /banking
+    buildFilter: 
+      path: 
+        - apps/banking/**
+    healthCheckPath: /status
+    buildCommand: npm i && npm build --filter=banking
+    startCommand: cd app/banking; npm start
+    domains:
+      - retropay-wlt-banking-api-staging.render.com
+    envVars: 
+      - key: REDIS_CONNECTION_STRING
+        fromService:
+          type: redis
+          name: retropay-wallet-redis
+          property: connectionString
+      - fromGroup: retropay-wallet-banking-envs
+
+  - type: web
+    name: retropay-wallet-banking-serivce-prod
+    env: node
+    repo: https://github.com/RetroPay/retropay-wallet-api.git
+    branch: master
+    plan: free
+    rootDir: /banking
+    buildFilter: 
+      path: 
+        - apps/banking/**
+    healthCheckPath: /status
+    buildCommand: npm i && npm build --filter=banking
+    startCommand: cd app/banking; npm start
+    domains:
+      - retropay-wlt-banking-api-prod.render.com
+    envVars: 
+      - key: REDIS_CONNECTION_STRING
+        fromService:
+          type: redis
+          name: retropay-wallet-redis
+          property: connectionString
+      - fromGroup: retropay-wallet-banking-envs
+
+  - type: redis
+    name: retropay-wallet-redis
+    plan: free

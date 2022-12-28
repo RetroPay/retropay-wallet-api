@@ -219,7 +219,7 @@ class UserService {
                     "email": foundUser.email, 
                     "phone": phoneNumber
                 },
-                "sender": "Retro Pay",
+                "sender": "RetroPay Wallet",
                 "send": true,
                 "medium": [
                     "email",
@@ -351,7 +351,18 @@ class UserService {
             const updatedUser = await userModel.findByIdAndUpdate(userId, {$push: { favoritedRecipients: foundRecipient.id }}, { new: true})
             if(!updatedUser) throw new Error("Unable to add to favourites.")
 
-            return updatedUser
+            //return ID of favorited recipient
+            return foundRecipient.id
+        } catch (error: any) {
+            throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+        }
+    }
+
+    public async deactivateUserAccount(userId: string): Promise<void> {
+        try {
+            const foundUser = await userModel.findByIdAndUpdate(userId, {$set: {isAccountActive: false}}, { new: true })
+            console.log(foundUser)
+            if(!foundUser) throw new Error("Unable to delete user account.")
         } catch (error: any) {
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
         }

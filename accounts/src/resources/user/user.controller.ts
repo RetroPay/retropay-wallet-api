@@ -52,6 +52,8 @@ class UserController implements IController {
         this.router.get("/user/:username/resolve", authenticatedMiddleware, this.resolveAccountTag)
         this.router.post("/user/profile/favorite-recipients/add", authenticatedMiddleware, validationMiddleware(validate.addFavorites), this.favoriteRecipient)
 
+        this.router.delete("/user/deactivate", authenticatedMiddleware, this.softDeleteUserAccount)
+
         //NUBAN verification and creation
         // this.router.post('/user/profile/verify-identity', authenticatedMiddleware, validationMiddleware(validate.verifyIdentity), this.verifyUserIdentity)
         // this.router.post('/user/nuban/create', authenticatedMiddleware, this.createNubanAccount)
@@ -333,9 +335,21 @@ class UserController implements IController {
 
     private softDeleteUserAccount = async(req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            
-        } catch (error) {
-            
+            await this.UserService.deactivateUserAccount(req.user)
+
+            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'DEACTIVATE_USER_ACOUNT',
+                data: {
+                    id: req.user
+                }
+            }));
+
+            res.status(204).json({
+                success: true,
+                message: "User account deactivated.",
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
         }
     }
 
@@ -370,7 +384,16 @@ class UserController implements IController {
 
     public favoriteRecipient = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {
-            await this.UserService.addToFavoritedRecipients(req.user, req.body.recipientTag)
+            const recipientId = await this.UserService.addToFavoritedRecipients(req.user, req.body.recipientTag)
+
+            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'ADD_FAVORITE_RECIPIENT',
+                data: {
+                    id: req.user,
+                    recipientId: recipientId
+                }
+            }));
+
             res.status(200).json({
                 success: true,
                 message: "Recipient added to favorites succesfully.", 
