@@ -26,7 +26,7 @@ services:
       path: 
         - apps/accounts/**
     healthCheckPath: /status
-    buildCommand: npm i && npm build --filter=account
+    buildCommand: npm i && npm build --filter=accounts
     startCommand: cd app/acounts; npm start
     domains: 
       - retropay-wlt-accounts-api-prod.render.com
