@@ -110,3 +110,4 @@ services:
   - type: redis
     name: retropay-wallet-redis
     plan: free
+    ipAllowList: []
