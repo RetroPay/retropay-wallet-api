@@ -7,8 +7,8 @@ services:
     plan: free
     rootDir: /gateway
     buildFilter: 
-      path: 
-        - app/gateway/**
+      paths: 
+        - gateway/**
     healthCheckPath: /
     buildCommand: npm i && npm build --filter=gateway
     startCommand: cd app/gateway; npm start
@@ -23,7 +23,7 @@ services:
     plan: free
     rootDir: /accounts
     buildFilter: 
-      path: 
+      paths: 
         - accounts/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=accounts
@@ -46,7 +46,7 @@ services:
     plan: free
     rootDir: /accounts
     buildFilter: 
-      path: 
+      paths: 
         - accounts/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=accounts
@@ -69,7 +69,7 @@ services:
     plan: free
     rootDir: /banking
     buildFilter: 
-      path: 
+      paths: 
         - banking/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=banking
@@ -92,7 +92,7 @@ services:
     plan: free
     rootDir: /banking
     buildFilter: 
-      path: 
+      paths: 
         - banking/**
     healthCheckPath: /status
     buildCommand: npm i && npm build --filter=banking
