@@ -6,7 +6,7 @@ import 'module-alias/register'
 import ErrorMiddleware from '@/middlewares/error.middleware'
 import IController from '@/utils/interfaces/controller.interface'
 import MailService from './services/sendEmails'
-// import cors from 'cors'
+import cors from 'cors'
 import helmet from 'helmet'
 import process from 'process'
 // import smsService from './services/sms.service'
@@ -26,7 +26,7 @@ class App {
 
     private initialiseMiddlewares():void {
         this.express.use(helmet())
-        // this.express.use(cors())
+        this.express.use(cors())
         this.express.use(morgan('dev'))
         this.express.use(express.json())
         this.express.use(express.urlencoded({ extended: false }))
