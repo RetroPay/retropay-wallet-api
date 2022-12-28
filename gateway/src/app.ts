@@ -50,7 +50,12 @@ class App {
     }
 
     private proxyHandler() {
-        this.express.use("/banking", proxy("http://localhost:4001", {
+        const account_host = process.env.ACCOUNTS_HOST
+        const banking_host = process.env.BANKING_HOST
+
+        console.log(account_host, banking_host)
+
+        this.express.use("/banking", proxy(banking_host != undefined ? banking_host : "http://localhost:4001", {
             proxyErrorHandler: function(err, res, next) {
                 console.log(err, "error here")
                 switch (err && err.code) {
@@ -60,18 +65,18 @@ class App {
                 }
             }
         }))
-        this.express.use("/account", proxy("http://localhost:4002", {
+        this.express.use("/account", proxy(account_host != undefined ? account_host : "http://localhost:4002", {
             proxyErrorHandler: function(err, res, next) {
                 console.log(err, "error here")
                 return res.status(503).send('Service Unavailable');
             }
         }))
-        this.express.use("/account/status", proxy("http://localhost:4002", {
+        this.express.use("/account/status", proxy(account_host != undefined ? account_host : "http://localhost:4002", {
             proxyErrorHandler: function(err, res, next) {
                 return res.status(503).send('Service Unavailable');
             }
         }))
-        this.express.use("/accounts/status", proxy("http://localhost:4002", {
+        this.express.use("/accounts/status", proxy(banking_host != undefined ? banking_host : "http://localhost:4002", {
             proxyErrorHandler: function(err, res, next) {
                 return res.status(503).send('Service Unavailable');
             }

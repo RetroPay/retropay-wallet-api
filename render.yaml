@@ -9,11 +9,19 @@ services:
     buildFilter: 
       paths: 
         - ./gateway/**
-    healthCheckPath: /
-    buildCommand: npm i && npm build --filter=gateway
-    startCommand: cd app/gateway; npm start
-    domains: 
-      - api-retropay-wlt.render.com
+    envVars: 
+      - key: ACCOUNTS_HOST
+        fromService:
+          type: web
+          name: retropay-wallet-accounts-serivce-staging
+          property: host
+      - key: BANKING_HOST
+        fromService:
+          type: web
+          name: retropay-wallet-banking-serivce-staging
+          property: host
+    buildCommand: npm ci && npm build
+    startCommand: npm start
 
   - type: web
     name: retropay-wallet-accounts-serivce-prod
@@ -26,10 +34,8 @@ services:
       paths: 
         - ./accounts/**
     healthCheckPath: /status
-    buildCommand: npm i && npm build --filter=accounts
-    startCommand: cd app/acounts; npm start
-    domains: 
-      - retropay-wlt-accounts-api-prod.render.com
+    buildCommand: npm ci && npm build
+    startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
         fromService:
@@ -49,10 +55,8 @@ services:
       paths: 
         - ./accounts/**
     healthCheckPath: /status
-    buildCommand: npm i && npm build --filter=accounts
-    startCommand: cd app/acounts; npm start
-    domains:
-      - retropay-wlt-accounts-api-staging.render.com
+    buildCommand: npm ci && npm build
+    startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
         fromService:
@@ -72,10 +76,8 @@ services:
       paths: 
         - ./banking/**
     healthCheckPath: /status
-    buildCommand: npm i && npm build --filter=banking
-    startCommand: cd app/banking; npm start
-    domains:
-      - retropay-wlt-banking-api-staging.render.com
+    buildCommand: npm ci && npm build
+    startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
         fromService:
@@ -95,10 +97,8 @@ services:
       paths: 
         - ./banking/**
     healthCheckPath: /status
-    buildCommand: npm i && npm build --filter=banking
-    startCommand: cd app/banking; npm start
-    domains:
-      - retropay-wlt-banking-api-prod.render.com
+    buildCommand: npm ci && npm build
+    startCommand: npm start
     envVars: 
       - key: REDIS_CONNECTION_STRING
         fromService:
