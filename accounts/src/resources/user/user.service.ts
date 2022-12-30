@@ -10,11 +10,11 @@ import MailService from "@/services/sendEmails";
 // const Paystack = require("paystack-api")(process.env.GATEWAY_SECRET_KEY)
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
-// import MessageBroker from "@/utils/broker"
-// import app from '../../server'
 import App from "../../app"
 import amqplib from 'amqplib'
 import MessageBroker from '@/utils/broker'
+import axios from 'axios'
+import { v4 } from "uuid"
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
@@ -260,16 +260,9 @@ class UserService {
             if((Date.now() > new Date(phoneVerification.expires).getTime()) || phoneVerification.token != token) {
                 throw new Error("Invalid or expired token.")
             }
-            // const createdCustomer = await Paystack.customer.create({
-            //     email: email,
-            //     first_name: firstname,
-            //     last_name: lastname,
-            //     phone: '+' + phoneNumber,
-            // })
-            // console.log(createdCustomer)
+
             const updatedUser = await userModel.findByIdAndUpdate(userId, {$set: {
                     isPhoneVerified: true,
-                // customerCode: createdCustomer.data.customer_code 
                 }
             }, { new: true })
             return updatedUser
@@ -279,9 +272,57 @@ class UserService {
         }
     }
 
+    public async createNubanAccount(userId: string, k_token: string): Promise<IUser | null> {
+        try {
+            const foundUser = await userModel.findById(userId).select("email firstname lastname phoneNumber middlename nubanAccountDetails")
+            if(!foundUser) throw new Error("Unable to create nuban.")
+
+            if(foundUser.nubanAccountDetails) throw new Error("Nuban has already been created")
+            const { email, firstname, lastname, middlename, phoneNumber, id } = foundUser
+            
+            /* Phone numbers are stored with their respective country codes e.g 234, 
+            the following line of code removes the country code which is the first 3 numbers */
+            const formatPhoneNumber = '0' + phoneNumber?.substring(3)
+
+            const response = await axios({
+                method: 'POST',
+                url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
+                data: {
+                    ServiceType :"ADMIN_CREATE_VIRTUAL_ACCOUNT",
+                    RequestRef: v4(),
+                    data: {
+                        email,
+                        phoneNumber: formatPhoneNumber,
+                        lastName: lastname,
+                        firstName: firstname,
+                        middleName: middlename || '',
+                        trackingReference: id
+                    }
+                },
+                headers: {
+                    Authorization: `Bearer ${k_token}`
+                }
+              })
+
+            const data = response.data
+            
+            //if axios call is successful but kuda status returns failed e'g 400 errors
+            if(!data.status) throw new Error(data.message)
+
+            await userModel.findByIdAndUpdate(userId, {
+                nubanAccountDetails: { nuban: data.data.accountNumber }
+            })
+
+            return data.data
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to create nuban.')
+        }
+    }
+
     public async chackTagAvailability(username: string): Promise<boolean> {
         try {
             const foundUser = await userModel.findOne({ username }).select("username")
+            
             //If there is no existing user found with that username, that means it's available
             if(!foundUser) {
                 return true

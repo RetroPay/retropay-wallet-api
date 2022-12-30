@@ -11,12 +11,12 @@ const WalletSchema = new Schema(
     },
     currency: String,
     accessCode: { type: String },
-    operationType: {
-      type: String,
-      trim: true,
-      enum: ['credit', 'debit'],
-      required: true
-    },
+    // operationType: {
+    //   type: String,
+    //   trim: true,
+    //   enum: ['credit', 'debit'],
+    //   required: true
+    // },
     fundRecipientAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     fundOriginatorAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     status: {

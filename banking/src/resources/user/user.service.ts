@@ -28,6 +28,9 @@ class UserService {
             case 'DEACTIVATE_USER_ACOUNT': await this.deactivateUserAccount(data)
                 break;
             case 'ADD_FAVORITE_RECIPIENT': await this.addToFavoritedRecipients(data)
+                break;
+            case 'USER_NUBAN_CREATED': await this.updateNubanDetails(data)
+                break;
             default: throw new Error("=== Invalid event ===")
                 break;
         }
@@ -56,7 +59,8 @@ class UserService {
         try {
             const { id, pin } = reqData
 
-            await userModel.findOneAndUpdate({referenceId: id}, { pin }, { new: true})
+            const updated = await userModel.findOneAndUpdate({referenceId: id}, { pin }, { new: true})
+            console.log(updated)
         } catch (error) {
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to set transaction pin.')
@@ -101,6 +105,16 @@ class UserService {
             if(!foundUser) throw new Error("Unable to delete user account.")
         } catch (error: any) {
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+        }
+    }
+    public async updateNubanDetails(reqData: {id: string, accountNumber: string}): Promise<void> {
+        try {
+            const { id, accountNumber } = reqData
+            const updateUser = await userModel.findOneAndUpdate({ referenceId: id }, {nubanAccountDetails: { nuban: accountNumber }},{ new: true })
+            console.log(updateUser)
+            if(!updateUser) throw new Error("Unable to delete user account.")
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to add update nuban details.')
         }
     }
 }

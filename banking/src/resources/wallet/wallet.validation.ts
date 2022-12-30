@@ -16,9 +16,20 @@ const resolveAccount= Joi.object({
     accountNumber: Joi.string().required()
 })
 
+const withdrawFunds = Joi.object({
+    pin: Joi.string().required(),
+    amount: Joi.number().required(),
+    beneficiaryAccount: Joi.string().required(),
+    comment: Joi.string().required(), 
+    beneficiaryBankCode: Joi.string().required(), 
+    beneficiaryName: Joi.string().required(), 
+    nameEnquiryId: Joi.string().required(),
+})
+
 
 export default {
     fundWallet,
     transferFunds,
-    resolveAccount
+    resolveAccount,
+    withdrawFunds
 }

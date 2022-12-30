@@ -30,8 +30,9 @@ class WalletController implements IController {
         //wallet transfers
         this.router.post("/wallet/transfer", authenticatedMiddleware, validationMiddleware(validate.transferFunds), this.transferFunds)
         //wallet withdrawals
-        this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), this.resolveBankAccount)
+        this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
+        this.router.post("/wallet/withdraw", authenticatedMiddleware, validationMiddleware(validate.withdrawFunds), kudaTokenHandler, this.withdrawFunds)
     }
 
     private fundWallet = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
@@ -144,12 +145,31 @@ class WalletController implements IController {
         }
     }
 
+    
+    private withdrawFunds = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const { pin, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryName, nameEnquiryId } = req.body
+
+            console.log(req.body)
+            const transaction = await this.walletService.withdrawFunds(pin, req.referenceId, req.user, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryName, nameEnquiryId, req.k_token)
+            res.status(201).json({
+                success: true,
+                message: "Transaction successfull",
+                data: {
+                    transaction
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
     private resolveBankAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
-            const accountDetails = await this.walletService.resolveBankAccount(req.body.accountNumber, req.body.bankCode)
+            const accountDetails = await this.walletService.confirmTransferRecipient(req.body.accountNumber, req.body.bankCode, req.referenceId, req.k_token)
             res.status(200).json({
                 success: true,
-                message: "Baank account resolved successfully.",
+                message: "Bank account resolved successfully.",
                 data: {
                     accountDetails
                 }

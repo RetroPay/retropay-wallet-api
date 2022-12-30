@@ -21,7 +21,6 @@ class WalletService {
   
         if(!foundUser?.fundPermission) throw new Error("Verify your identity to fund your wallet.")
   
-  
         const helper = new Paystack.FeeHelper();
         const amountPlusPaystackFees = helper.addFeesTo(amount * 100);
         const splitAccountFees = 100 * 100 //Charge an NGN100 flat fee, in kobo
@@ -210,9 +209,10 @@ class WalletService {
 
   private async validatePin(formPin: string, userId: string):Promise<boolean> {
     try {
-      const foundUser = await userModel.findById(userId).select('pin');
+      const foundUser = await userModel.findById(userId)
+      console.log(foundUser)
   
-      if(!foundUser) throw new Error("Error validatiing your pin")
+      if(!foundUser) throw new Error("Error validating your pin")
       
       if (await foundUser.isValidPin(formPin)) {
         return true;
@@ -220,8 +220,8 @@ class WalletService {
       return false;
       
     } catch (error) {
-      console.log(translateError(error))
-      throw new Error('Balance unavailable.')
+      console.log(error)
+      throw new Error('Unable to validate pin.')
     }
   }
 
@@ -270,28 +270,113 @@ class WalletService {
 
     } catch (error) {
       console.log(translateError(error))
-      throw new Error('Unable to retrieve transaction')
+      throw new Error(translateError(error)[0] || 'Unable to retrieve transaction')
     }
   } 
 
-  public async resolveBankAccount(account_number: string, bank_code: string): Promise<any> {
+  public async withdrawFunds(
+    formPin: string,
+    referenceId: string,
+    userId: string,
+    amount: number, 
+    beneficiaryAccount: string,
+    comment: string, 
+    beneficiaryBankCode: string, 
+    beneficiaryName: string, 
+    nameEnquiryId: string,
+    k_token: string ): Promise<IWallet>
+    {
+      try {
+        if (await this.validatePin(formPin, userId) == false) throw new Error("Transfer failed - Incorrect transaction pin")
+
+        console.log(referenceId)
+        const response = await axios({
+          method: 'post',
+          url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+          data: {
+            "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+            "requestRef": v4(),
+            data: {
+              trackingReference: referenceId,
+              beneficiaryAccount,
+              amount: amount * 100, //amount in Kobo
+              narration: comment,
+              beneficiaryBankCode,
+              beneficiaryName,
+              senderName: '',
+              nameEnquiryId,
+            }
+          },
+          headers: {
+            "Authorization": `Bearer ${k_token}`
+          }
+        })
+  
+        const data = response.data
+        console.log(data)
+            
+        //if axios call is successful but kuda status returns failed e'g 400 errors
+        if(!data.status) throw new Error(data.message)
+
+        return response.data.data
+        // const newTransaction = await walletModel.create({
+        //   fundOriginatorAccount: userId,
+        //   amount,
+        //   transactionType: 'withdrawal',
+        //   status: 'pending',
+        //   referenceId: v4(),
+        //   comment,
+        //   beneficiaryBankCode,
+        //   beneficiaryName,
+        //   nameEnquiryId,
+        //   beneficiaryAccount
+        // });
+
+        // if (!newTransaction) throw new Error("Transafer failed - Unable to process transfer.")
+      
+        // return newTransaction
+
+      } catch (error) {
+        console.log(error)
+        throw new Error(translateError(error)[0] || 'Transfer failed - Unable to process transfer.')
+      }
+
+  }
+
+  public async confirmTransferRecipient(accountNumber: string, bankCode: string, userId: string, k_token: string): Promise<any> {
     try {
-      const accountDetails = await Paystack.verification.resolveAccount({
-        account_number,
-        bank_code,
-      });
+      const response = await axios({
+        method: 'POST',
+        url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
+        data: {
+            ServiceType :"NAME_ENQUIRY",
+            RequestRef: v4(),
+            data: {
+              "beneficiaryAccountNumber": accountNumber,
+              "beneficiaryBankCode": bankCode,
+              "SenderTrackingReference": userId, 
+              "isRequestFromVirtualAccount": true
+            }
+        },
+        headers: {
+            Authorization: `Bearer ${k_token}`
+        }
+      })
 
-      console.log(accountDetails)
+      const data = response.data
+      console.log(data)
 
-      if(!accountDetails) throw new Error("Unable to resolve bank account.")
+      //if axios call is successful but kuda status returns failed e'g 400 errors
+      if(!data.status) throw new Error(data.message)
 
-      return accountDetails.data
+      return data.data
     } catch (error: any) {
-      throw new Error(translateError(error.error)[0] || translateError(error)[0] || "Unable to resolve bank account.")
+      console.error(error)
+      throw new Error(translateError(error)[0] || "Unable to resolve bank account.")
     }
   }
 
-  public async getBankList(k_token: string): Promise<any> {
+  public async getBankList(kuda_token: string): Promise<any> {
     try {
       const response = await axios({
         method: 'post',
@@ -301,7 +386,7 @@ class WalletService {
           "requestRef": v4()
         },
         headers: {
-          "Authorization": `Bearer ${k_token}`
+          "Authorization": `Bearer ${kuda_token}`
         }
       })
 
@@ -311,24 +396,6 @@ class WalletService {
     } catch (error: any) {
       console.log(error)
       throw new Error("Unable to retrieve list of banks.")
-    }
-  }
-
-  public async genererateTransferRecipient(fullName: string, account_number: string, bank_code: string): Promise<any> {
-    try {
-      const recipient = await Paystack.transfer_recipient.create({
-        type: 'nuban',
-        name: fullName,
-        account_number,
-        bank_code,
-        currency: 'NGN',
-      });
-
-      if(!recipient) throw new Error("Unable to generate transfer recipient.")
-
-      return recipient.data
-    } catch (error: any) {
-      throw new Error(translateError(error.error)[0] || translateError(error)[0] || "UUnable to generate transfer recipient.")
     }
   }
 }

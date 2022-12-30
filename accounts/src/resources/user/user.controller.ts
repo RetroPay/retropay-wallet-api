@@ -7,6 +7,7 @@ import validationMiddleware from "@/middlewares/validation.middleware";
 import HttpExeception from "@/utils/exceptions/http.exception";
 import MailService from "@/services/sendEmails";
 import authenticatedMiddleware from "@/middlewares/authenticate.middlware";
+import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
 import translateError from "@/helpers/mongod.helper";
 import welcomeEmail from "@/templates/welcome.template";
 import passwordResetEmail from "@/templates/passwordReset.template";
@@ -14,7 +15,7 @@ import verifyEmailTemplate from "@/templates/verifyEmail.template";
 // import smsService from "@/services/sms.service";
 import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable"
-import channel from "../../server"
+import { brokerChannel } from "../../server"
 import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class UserController implements IController {
@@ -28,7 +29,7 @@ class UserController implements IController {
     }
 
     private async subscribeBroker(): Promise<void> {
-        await subscribeMessage(await channel, `${process.env.ACCOUNT_BINDING_KEY}`, this.UserService)
+        await subscribeMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, this.UserService)
     }
 
     private initialiseRoutes(): void {
@@ -56,7 +57,7 @@ class UserController implements IController {
 
         //NUBAN verification and creation
         // this.router.post('/user/profile/verify-identity', authenticatedMiddleware, validationMiddleware(validate.verifyIdentity), this.verifyUserIdentity)
-        // this.router.post('/user/nuban/create', authenticatedMiddleware, this.createNubanAccount)
+        this.router.post('/user/nuban/create', authenticatedMiddleware, kudaTokenHandler, this.createNubanAccount)
 
     }
 
@@ -77,7 +78,7 @@ class UserController implements IController {
             
             const { firstname, lastname, email, username, _id } = user.user
             //Notify banking service
-            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'NEW_USER_CREATED',
                 data: {
                     firstname, 
@@ -124,7 +125,7 @@ class UserController implements IController {
     private setPin = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const updatedUser: IUser | any = await this.UserService.setTransactionPin(req.user, req.body.pin, req.body.confirmPin)
-            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'USER_CREATE_PIN',
                 data: {
                     id: req.user,
@@ -275,7 +276,7 @@ class UserController implements IController {
         try {
             const updatedUser = await this.UserService.setUsername(req.body.username, req.user)
             // if(updatedUser) {}
-            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'USERNAME_UPDATED',
                 data: updatedUser
             }));
@@ -337,7 +338,7 @@ class UserController implements IController {
         try {
             await this.UserService.deactivateUserAccount(req.user)
 
-            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'DEACTIVATE_USER_ACOUNT',
                 data: {
                     id: req.user
@@ -386,7 +387,7 @@ class UserController implements IController {
         try {
             const recipientId = await this.UserService.addToFavoritedRecipients(req.user, req.body.recipientTag)
 
-            publishMessage(await channel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'ADD_FAVORITE_RECIPIENT',
                 data: {
                     id: req.user,
@@ -403,20 +404,29 @@ class UserController implements IController {
         }
     }
 
-    // private createNubanAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
-    //     try {
-    //         const createdAccount = await this.UserService.createNuban(req.user)
-    //         console.log(createdAccount)
-    //         res.status(200).json({
-    //             success: true,
-    //             message: createdAccount.message,
-    //             data: { accountNumber: createdAccount.data.account_name, accountName: createdAccount.data.account_name }
-    //         })
-    //     } catch (error: any) {
-    //         console.log(error)
-    //         return next(new HttpExeception(400, error.message))
-    //     }
-    // }
+    private createNubanAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const createdAccount: any = await this.UserService.createNubanAccount(req.user, req.k_token)
+            console.log(createdAccount)
+
+            //Notify banking service
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'USER_NUBAN_CREATED',
+                data: {
+                    id: req.user,
+                    accountNumber: createdAccount.accountNumber
+                }
+            }));
+            res.status(200).json({
+                success: true,
+                message: "Succesfully created nuban account",
+                data: createdAccount
+            })
+        } catch (error: any) {
+            console.log(error)
+            return next(new HttpExeception(400, error.message))
+        }
+    }
 }
 
 export default UserController

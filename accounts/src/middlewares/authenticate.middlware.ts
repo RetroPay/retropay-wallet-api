@@ -13,7 +13,7 @@ async function authenticatedMiddleware(
     const bearer = req.headers.authorization
 
     if (!bearer || !bearer.startsWith('Bearer ')) {
-        return next(new HttpException(401, 'Unauthorised - No Auth token found'))
+        return next(new HttpException(401, 'Unauthorised'))
     }
 
     const accessToken = bearer.split('Bearer ')[1].trim()
@@ -31,6 +31,10 @@ async function authenticatedMiddleware(
         if (!user) {
             return next(new HttpException(401, 'Unauthorised'))
         }
+
+
+        //if account is suspended or deactivated
+        if(user.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
 
         req.user = user.id
         req.username = user.username

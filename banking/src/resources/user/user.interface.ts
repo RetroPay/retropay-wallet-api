@@ -27,6 +27,7 @@ export default interface IUser {
     customerCode? : string,
     nubanAccountDetails?: object
     favoritedRecipients?: string[]
+    isAccountActive: boolean
 
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>
