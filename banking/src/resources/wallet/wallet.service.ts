@@ -319,6 +319,7 @@ class WalletService {
         if(!data.status) throw new Error(data.message)
 
         return response.data.data
+        
         // const newTransaction = await walletModel.create({
         //   fundOriginatorAccount: userId,
         //   amount,
