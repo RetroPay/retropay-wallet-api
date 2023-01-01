@@ -23,7 +23,7 @@ const WalletSchema = new Schema(
       type: String,
       trim: true,
       default: 'pending',
-      enum: ['pending', 'success', 'failed', 'abandoned'],
+      enum: ['pending', 'success', 'failed', 'abandoned', 'reversed'],
       required: true
     },
     processingFees: { type: Number, default: 0 },
@@ -37,7 +37,11 @@ const WalletSchema = new Schema(
     recepientTag: { type: String },
     senderTag: { type: String },
     withdrawalRecipientBankDetails: { type: Object },
-    fullDepositData: { type: Object }
+    fullDepositData: { type: Object },
+    beneficiaryBankCode: { type: String },
+    beneficiaryName: { type: String },
+    nameEnquiryId: { type: String },
+    beneficiaryAccount: { type: String },
   },
   {
     timestamps: true

@@ -5,6 +5,7 @@ import App from './app'
 import DemoController from "@/resources/status/status.controller"
 import UserController from "@/resources/user/user.controller"
 import WalletController from "@/resources/wallet/wallet.controller"
+import WebhookController from "@/resources/webhooks/kuda/hook.controller"
 import {createChannel} from "@/utils/broker"
 import { createClient } from "redis"
 
@@ -28,7 +29,8 @@ export default {
 const app = new App([
     new DemoController, 
     new UserController,
-    new WalletController
+    new WalletController,
+    new WebhookController
 ], Number(process.env.PORT) || 4001)
 
 

@@ -20,58 +20,59 @@ class WalletController implements IController {
     }
 
     private initialiseRoutes(): void {
-        this.router.post("/wallet/fund", validationMiddleware(validate.fundWallet), this.fundWallet)
+        // this.router.post("/wallet/fund", validationMiddleware(validate.fundWallet), this.fundWallet)
         //transaction history
-        this.router.get("/wallet/transactions/:reference/verify", authenticatedMiddleware, this.verifyDepositTransaction)
+        // this.router.get("/wallet/transactions/:reference/verify", authenticatedMiddleware, this.verifyDepositTransaction)
+        this.router.get("/wallet/transactions/:reference/status", authenticatedMiddleware, kudaTokenHandler, this.queryTransactionStatus)
         this.router.get("/wallet/transactions/:year/:month", authenticatedMiddleware, this.getTransactionByMonth)
         this.router.get("/wallet/transactions/:reference", authenticatedMiddleware, this.getTransactionDetails)
         //wallet balance
         this.router.get("/wallet/balance", authenticatedMiddleware, this.getWalletBalance)
         //wallet transfers
-        this.router.post("/wallet/transfer", authenticatedMiddleware, validationMiddleware(validate.transferFunds), this.transferFunds)
+        // this.router.post("/wallet/transfer", authenticatedMiddleware, validationMiddleware(validate.transferFunds), this.transferFunds)
         //wallet withdrawals
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
         this.router.post("/wallet/withdraw", authenticatedMiddleware, validationMiddleware(validate.withdrawFunds), kudaTokenHandler, this.withdrawFunds)
     }
 
-    private fundWallet = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
-        try {
-            // const checkout = await this.walletService.initializePaystackCheckout(req.body.amount, req.user, "NGN")
-            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
-                event: 'USER_INITIALISE_FUND_WALLET',
-                // data: checkout,
-                data: 'It went through'
-            }));
-            res.status(201).json({
-                success: true,
-                message: "Initialization successful",
-                // data: checkout
-                data: 'It went through'
-            })
-        } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
-        }
-    }
+    // private fundWallet = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+    //     try {
+    //         // const checkout = await this.walletService.initializePaystackCheckout(req.body.amount, req.user, "NGN")
+    //         publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+    //             event: 'USER_INITIALISE_FUND_WALLET',
+    //             // data: checkout,
+    //             data: 'It went through'
+    //         }));
+    //         res.status(201).json({
+    //             success: true,
+    //             message: "Initialization successful",
+    //             // data: checkout
+    //             data: 'It went through'
+    //         })
+    //     } catch (error: any) {
+    //         return next(new HttpExeception(400, error.message))
+    //     }
+    // }
 
-    private verifyDepositTransaction = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
-        try {
-            if(req.params.reference === undefined) return next(new HttpExeception(400, "Invalid request. Include transaction reference"))
+    // private verifyDepositTransaction = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+    //     try {
+    //         if(req.params.reference === undefined) return next(new HttpExeception(400, "Invalid request. Include transaction reference"))
            
-            const updatedTransaction: IWallet | null = await this.walletService.verifyTransaction(req.params.reference)
-            res.status(200).json({
-                success: true,
-                message: "Transaction succesfully verified",
-                data: { 
-                    transactionStatus: updatedTransaction?.status,
-                    amount: updatedTransaction?.amount,
-                    transactionType: updatedTransaction?.transactionType
-                 }
-            })
-        } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
-        }
-    }
+    //         const updatedTransaction: IWallet | null = await this.walletService.verifyTransaction(req.params.reference)
+    //         res.status(200).json({
+    //             success: true,
+    //             message: "Transaction succesfully verified",
+    //             data: { 
+    //                 transactionStatus: updatedTransaction?.status,
+    //                 amount: updatedTransaction?.amount,
+    //                 transactionType: updatedTransaction?.transactionType
+    //              }
+    //         })
+    //     } catch (error: any) {
+    //         return next(new HttpExeception(400, error.message))
+    //     }
+    // }
 
     private getTransactionByMonth = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
@@ -95,16 +96,32 @@ class WalletController implements IController {
         }
     }
 
+    private queryTransactionStatus = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const { reference } = req.params
+            console.log(reference)
+            if(reference == "") throw new Error("Invalid request. Include valid reference.")
+
+            const transaction = await this.walletService.getTransactionStatus(req.user, req.k_token, reference)
+            res.status(200).json({
+                success: true,
+                message: "Transactions status retrieved succeesfully",
+                data: transaction
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
     private getTransactionDetails = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const { reference } = req.params
-            if(!reference) throw new Error("Invalid request. Include valid reference.")
+            if(reference == "") throw new Error("Invalid request. Include valid reference.")
 
             const transaction = await this.walletService.getTransactionDetails(req.user, reference)
-
             res.status(200).json({
                 success: true,
-                message: "Transactions retrieved succeesfully",
+                message: "Transactions retrieved succeesfully.",
                 data: transaction
             })
         } catch (error: any) {
@@ -129,21 +146,21 @@ class WalletController implements IController {
         }
     }
 
-    private transferFunds = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
-        try {
-            const { pin, amount, recipientTag, comment } = req.body
-            const transaction = await this.walletService.transferFund(pin, amount, recipientTag, comment, req.user, req.username)
-            res.status(201).json({
-                success: true,
-                message: "Balance retrieved succeesfully",
-                data: {
-                    transaction
-                }
-            })
-        } catch (error: any) {
-            return next(new HttpExeception(400, error.message))  
-        }
-    }
+    // private transferFunds = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+    //     try {
+    //         const { pin, amount, recipientTag, comment } = req.body
+    //         const transaction = await this.walletService.transferFund(pin, amount, recipientTag, comment, req.user, req.username)
+    //         res.status(201).json({
+    //             success: true,
+    //             message: "Balance retrieved succeesfully",
+    //             data: {
+    //                 transaction
+    //             }
+    //         })
+    //     } catch (error: any) {
+    //         return next(new HttpExeception(400, error.message))  
+    //     }
+    // }
 
     
     private withdrawFunds = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
