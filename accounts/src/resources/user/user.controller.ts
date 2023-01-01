@@ -52,6 +52,7 @@ class UserController implements IController {
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.sertPin), this.setPin)
         this.router.get("/user/:username/resolve", authenticatedMiddleware, this.resolveAccountTag)
         this.router.post("/user/profile/favorite-recipients/add", authenticatedMiddleware, validationMiddleware(validate.addFavorites), this.favoriteRecipient)
+        this.router.get("/user/profile/favorite-recipients/list", authenticatedMiddleware, this.getFavoriteRecipients)
 
         this.router.delete("/user/deactivate", authenticatedMiddleware, this.softDeleteUserAccount)
 
@@ -398,6 +399,19 @@ class UserController implements IController {
             res.status(200).json({
                 success: true,
                 message: "Recipient added to favorites succesfully.", 
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    public getFavoriteRecipients = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const favorites = await this.UserService.retrieveFavorites(req.user)
+            res.status(200).json({
+                success: true,
+                message: "Favorite recipients retrieved succesfully.", 
+                data: {favorites}
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))

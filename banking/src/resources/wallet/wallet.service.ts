@@ -208,6 +208,35 @@ class WalletService {
     }
   }
 
+  public async getAccountBalance(referenceId: string, k_token: string): Promise<any> {
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
+        data: {
+            ServiceType :"RETRIEVE_VIRTUAL_ACCOUNT_BALANCE",
+            RequestRef: v4(),
+            data: {
+              trackingReference: referenceId,
+            }
+        },
+        headers: {
+            Authorization: `Bearer ${k_token}`
+        }
+      })
+
+      const data = response.data
+      console.log(data)
+
+      if(!data.status) throw new Error(data.message)
+
+      return data.data.availableBalance
+    } catch (error) {
+      console.log(error)
+      throw new Error(translateError(error)[0] || 'Transfer failed - Unable to process transfer.')
+    }
+  }
+
   private async validatePin(formPin: string, userId: string):Promise<boolean> {
     try {
       const foundUser = await userModel.findById(userId)
@@ -372,6 +401,8 @@ class WalletService {
             
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if(!data.status) throw new Error(data.message)
+
+      /* Include section to save response to database, and update requird fields */
 
       return data.data
     } catch(error: any) {

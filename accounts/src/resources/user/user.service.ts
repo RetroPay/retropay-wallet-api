@@ -337,7 +337,6 @@ class UserService {
 
     public async setUsername(username: string, id: string): Promise<IUser | null> {
         try {
-            //Still check if username already exists
             if(await userModel.findOne({username})) throw new Error('Username already exists')
 
             const updatedUser = await userModel.findByIdAndUpdate(id, { username }, { new: true }).select("username");
@@ -396,6 +395,19 @@ class UserService {
             return foundRecipient.id
         } catch (error: any) {
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+        }
+    }
+
+    public async retrieveFavorites(userId: string): Promise<IUser[]> {
+        try {
+            const foundUser = await userModel.findById(userId).select("favoritedRecipients")
+
+            if(!foundUser) throw new Error("Unable to retrieve favorites")
+
+            const favorites = await userModel.find({_id: {$in: foundUser.favoritedRecipients }}).select("firstname lastname isIdentityVerified profilePhoto.url username")
+            return favorites
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to retrieve favorites.')
         }
     }
 

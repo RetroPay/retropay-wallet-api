@@ -27,7 +27,7 @@ class WalletController implements IController {
         this.router.get("/wallet/transactions/:year/:month", authenticatedMiddleware, this.getTransactionByMonth)
         this.router.get("/wallet/transactions/:reference", authenticatedMiddleware, this.getTransactionDetails)
         //wallet balance
-        this.router.get("/wallet/balance", authenticatedMiddleware, this.getWalletBalance)
+        this.router.get("/wallet/balance", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalance)
         //wallet transfers
         // this.router.post("/wallet/transfer", authenticatedMiddleware, validationMiddleware(validate.transferFunds), this.transferFunds)
         //wallet withdrawals
@@ -132,7 +132,7 @@ class WalletController implements IController {
     private getWalletBalance = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             console.log(req.user)
-            const balance = await this.walletService.calculateWalletBalance(req.user)
+            const balance = await this.walletService.getAccountBalance(req.referenceId, req.k_token)
             
             res.status(200).json({
                 success: true,
