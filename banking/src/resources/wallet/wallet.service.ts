@@ -294,7 +294,6 @@ class WalletService {
           referenceId: data.transactionReference,
           comment,
           recepientTag: fundRecipientAccountTag,
-          recepientPhoto: foundRecipient?.profilePhoto?.url,
           senderTag,
           responseCode: data.responseCode,
         });
