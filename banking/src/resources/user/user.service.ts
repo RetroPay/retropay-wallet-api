@@ -112,7 +112,7 @@ class UserService {
     public async updateNubanDetails(reqData: {id: string, accountNumber: string}): Promise<void> {
         try {
             const { id, accountNumber } = reqData
-            const updateUser = await userModel.findOneAndUpdate({ referenceId: id }, {nubanAccountDetails: { nuban: accountNumber }},{ new: true })
+            const updateUser = await userModel.findOneAndUpdate({ referenceId: id }, {nubanAccountDetails: { nuban: accountNumber }, $set: { transferPermission: true }},{ new: true })
             console.log(updateUser)
             if(!updateUser) throw new Error("Unable to delete user account.")
         } catch (error) {

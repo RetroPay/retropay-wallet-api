@@ -21,15 +21,20 @@ class WalletController implements IController {
 
     private initialiseRoutes(): void {
         // this.router.post("/wallet/fund", validationMiddleware(validate.fundWallet), this.fundWallet)
+
         //transaction history
         // this.router.get("/wallet/transactions/:reference/verify", authenticatedMiddleware, this.verifyDepositTransaction)
         this.router.get("/wallet/transactions/:reference/status", authenticatedMiddleware, kudaTokenHandler, this.queryTransactionStatus)
         this.router.get("/wallet/transactions/:year/:month", authenticatedMiddleware, this.getTransactionByMonth)
         this.router.get("/wallet/transactions/:reference", authenticatedMiddleware, this.getTransactionDetails)
+
         //wallet balance
         this.router.get("/wallet/balance", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalance)
+
         //wallet transfers
         // this.router.post("/wallet/transfer", authenticatedMiddleware, validationMiddleware(validate.transferFunds), this.transferFunds)
+        this.router.post("/wallet/tag/resolve-account", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.resolveAccountTag), this.resolveAccountTag)
+
         //wallet withdrawals
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
@@ -187,6 +192,21 @@ class WalletController implements IController {
             res.status(200).json({
                 success: true,
                 message: "Bank account resolved successfully.",
+                data: {
+                    accountDetails
+                }
+            })
+        } catch (error :any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private resolveAccountTag = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const accountDetails = await this.walletService.confirmTransferRecipientByAccountTag(req.body.accountTag, req.k_token, req.referenceId)
+            res.status(200).json({
+                success: true,
+                message: "User account resolved successfully.",
                 data: {
                     accountDetails
                 }

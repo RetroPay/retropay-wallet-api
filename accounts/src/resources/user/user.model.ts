@@ -41,7 +41,6 @@ const UserSchema = new Schema({
     identityVerificationStatus: identityVerificationSchema,
     transferPermission: { type: Boolean, default: false },
     withdrawPermission: { type: Boolean, default: false },
-    fundPermission: { type: Boolean, default: false },
     customerCode: { type: String, },
     nubanAccountDetails: Object,
     favoritedRecipients: { type: Array },

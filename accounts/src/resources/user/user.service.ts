@@ -310,7 +310,8 @@ class UserService {
             if(!data.status) throw new Error(data.message)
 
             await userModel.findByIdAndUpdate(userId, {
-                nubanAccountDetails: { nuban: data.data.accountNumber }
+                nubanAccountDetails: { nuban: data.data.accountNumber },
+                $set: { transferPermission: true }
             })
 
             return data.data
