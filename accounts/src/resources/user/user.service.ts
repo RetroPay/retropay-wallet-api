@@ -398,6 +398,21 @@ class UserService {
         }
     }
 
+    public async removeFavoritedRecicpient(userId: string, username: string): Promise<IUser | null> {
+        try {
+            const foundRecipient = await userModel.findOne({ username })
+            if(!foundRecipient) throw new Error("Invalid recipient tag.")
+            console.log(foundRecipient)
+
+            const updatedUser = await userModel.findByIdAndUpdate(userId, {$pull: {favoritedRecipients: foundRecipient.id }}, { new: true })
+
+            console.log(updatedUser)
+            return foundRecipient.id
+        } catch (error: any) {
+            throw new Error(translateError(error)[0] || 'Unable to unfavourite this recipient.')
+        }
+    }
+
     public async retrieveFavorites(userId: string): Promise<IUser[]> {
         try {
             const foundUser = await userModel.findById(userId).select("favoritedRecipients")

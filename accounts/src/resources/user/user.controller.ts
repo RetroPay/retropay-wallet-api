@@ -52,6 +52,7 @@ class UserController implements IController {
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.sertPin), this.setPin)
         this.router.get("/user/:username/resolve", authenticatedMiddleware, this.resolveAccountTag)
         this.router.post("/user/profile/favorite-recipients/add", authenticatedMiddleware, validationMiddleware(validate.addFavorites), this.favoriteRecipient)
+        this.router.delete("/user/profile/favorite-recipients/delete", authenticatedMiddleware, validationMiddleware(validate.removeFavorite), this.unfavoriteRecipient)
         this.router.get("/user/profile/favorite-recipients/list", authenticatedMiddleware, this.getFavoriteRecipients)
 
         this.router.delete("/user/deactivate", authenticatedMiddleware, this.softDeleteUserAccount)
@@ -396,12 +397,35 @@ class UserController implements IController {
                 }
             }));
 
-            res.status(200).json({
+            res.status(201).json({
                 success: true,
                 message: "Recipient added to favorites succesfully.", 
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    public unfavoriteRecipient = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const { recipientTag } = req.body
+            const recipientId = await this.UserService.removeFavoritedRecicpient(req.user, recipientTag)
+
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'DELETE_FAVORITE_RECIPIENT',
+                data: {
+                    id: req.user,
+                    recipientId: recipientId
+                }
+            }));
+
+            res.status(201).json({
+                success: true,
+                message: "Recipient removed from favorites succesfully.", 
+            })
+
+        } catch (error) {
+            
         }
     }
 

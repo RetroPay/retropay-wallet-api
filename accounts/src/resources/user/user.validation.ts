@@ -58,6 +58,10 @@ const addFavorites = Joi.object({
     recipientTag: Joi.string().required()
 })
 
+const removeFavorite = Joi.object({
+    recipientTag: Joi.string().required()
+})
+
 export default { 
     register,
     login,
@@ -70,5 +74,6 @@ export default {
     setupUsername,
     verifyIdentity,
     sertPin,
-    addFavorites
+    addFavorites,
+    removeFavorite,
 }

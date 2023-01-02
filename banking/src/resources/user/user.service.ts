@@ -31,6 +31,8 @@ class UserService {
                 break;
             case 'USER_NUBAN_CREATED': await this.updateNubanDetails(data)
                 break;
+            case 'DELETE_FAVORITE_RECIPIENT': await this.deleteFavoritedRecipient(data)
+                break;
             default: throw new Error("=== Invalid event ===")
                 break;
         }
@@ -115,6 +117,18 @@ class UserService {
             if(!updateUser) throw new Error("Unable to delete user account.")
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to add update nuban details.')
+        }
+    }
+
+    public async deleteFavoritedRecipient(reqData: {id: string, recipientId: string}): Promise<void> {
+        try {
+            const { id, recipientId } = reqData
+
+            const updatedUser = await userModel.findOneAndUpdate({ referenceId: id }, { $pull: {favoritedRecipients: recipientId } }, { new: true })
+            console.log(updatedUser)
+            if(!updatedUser) throw new Error("Unable to delete recipient.")
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to delete recipient.')
         }
     }
 }
