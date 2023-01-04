@@ -419,7 +419,7 @@ class UserController implements IController {
                 }
             }));
 
-            res.status(201).json({
+            res.status(200).json({
                 success: true,
                 message: "Recipient removed from favorites succesfully.", 
             })
@@ -435,7 +435,7 @@ class UserController implements IController {
             res.status(200).json({
                 success: true,
                 message: "Favorite recipients retrieved succesfully.", 
-                data: {favorites}
+                data: { favorites }
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))

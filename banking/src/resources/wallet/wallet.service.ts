@@ -4,97 +4,12 @@ import { v4 } from "uuid"
 import userModel from "../user/user.model"
 import IWallet from "./wallet.interface"
 import translateError from "@/helpers/mongod.helper"
-import mongoose from "mongoose"
+import mongoose, { StringExpressionOperatorReturningBoolean } from "mongoose"
 import axios from "axios"
 import { redisClient } from "../../server"
 import IUser from "../user/user.interface"
 
 class WalletService {
-
-  // public async initializePaystackCheckout(amount: number, userId: string, currency: string): Promise<IWallet | null> {
-  //     try {
-        
-  //       const foundUser = await userModel.findById(userId).select("email fundPermission")
-  
-  //       if(!foundUser) throw new Error("Unable to initialize payment.")
-  
-  //       const { email } = foundUser
-  
-  //       if(!foundUser?.fundPermission) throw new Error("Verify your identity to fund your wallet.")
-  
-  //       const helper = new Paystack.FeeHelper();
-  //       const amountPlusPaystackFees = helper.addFeesTo(amount * 100);
-  //       const splitAccountFees = 100 * 100 //Charge an NGN100 flat fee, in kobo
-  
-  //       console.log(amountPlusPaystackFees, "paystack fees")
-  //       console.log(splitAccountFees, "split account fees")
-        
-  //       //Initiaize paystack checkout
-  //       const result = await Paystack.transaction.initialize({
-  //         email,
-  //         /* If amount is less than NGN2500, waive paystack's NGN100 charge to NGN10.
-  //           There's an overflow padding of NGN10 due to paystack's incosistent fee.
-  //         */
-  //         amount:
-  //           amount >= 2500
-  //             ? Math.floor(amountPlusPaystackFees + 11000 + splitAccountFees)
-  //             : Math.floor(amountPlusPaystackFees + 1000 + splitAccountFees),
-  //         reference: v4(),
-  //         currency,
-  //         // split_code: process.env.GATEWAY_SPLIT_CODE,
-  //         bearer: "account"
-  //       });
-    
-  //       if (!result) throw new Error("Unable to initialize payment.")
-  
-  //       const newTransaction = await walletModel.create({
-  //           referenceId: result.data.reference,
-  //           transactionType: 'deposit',
-  //           operationType: 'credit',
-  //           amount,
-  //           currency,
-  //           fundRecipientAccount: userId,
-  //           accessCode: result.data.access_code
-  //       })
-  
-  //       if(!newTransaction) throw new Error("Unable to fund wallet at this moment. Try again.")
-
-  //       return result.data
-
-  //     } catch (error: any) {
-  //       console.log(translateError(error))
-  //       throw new Error(translateError(error.error)[0] || translateError(error)[0] || 'Unable to fund wallet at this moment. Try again.')
-  //     }
-  // }
-
-  // public async verifyTransaction(reference: string): Promise<IWallet | null> {
-  //   try {
-  //     const result = await Paystack.transaction.verify({
-  //       reference,
-  //     });
-
-  //     if (!result) throw new Error("Unable to verify deposit transaction. Try again")
-
-  //     const resultData = result.data
-  //     const paystack = resultData.fees;
-  //     const totalProcessingFees = paystack + (100 * 100); //Paystack charge + retro pay NGN100 service fee, all in kobo
-
-  //     const updatedTransaction = await walletModel.findOneAndUpdate({ referenceId: reference }, {
-  //       status: resultData.status,
-  //       processingFees: totalProcessingFees / 100,
-  //       authorization: resultData.authorization,
-  //       fullDepositData: resultData
-  //     }, { new: true})
-
-  //     if (!updatedTransaction) throw new Error("Unable to verify deposit transaction. Try again") 
-
-  //     return updatedTransaction
-
-  //   } catch (error: any) {
-  //     console.log(translateError(error))
-  //     throw new Error(translateError(error.error)[0] || translateError(error)[0] || 'Unable to verify deposit transaction. Try again.')
-  //   }
-  // }
 
   public async getTransactionsByMonth(month: number, year: number, userId: string): Promise<any | null> {
     try {
@@ -233,7 +148,7 @@ class WalletService {
     referenceId: string,
     k_token: string,
     beneficiaryName: string,
-  ): Promise<IWallet | null> {
+  ): Promise<any> {
     try {
       
       //find recipient account
@@ -244,18 +159,20 @@ class WalletService {
       console.log(foundRecipient)
       if (!foundRecipient) throw new Error("Invalid recipient account.")
 
-      const foundUser = await userModel.findById(userId).select("firstname lastame")
-      if(!foundUser) throw new Error('Invalid ')
+      const foundUser = await userModel.findById(userId).select("firstname lastname")
+      if(!foundUser) throw new Error('Unable to process transaction.')
 
 
-      // If user tries to transfer to their own account.
-      if(foundRecipient._id == userId) throw new Error("Transfer can not be processed.")
+      // If user tries to transfer to their own account lol.
+      if(foundRecipient._id == userId) throw new Error("Unable to process transaction.")
   
       //calculate users wallet balance
       // if ((await this.calculateWalletBalance(fundOriginatorAccount)) <= Number(amount) + 100 ) throw new Error("Transafer failed - Insufficient funds")
   
-      if (!await this.validatePin(formPin, userId)) throw new Error("Transafer failed - Incorrect transaction pin")
+      if (!await this.validatePin(formPin, userId)) throw new Error("Transfer failed - Incorrect transaction pin")
+
       await redisClient.connect()
+
       const response = await axios({
           method: 'post',
           url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
@@ -270,19 +187,39 @@ class WalletService {
               beneficiaryBankCode: await redisClient.get("kudaBankCode") || '999129',
               beneficiaryName,
               senderName: foundUser.lastname + ' ' + foundUser.firstname,
-              // nameEnquiryId,
             }
           },
           headers: {
             "Authorization": `Bearer ${k_token}`
           }
         })
+
+        await redisClient.disconnect();
   
         const data = response.data
         console.log(data)
             
         //if axios call is successful but kuda status returns failed e'g 400 errors
-        if(!data.status) throw new Error(data.message)
+        if(!data.status) {
+          const { responseCode } = data
+
+          switch (responseCode) {
+            case '06' : throw new Error('Transfer failed - processng error.')
+              break;
+            case '52' : throw new Error('Transfer failed - Inactive recipient account.')
+              break;
+            case '23' : throw new Error('Transfer failed - A PND is active on your account. Kindly contact support.')
+              break;
+            case '51' : throw new Error('Transfer failed - Insufficient funds on account.')
+              break;
+            case '93' : throw new Error('Transfer failed - Cash limit exceeded for your account tier.')
+              break;
+            case 'k91' : throw new Error('Transfer error - Transaction timeout, Kindly contact support to confirm transaction status.')
+              break;
+            default: throw new Error(data.message)
+          }
+        }
+
 
         //Log new transaction
         const newTransaction = await walletModel.create({
@@ -291,16 +228,21 @@ class WalletService {
           amount,
           transactionType: 'transfer',
           status: 'pending',
-          referenceId: data.transactionReference,
+          referenceId: v4() || data.transactionReference, //remove uuid before deploying to staging
           comment,
           recepientTag: fundRecipientAccountTag,
           senderTag,
           responseCode: data.responseCode,
+          beneficiaryName
         });
-    
-        if (!newTransaction) throw new Error("Transafer failed - Unable to process transfer.")
-        
-        return newTransaction
+            
+        return {
+          amount, 
+          transactionId: data.transactionReference,
+          fundRecipientAccountTag,
+          transactionType: 'Transfer',
+          createdAt: newTransaction?.createdAt
+        }
 
     } catch (error) {
       console.log(translateError(error))
@@ -315,10 +257,11 @@ class WalletService {
     amount: number, 
     beneficiaryAccount: string,
     comment: string, 
-    beneficiaryBankCode: string, 
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
     beneficiaryName: string, 
     nameEnquiryId: string,
-    k_token: string ): Promise<IWallet>
+    k_token: string ): Promise<IWallet |  any>
     {
       try {
         const foundUser = await userModel.findById(userId).select("firstname lastname")
@@ -360,16 +303,24 @@ class WalletService {
           amount,
           transactionType: 'withdrawal',
           status: 'pending',
-          referenceId: data.transactionReference,
+          referenceId: v4() || data.transactionReference, // remove uuid in production
           comment,
           beneficiaryBankCode,
+          beneficiaryBank,
           beneficiaryName,
           nameEnquiryId,
           beneficiaryAccount,
           responseCode: data.responseCode,
         });
-      
-        return newTransaction
+    
+        return { 
+          amount, 
+          transactionId: data.transactionReference, 
+          beneficiaryName, 
+          beneficiaryBank,
+          transactionType: 'Withdrawal',
+        }
+
       } catch (error) {
         console.log(error)
         throw new Error(translateError(error)[0] || 'Transfer failed - Unable to process transfer.')
@@ -404,7 +355,7 @@ class WalletService {
       console.log(data)
             
       //if axios call is successful but kuda status returns failed e'g 400 errors
-      if(!data.status) throw new Error(data.message)
+      if(!data.status) throw new Error(data.responseCode == 'k25' ? 'Record not found' : data.message)
 
       /* Include section to save response to database, and update requird fields */
 
@@ -450,10 +401,10 @@ class WalletService {
 
   public async confirmTransferRecipientByAccountTag(username: string, k_token: string, referenceId: string): Promise<any> {
     try {
-        const foundRecipient = await userModel.findOne({username}).select('nubanAccountDetails transferPermission')
+        const foundRecipient = await userModel.findOne({username}).select('nubanAccountDetails transferPermission lastname firstname middlename isIdentityVerified profilePhoto')
         console.log(foundRecipient)
 
-        /*Check if user exists and has created a nuban to recieve funds in*/
+        /*Check if user exists and has created a nuban to recieve funds in else throw error*/
         if(!foundRecipient || !foundRecipient.transferPermission) throw new Error('Invalid recipient.')
 
         await redisClient.connect()
@@ -483,8 +434,19 @@ class WalletService {
   
         //if axios call is successful but kuda status returns failed e'g 400 errors
         if(!data.status) throw new Error(data.message)
-  
-        return data.data
+
+        const { beneficiaryName } = data.data
+        const { lastname, firstname, middlename, isIdentityVerified, profilePhoto } = foundRecipient
+
+        return {
+          lastname, 
+          firstname, 
+          middlename,
+          isIdentityVerified,
+          profilePhoto,
+          beneficiaryName
+        }
+
     } catch (error: any) {
       console.error(error)
       throw new Error(translateError(error)[0] || "Unable to resolve bank account.")

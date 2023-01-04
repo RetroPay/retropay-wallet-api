@@ -11,12 +11,6 @@ const WalletSchema = new Schema(
     },
     currency: String,
     accessCode: { type: String },
-    // operationType: {
-    //   type: String,
-    //   trim: true,
-    //   enum: ['credit', 'debit'],
-    //   required: true
-    // },
     fundRecipientAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     fundOriginatorAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     status: {
@@ -32,13 +26,12 @@ const WalletSchema = new Schema(
       required: true
     },
     referenceId: { type: String, unique: true, required: true },
-    authorization: { type: Object },
     comment: { type: String },
     recepientTag: { type: String },
     senderTag: { type: String },
-    withdrawalRecipientBankDetails: { type: Object },
-    fullDepositData: { type: Object },
+    responseCode: String,
     beneficiaryBankCode: { type: String },
+    beneficiaryBank: String,
     beneficiaryName: { type: String },
     nameEnquiryId: { type: String },
     beneficiaryAccount: { type: String },

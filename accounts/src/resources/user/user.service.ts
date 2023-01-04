@@ -420,7 +420,7 @@ class UserService {
 
             if(!foundUser) throw new Error("Unable to retrieve favorites")
 
-            const favorites = await userModel.find({_id: {$in: foundUser.favoritedRecipients }}).select("firstname lastname isIdentityVerified profilePhoto.url username")
+            const favorites = await userModel.find({_id: {$in: foundUser.favoritedRecipients }}, { _id: 0, firstname: 1 }).select("firstname lastname isIdentityVerified profilePhoto.url username")
             return favorites
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to retrieve favorites.')

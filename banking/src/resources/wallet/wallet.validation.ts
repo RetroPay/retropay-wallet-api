@@ -8,7 +8,8 @@ const transferFunds = Joi.object({
     pin: Joi.string().required().min(4).max(4),
     amount: Joi.number().required(),
     comment: Joi.string().required(),
-    recipientTag: Joi.string().required()
+    recipientTag: Joi.string().required(),
+    beneficiaryName: Joi.string().required()
 })
 
 const resolveAccount= Joi.object({
@@ -28,6 +29,7 @@ const withdrawFunds = Joi.object({
     beneficiaryBankCode: Joi.string().required(), 
     beneficiaryName: Joi.string().required(), 
     nameEnquiryId: Joi.string().required(),
+    beneficiaryBank: Joi.string().required()
 })
 
 

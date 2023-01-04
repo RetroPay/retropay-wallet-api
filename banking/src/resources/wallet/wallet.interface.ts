@@ -12,7 +12,12 @@ export default interface IWallet {
     comment?: string
     recepientTag?: string
     senderTag?: string
-    withdrawalBankDetails?: object
     currency?: string
-    fullDepositData: object
+    responseCode?: string
+    beneficiaryBankCode?: string
+    beneficiaryBank?: string
+    beneficiaryName?: string
+    nameEnquiryId?: string
+    beneficiaryAccount?: string
+    createdAt?: string
 }
