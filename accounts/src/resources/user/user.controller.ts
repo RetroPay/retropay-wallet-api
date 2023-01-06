@@ -8,11 +8,8 @@ import HttpExeception from "@/utils/exceptions/http.exception";
 import MailService from "@/services/sendEmails";
 import authenticatedMiddleware from "@/middlewares/authenticate.middlware";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
-import translateError from "@/helpers/mongod.helper";
-import welcomeEmail from "@/templates/welcome.template";
 import passwordResetEmail from "@/templates/passwordReset.template";
 import verifyEmailTemplate from "@/templates/verifyEmail.template";
-// import smsService from "@/services/sms.service";
 import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable"
 import { brokerChannel } from "../../server"
@@ -67,16 +64,19 @@ class UserController implements IController {
         try {
             const user = await this.UserService.register(req.body)
             console.log(user)
-            if(user) {
-                const emailTemplate = welcomeEmail(req.body.firstname)
-                const mailService = MailService.getInstance();
-                mailService.sendMail({
-                    to: req.body.email,
-                    subject: 'Welcome to RetroPay!',
-                    text: emailTemplate.text,
-                    html: emailTemplate.html,
-                });
-            }
+
+            //Redesign a new welcome mail
+
+            // if(user) {
+            //     const emailTemplate = welcomeEmail(req.body.firstname)
+            //     const mailService = MailService.getInstance();
+            //     mailService.sendMail({
+            //         to: req.body.email,
+            //         subject: 'Welcome to RetroPay!',
+            //         text: emailTemplate.text,
+            //         html: emailTemplate.html,
+            //     });
+            // }
             
             const { firstname, lastname, email, username, _id } = user.user
             //Notify banking service
@@ -296,11 +296,11 @@ class UserController implements IController {
 
     private uploadProfilePhoto = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            console.log(req)
             //Parse multi-part form data with formidable
-            const form = formidable({ multiples: true });
+            const form = formidable({ multiples: false });
 
             form.parse(req, async (err, fields, files) => {
+
                 if (err) {
                     console.log(err)
                     return next(new HttpExeception(400, 'Unable to upload photo.'))
@@ -322,11 +322,19 @@ class UserController implements IController {
                 //store uploaded image info
                 const updatedUser = await this.UserService.setPhotoUrl(req.user, uploadResponse)
 
+                publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                    event: 'UPLOAD_PROFILE_PHOTO',
+                    data: {
+                        id: req.user,
+                        profilePhoto: updatedUser.url
+                    }
+                }));
+
                 res.status(200).json({
                     success: true,
                     message: 'Profile upload succesful',
                     data: {
-                        profilePhoto: updatedUser?.profilePhoto
+                        profilePhoto: updatedUser
                     }
                 })
             

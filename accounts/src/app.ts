@@ -9,7 +9,6 @@ import MailService from './services/sendEmails'
 import cors from 'cors'
 import helmet from 'helmet'
 import process from 'process'
-// import smsService from './services/sms.service'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
 
 class App {
@@ -28,8 +27,8 @@ class App {
         this.express.use(helmet())
         this.express.use(cors())
         this.express.use(morgan('dev'))
-        this.express.use(express.json())
         this.express.use(express.urlencoded({ extended: false }))
+        this.express.use(express.json())
         this.express.use(compression())
         this.express.use(ExpressMongoSanitize())
     }

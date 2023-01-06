@@ -20,10 +20,12 @@ class WalletController implements IController {
     }
 
     private initialiseRoutes(): void {
-        //transaction history
+        //transactions
         this.router.get("/wallet/transactions/:reference/status", authenticatedMiddleware, kudaTokenHandler, this.queryTransactionStatus)
         this.router.get("/wallet/transactions/:year/:month", authenticatedMiddleware, this.getTransactionByMonth)
         this.router.get("/wallet/transactions/:reference", authenticatedMiddleware, this.getTransactionDetails)
+
+        this.router.get("/wallet/transactions-summary/:year", authenticatedMiddleware, this.getYearTransactionSummary)
 
         //wallet balance
         this.router.get("/wallet/balance", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalance)
@@ -49,10 +51,27 @@ class WalletController implements IController {
             const monthNumber = months.indexOf(month.toLowerCase())
             if(monthNumber == -1) throw new Error("Invalid request.")
 
-            const result = await this.walletService.getTransactionsByMonth(monthNumber + 1, year, req.user)
+            const result = await this.walletService.getTransactionsByMonthandYear(monthNumber + 1, year, req.user)
             res.status(200).json({
                 success: true,
                 message: "Transactions retrieved succeesfully",
+                data: result
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private getYearTransactionSummary = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const { year } = req.params
+            if(year == "") throw new Error("Invalid request. Include year.")
+            
+            const result = await this.walletService.getYearlyTransactions(year, req.user)
+
+            res.status(200).json({
+                success: true,
+                message: "Transaction summary retrieved successfully",
                 data: result
             })
         } catch (error: any) {
@@ -83,10 +102,14 @@ class WalletController implements IController {
             if(reference == "") throw new Error("Invalid request. Include valid reference.")
 
             const transaction = await this.walletService.getTransactionDetails(req.user, reference)
+
+            delete transaction.fundOriginatorAccount
+            delete transaction.fundRecipientAccount
+
             res.status(200).json({
                 success: true,
                 message: "Transactions retrieved succeesfully.",
-                data: transaction
+                data: { transaction }
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))

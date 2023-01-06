@@ -350,7 +350,7 @@ class UserService {
         }
     }
 
-    public async setPhotoUrl(id: string, uploadResponse: ICloudinaryResponse): Promise<IUser | null> {
+    public async setPhotoUrl(id: string, uploadResponse: ICloudinaryResponse): Promise<IUser | any> {
         try {
 
             const updatedUser = await userModel.findOneAndUpdate({ id },
@@ -360,7 +360,7 @@ class UserService {
 
             if (!updatedUser) throw new Error('Unable to upload profile photo.')
 
-            return updatedUser
+            return updatedUser?.profilePhoto
         } catch (error: any) {
             console.log(translateError(error))
             throw new Error("Unable to upload profile photo.")

@@ -33,7 +33,9 @@ class UserService {
                 break;
             case 'DELETE_FAVORITE_RECIPIENT': await this.deleteFavoritedRecipient(data)
                 break;
-            default: throw new Error("=== Invalid event ===")
+            case 'UPLOAD_PROFILE_PHOTO': await this.setProfilePhoto(data)
+                break;
+            default:    console.log("== invalid event == ")
                 break;
         }
     }
@@ -129,6 +131,18 @@ class UserService {
             if(!updatedUser) throw new Error("Unable to delete recipient.")
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to delete recipient.')
+        }
+    }
+
+    public async setProfilePhoto(reqData: {id: string, profilePhoto: string}): Promise<void> {
+        try {
+            const { id, profilePhoto } = reqData
+            const updatedUser = await userModel.findOneAndUpdate({referenceId: id}, { profilePhoto }, { new: true })
+
+            console.log(updatedUser)
+            if(!updatedUser) throw new Error("Unable to upload profile photo.")
+        } catch (error: any) {
+            throw new Error(translateError(error)[0] || 'Unable to upload profile photo.')
         }
     }
 }

@@ -1,6 +1,8 @@
 import { Schema, model } from "mongoose"
 import IWallet from "./wallet.interface";
 
+// Transaction schema
+
 const WalletSchema = new Schema(
   {
     transactionType: {
@@ -9,7 +11,7 @@ const WalletSchema = new Schema(
       enum: ['deposit', 'withdrawal', 'transfer'],
       required: true
     },
-    currency: String,
+    currency: {type: String, enum: ['NGN', 'USD']},
     accessCode: { type: String },
     fundRecipientAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     fundOriginatorAccount: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -41,4 +43,5 @@ const WalletSchema = new Schema(
   }
 );
 
+// Chane collection name to transaction before prod
 export default model<IWallet>('wallet', WalletSchema)

@@ -25,7 +25,8 @@ const UserSchema = new Schema({
     customerCode: { type: String, },
     nubanAccountDetails: nubanAccountSchema,
     favoritedRecipients: { type: Array },
-    isAccountActive: { type: Boolean, default: true }
+    isAccountActive: { type: Boolean, default: true },
+    profilePhoto: String
 }, { timestamps: true})
 
 

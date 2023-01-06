@@ -21,4 +21,4 @@ const webhookSchema = new Schema(
   }
 );
 
-export default model('webhook-Notification', webhookSchema)
+export default model('kuda-webhook', webhookSchema)

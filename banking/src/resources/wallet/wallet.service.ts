@@ -11,20 +11,20 @@ import IUser from "../user/user.interface"
 
 class WalletService {
 
-  public async getTransactionsByMonth(month: number, year: number, userId: string): Promise<any | null> {
+  public async getTransactionsByMonthandYear(month: number, year: number, userId: string): Promise<any | null> {
     try {
       const creditTransactions: any = await walletModel.find({
         fundRecipientAccount: userId,
-        status: "success",
+        // status: "success",
         $and: [
-          { $expr: {$eq: [{$month: "$createdAt"}, month]} },
-          { $expr: {$eq: [{$year: "$createdAt"}, year]} }
+          { $expr: {$eq: [{$month: "$createdAt"}, Number(month)]} },
+          { $expr: {$eq: [{$year: "$createdAt"}, Number(year)]} }
         ]
       }).sort({createdAt: -1})
 
       const debitTransactions: any = await walletModel.find({
         fundOriginatorAccount: userId,
-        status: "success",
+        // status: "success",
         $and: [
           { $expr: {$eq: [{$month: "$createdAt"}, month]} },
           { $expr: {$eq: [{$year: "$createdAt"}, year]} }
@@ -37,31 +37,127 @@ class WalletService {
     }
   }
 
-  public async getTransactionDetails(userId: string, reference: string): Promise<IWallet | null> {
+  public async getYearlyTransactions(year: number, userId: string): Promise<any> {
     try {
-      const foundTransaction = await walletModel.findOne({ referenceId: reference }).select
-      (`transactionType 
-        currency 
-        operationType 
-        fundRecipientAccount 
-        fundOriginatorAccount 
-        status 
-        processingFees 
-        amount 
-        referenceId 
-        comment 
-        recepientTag 
-        senderTag 
-        withdrawalRecipientBankDetails
-        createdAt
-        updatedAt
-      `)
+      if(year > (new Date).getFullYear()) throw new Error("Invalid year")
 
-      if(!foundTransaction) throw new Error("Transaction not found.")
+      const debitTransaction = await walletModel.aggregate([
+        {
+          $match: {
+            fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
+            // status: "success",
+            $expr: { $eq: [{$year: "$createdAt"}, Number(year)] },
+          }
+        },
+        {
+          $project: {
+            amount: 1,
+            month: { $month: "$createdAt" }
+          }
+        },
+        {
+          $group: {
+            "_id": "$month",
+            "totalDebit": {"$sum": "$amount"}
+          }
+        }
+      ])
+
+      const creditTransaction = await walletModel.aggregate([
+        {
+          $match: {
+            fundRecipientAccount: new mongoose.Types.ObjectId(userId),
+            // status: "success",
+            $expr: { $eq: [{$year: "$createdAt"}, Number(year)] },
+          }
+        },
+        {
+          $project: {
+            amount: 1,
+            month: { $month: "$createdAt" }
+          }
+        },
+        {
+          $group: {
+            "_id": "$month",
+            "totalCredit": {"$sum": "$amount"}
+          }
+        }
+      ])
       
-      if(foundTransaction.fundRecipientAccount != userId && foundTransaction.fundOriginatorAccount != userId) throw new Error("Unauthorized")
+      console.log(debitTransaction, creditTransaction)
+      return debitTransaction
+    } catch (error) {
+      console.log(translateError(error))
+      throw new Error(translateError(error)[0] || 'Unable to retrieve yearly analytics')
+    }
+  }
+
+  public async getTransactionDetails(userId: string, reference: string): Promise<IWallet | any> {
+    try {
+      const transaction = await walletModel.aggregate([
+        {
+          $match: {
+            referenceId: reference
+          }
+        }, 
+        {
+          $lookup: {
+            from: "users",
+            let: { "fundRecipientAccount": "$fundRecipientAccount"},
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$_id", "$$fundRecipientAccount"]
+                  }
+                }
+              }, {
+                $project: {
+                  _id: 0,
+                  firstname: 1,
+                  lastname: 1,
+                  middlename: 1,
+                  "profilePhoto" :1,
+                  username: 1
+                }
+              }
+            ],
+            as: "FundRecipientDetails"
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            let: { "fundOriginatorAccount": "$fundOriginatorAccount"},
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$_id", "$$fundOriginatorAccount"]
+                  }
+                }
+              }, {
+                $project: {
+                  _id: 0,
+                  firstname: 1,
+                  lastname: 1,
+                  middlename: 1,
+                  "profilePhoto" :1,
+                  username: 1
+                }
+              }
+            ],
+            as: "FundOriginatorDetails"
+          }
+        }
+      ])
+
+      if(!transaction) throw new Error("Transaction not found.")
       
-      return foundTransaction
+      if(transaction[0].fundRecipientAccount != userId && transaction[0].fundOriginatorAccount != userId) throw new Error("Unauthorized")
+
+      return transaction[0]
     } catch (error: any) {
       console.log(translateError(error))
       throw new Error(translateError(error)[0] || 'Unable to retrieve transaction')
@@ -228,12 +324,13 @@ class WalletService {
           amount,
           transactionType: 'transfer',
           status: 'pending',
-          referenceId: v4() || data.transactionReference, //remove uuid before deploying to staging
+          referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
           comment,
           recepientTag: fundRecipientAccountTag,
           senderTag,
           responseCode: data.responseCode,
-          beneficiaryName
+          beneficiaryName,
+          currency: 'NGN'
         });
             
         return {
@@ -303,7 +400,7 @@ class WalletService {
           amount,
           transactionType: 'withdrawal',
           status: 'pending',
-          referenceId: v4() || data.transactionReference, // remove uuid in production
+          referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
           comment,
           beneficiaryBankCode,
           beneficiaryBank,
@@ -311,14 +408,16 @@ class WalletService {
           nameEnquiryId,
           beneficiaryAccount,
           responseCode: data.responseCode,
+          currency: 'NGN'
         });
     
-        return { 
+        return {
           amount, 
           transactionId: data.transactionReference, 
           beneficiaryName, 
           beneficiaryBank,
           transactionType: 'Withdrawal',
+          createdAt: newTransaction?.createdAt
         }
 
       } catch (error) {

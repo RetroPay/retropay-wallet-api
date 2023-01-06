@@ -1,11 +1,13 @@
 import { Router, Response, Request, NextFunction } from "express"
 import IController from "@/utils/interfaces/controller.interface"
 import webhookModel from "./hook.model"
+import UserService from "@/resources/user/user.service"
 import crypto from "crypto"
 
 class WebhookController implements IController {
-    public path = '/webhook'
+    public path = '/webhooks'
     public router = Router()
+    private userService = new UserService()
 
     constructor() {
         this.initialiseRoutes()
