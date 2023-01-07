@@ -4,7 +4,7 @@ import UserService from "@/resources/user/user.service"
 import webhookModel from "../metamap/hook.model"
 import crypto from "crypto"
 
-class WebhookController implements IController {
+class metaMapWebhookController implements IController {
     public path = '/webhooks'
     public router = Router()
     private userService = new UserService()
@@ -14,13 +14,12 @@ class WebhookController implements IController {
     }
 
     private initialiseRoutes(): void {
-        this.router.post(`${this.path}/kuda`, this.processEvent)
+        this.router.post(`${this.path}/metamap`, this.processEvent)
     }
 
     private processEvent = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
        try {
         console.log(req.body)
-        await webhookModel.create(req.body)
 
         res.sendStatus(200)
             console.log(req.body)
@@ -34,4 +33,4 @@ class WebhookController implements IController {
     }
 }
 
-export default WebhookController
+export default metaMapWebhookController

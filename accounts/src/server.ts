@@ -4,6 +4,7 @@ import validateEnv from './utils/validateEnv'
 import App from './app'
 import DemoController from "@/resources/status/status.controller"
 import UserController from "@/resources/user/user.controller"
+import metaMapWebhookController from './resources/webhooks/metamap/hook.controller'
 import { createChannel } from "@/utils/broker"
 import { createClient } from "redis"
 
@@ -26,6 +27,7 @@ export default {
 const app = new App([
     new DemoController, 
     new UserController,
+    new metaMapWebhookController
 ], Number(process.env.PORT) || 4002)
 
 //Connect to DB and run server
