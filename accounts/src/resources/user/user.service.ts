@@ -15,6 +15,7 @@ import amqplib from 'amqplib'
 import MessageBroker from '@/utils/broker'
 import axios from 'axios'
 import { v4 } from "uuid"
+import { publishMessage } from '@/utils/broker'
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
@@ -438,6 +439,29 @@ class UserService {
     }
 
    //user services for identity verification webhook events
+   public async startUserVerification(accountTag: string): Promise<void> {
+    try {
+        await userModel.findOneAndUpdate({username: accountTag}, { verificationStatus: 'pending' })
+    } catch (error) {
+        console.log(error)
+        //LogSnag call here
+    }
+   }
+
+   public async updateUserVerification(accountTag: string, status: string): Promise<void> {
+    try {
+        switch(status) {
+            case 'rejected': 
+            case 'reviewNeeded': await userModel.findOneAndUpdate({username: accountTag}, {verificationStatus: status == "reviewNeeded" ? "in review" : status})
+                break;
+            case 'verified': await userModel.findOneAndUpdate({username: accountTag}, {verificationStatus: status, $set: { isIdentityVerified: true }})
+                break;
+        }
+    } catch (error: any) {
+        console.log(error)
+        //LogSnag call here
+    }
+   }
 }
 
 export default UserService

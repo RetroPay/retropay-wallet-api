@@ -35,6 +35,8 @@ class UserService {
                 break;
             case 'UPLOAD_PROFILE_PHOTO': await this.setProfilePhoto(data)
                 break;
+            case 'UPDATE_USER_IDENTITY_STATUS': await this.updateUserVerification(data)
+                break;
             default:    console.log("== invalid event == ")
                 break;
         }
@@ -145,6 +147,24 @@ class UserService {
             throw new Error(translateError(error)[0] || 'Unable to upload profile photo.')
         }
     }
+
+    public async updateUserVerification(reqData: {username: string, status: string}): Promise<void> {
+        try {
+            const { status, username } = reqData
+
+            switch(status) {
+                case 'rejected': 
+                case 'reviewNeeded': await userModel.findOneAndUpdate({username}, {verificationStatus: status == "reviewNeeded" ? "in review" : status})
+                    break;
+                case 'verified': await userModel.findOneAndUpdate({username}, {verificationStatus: status, $set: { isIdentityVerified: true }})
+                    break;
+            }
+        } catch (error: any) {
+            console.log(error)
+            throw new Error(translateError(error)[0] || 'Unable to update identity status.')
+            //LogSnag call here
+        }
+       }
 }
 
 export default UserService

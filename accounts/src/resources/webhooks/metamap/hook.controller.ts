@@ -3,6 +3,8 @@ import IController from "@/utils/interfaces/controller.interface"
 import UserService from "@/resources/user/user.service"
 import webhookModel from "../metamap/hook.model"
 import crypto from "crypto"
+import { brokerChannel } from "../../../server"
+import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class metaMapWebhookController implements IController {
     public path = '/webhooks'
@@ -20,13 +22,28 @@ class metaMapWebhookController implements IController {
     private processEvent = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
        try {
         console.log(req.body)
+        const MERCHANT_SECRET = process.env.META_MAP_SECRET
 
         res.sendStatus(200)
-            console.log(req.body)
-            const { event } = req.body
-
-            if(!event) console.log("no event here")
         
+        const { eventName, metadata, status } = req.body
+
+        switch (eventName) {
+            case 'verification_updated':
+            case 'verification_completed': 
+                this.userService.updateUserVerification(metadata.accountTag, status)
+                publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                    event: 'UPDATE_USER_IDENTITY_STATUS',
+                    data: {
+                        username: metadata.accountTag,
+                        status
+                    }
+                }));
+                break;
+            case 'verification_started': this.userService.startUserVerification(metadata.accountTag)
+                break;
+        }
+
        } catch (error) {
             console.log(error)
        } 
