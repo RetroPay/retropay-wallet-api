@@ -60,6 +60,9 @@ class WalletService {
             "_id": "$month",
             "totalDebit": {"$sum": "$amount"}
           }
+        },
+        {
+          $sort: { _id: 1 }
         }
       ])
 
@@ -82,8 +85,18 @@ class WalletService {
             "_id": "$month",
             "totalCredit": {"$sum": "$amount"}
           }
+        },
+        {
+          $sort: { _id: 1 }
         }
       ])
+
+      const months = {
+        1: {
+          debit: '',
+          credit: ''
+        },
+      }
       
       console.log(debitTransaction, creditTransaction)
       return debitTransaction
