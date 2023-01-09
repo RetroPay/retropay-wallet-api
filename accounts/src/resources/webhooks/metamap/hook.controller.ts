@@ -21,7 +21,9 @@ class metaMapWebhookController implements IController {
 
     private processEvent = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
        try {
+        console.log(req.headers)
         console.log(req.body)
+
         const MERCHANT_SECRET = process.env.META_MAP_SECRET
 
         res.sendStatus(200)

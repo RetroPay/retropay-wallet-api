@@ -1,13 +1,13 @@
 import { Router, Response, Request, NextFunction } from "express"
 import IController from "@/utils/interfaces/controller.interface"
 import webhookModel from "./hook.model"
-import UserService from "@/resources/user/user.service"
+import WalletService from "@/resources/wallet/wallet.service"
 import crypto from "crypto"
 
 class WebhookController implements IController {
     public path = '/webhooks'
     public router = Router()
-    private userService = new UserService()
+    private walletService = new WalletService()
 
     constructor() {
         this.initialiseRoutes()
@@ -23,17 +23,19 @@ class WebhookController implements IController {
         await webhookModel.create(req.body)
 
         res.sendStatus(200)
-            console.log(req.body)
-            const { event } = req.body
+        console.log(req.body)
+        const { eventType  } = req.body
+        const  {payingBank,  amount, transactionReference, narrations, accountName, accountNumber, transactionType, senderName, recipientName, sessionId} = req.body
 
-            if(!event) console.log("no event here")
-            
-            if(event == 'Money.transfer') {
-                // await this.userService.updateIdentityVerificationStatus(req.body.data, 'failed')
-            }
-            if(event == 'Recieve.money') {
-                // await this.userService.updateIdentityVerificationStatus(req.body.data, 'success')
-            }
+        switch (eventType ) {
+            case 'Recieve.money': this.walletService.recieveFunds(payingBank,  amount, transactionReference, narrations, accountName, accountNumber, transactionType, senderName, recipientName, sessionId)
+                break;
+            case 'Money.transfer': this.walletService.acknowledgeFundsTransfer(amount, transactionReference, sessionId)
+                break;
+            default:
+                break;
+        }
+
         
        } catch (error) {
             console.log(error)

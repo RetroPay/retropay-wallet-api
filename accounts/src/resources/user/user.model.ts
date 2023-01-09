@@ -9,7 +9,7 @@ const tokenSchema = new Schema({
 
 const photoSchema = new Schema({
     url: { type: String, default: 'https://cdn-icons-png.flaticon.com/512/17/17004.png' },
-    publicIid: String,
+    publicId: String,
 }, { timestamps: true})
 
 

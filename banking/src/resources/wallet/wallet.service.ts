@@ -1,5 +1,4 @@
 import walletModel from "./wallet.model"
-const Paystack = require("paystack-api")(process.env.GATEWAY_SECRET_KEY)
 import { v4 } from "uuid"
 import userModel from "../user/user.model"
 import IWallet from "./wallet.interface"
@@ -598,6 +597,73 @@ class WalletService {
       throw new Error("Unable to retrieve list of banks.")
     }
   }
-}
+
+  //KUDA WEBHOOK SERVICES
+
+  public async recieveFunds(payingBank: string,  amount: string, transactionReference: string, narrations: string, accountName: string, accountNumber: string, transactionType: string, senderName: string, recipientName: string, sessionId: string): Promise<void> {
+    try {
+      const foundRecipient = await userModel.findOne({'nubanAccountDetails.nuban': accountNumber})
+      if(!foundRecipient) throw new Error('No account with that nuban found')
+
+      const newTransaction = await walletModel.create({
+          fundRecipientAccount: foundRecipient._id,
+          amount: (Number(amount)/100), //convert from kobo
+          transactionType: payingBank.includes('kuda') ? 'transfer' : 'fund',
+          status: 'pending',
+          referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
+          comment: narrations,
+          beneficiaryName: accountName,
+          beneficiaryAccount: accountNumber,
+          currency: 'NGN',
+          senderName,
+      })
+
+      // If paying bank isn't kuda bank, charge a NGN100 deposit fee
+      if(!payingBank.includes('kuda')) {
+        await redisClient.connect()
+
+        const response = await axios({
+            method: 'post',
+            url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+            data: {
+              "serviceType": "WITHDRAW_VIRTUAL_ACCOUNT",
+              "requestRef": v4(),
+              data: {
+                trackingReference: foundRecipient._id, //Unique identifier of user with Kuda
+                amount: 100 * 100, //amount in Kobo
+                narration: 'Retro Wallet deposit fee.',
+              }
+            },
+            headers: {
+              "Authorization": `Bearer ${await redisClient.get('K_TOKEN')}`
+            }
+          })
+
+          await redisClient.disconnect();
+      }
+
+      console.log(newTransaction)
+    } catch (error) {
+      console.log(error)
+      //LogSnag call here
+    }
+  }
+
+  //Aknowledge that funds have left senders account, and kuda is processing transfer
+  public async acknowledgeFundsTransfer(amount: string, transactionReference: string, sessionId: string): Promise<void> {
+    try {
+      const transaction = await walletModel.findOneAndUpdate(
+        { referenceId: transactionReference }, 
+        { $set: { webhookAcknowledgement: true }, status: 'success' },
+        { new: true }
+      )
+      console.log(transaction)
+    } catch (error) {
+      console.log(error)
+      //LogSnag call here
+    }
+  }
+} 
+
 
 export default WalletService

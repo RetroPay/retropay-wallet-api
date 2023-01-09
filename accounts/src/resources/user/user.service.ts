@@ -6,16 +6,10 @@ import { createToken } from "@/utils/token"
 import generateOtp from "@/services/otp"
 import moment from "moment"
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
-import MailService from "@/services/sendEmails";
-// const Paystack = require("paystack-api")(process.env.GATEWAY_SECRET_KEY)
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
-import App from "../../app"
-import amqplib from 'amqplib'
-import MessageBroker from '@/utils/broker'
 import axios from 'axios'
 import { v4 } from "uuid"
-import { publishMessage } from '@/utils/broker'
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
@@ -28,6 +22,19 @@ class UserService {
         
             default:
                 break;
+        }
+    }
+
+    public async getUser(id: string): Promise<IUser | Error> {
+        try {
+            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto username isIdentityVerified verificationStatus transferPermission nubanAccountDetails')
+            
+            if(!user) throw new Error("Unable to retrieve details")
+
+            return user
+        } catch (error) {
+            console.log(translateError(error))
+            throw new Error('Unable to retrieve user details.')
         }
     }
 
@@ -63,9 +70,10 @@ class UserService {
 
     public async login(reqData: {emailOrUsername: string, password: string }): Promise<string | Error> {
         try {
-            const foundUser = await userModel.findOne({ $or: [{email: reqData.emailOrUsername }, {username: reqData.emailOrUsername }] }).select("_id username password")
+            const foundUser = await userModel.findOne({ $or: [{email: reqData.emailOrUsername }, {username: reqData.emailOrUsername }] }).select("_id username password isAccountActive")
 
-            if(!foundUser) throw new Error(`${process.env.NODE_ENV == 'development' ? 'Email does not exists' : 'Incorrect userame or password'}`);
+            if(!foundUser) throw new Error('Incorrect username or password');
+            if(foundUser.isAccountActive == false) throw new Error("Account is disabled. Contact support")
 
             if (await foundUser.isValidPassword(reqData.password)) return createToken(foundUser)
             
@@ -85,12 +93,10 @@ class UserService {
             if(!await foundUser.isValidPassword(reqData.oldPassword)) throw new Error("Incorrect password.")
             
             const updatedUser = await userModel.findOneAndUpdate({ _id: user }, {password: await bcrypt.hash(reqData.newPassword, 10) }, { new: true})
-                
-            if(updatedUser) {
-               return updatedUser 
-            } else {
-                throw new Error("Unable to update password")
-            }
+
+            if(!updatedUser) throw new Error("Unable to update password") 
+            
+            return updatedUser 
         } catch (error: any) {
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to updated password.')
@@ -354,10 +360,11 @@ class UserService {
     public async setPhotoUrl(id: string, uploadResponse: ICloudinaryResponse): Promise<IUser | any> {
         try {
 
-            const updatedUser = await userModel.findOneAndUpdate({ id },
-                { profilePhoto: { url: uploadResponse.secure_url, publicIid: uploadResponse.public_id } },
+            const updatedUser = await userModel.findByIdAndUpdate(id,
+                { $set: {profilePhoto: { url: uploadResponse.secure_url, publicIid: uploadResponse.public_id }}},
                 { new: true }
             )
+            console.log(updatedUser)
 
             if (!updatedUser) throw new Error('Unable to upload profile photo.')
 

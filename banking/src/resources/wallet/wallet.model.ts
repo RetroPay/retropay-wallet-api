@@ -19,7 +19,7 @@ const WalletSchema = new Schema(
       type: String,
       trim: true,
       default: 'pending',
-      enum: ['pending', 'success', 'failed', 'abandoned', 'reversed'],
+      enum: ['pending', 'success', 'failed', 'reversed'],
       required: true
     },
     processingFees: { type: Number, default: 0 },
@@ -34,9 +34,12 @@ const WalletSchema = new Schema(
     responseCode: String,
     beneficiaryBankCode: { type: String },
     beneficiaryBank: String,
+    senderName: {type: String},
     beneficiaryName: { type: String },
     nameEnquiryId: { type: String },
     beneficiaryAccount: { type: String },
+    webhookAcknowledgement: {type: Boolean, default: false},
+    instrumentNumber: String
   },
   {
     timestamps: true

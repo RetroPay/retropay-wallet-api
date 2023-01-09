@@ -51,7 +51,7 @@ class UserController implements IController {
         this.router.post("/user/profile/favorite-recipients/add", authenticatedMiddleware, validationMiddleware(validate.addFavorites), this.favoriteRecipient)
         this.router.delete("/user/profile/favorite-recipients/delete", authenticatedMiddleware, validationMiddleware(validate.removeFavorite), this.unfavoriteRecipient)
         this.router.get("/user/profile/favorite-recipients/list", authenticatedMiddleware, this.getFavoriteRecipients)
-
+        this.router.get("/user/profile", authenticatedMiddleware, this.getUserDetails)
         this.router.delete("/user/deactivate", authenticatedMiddleware, this.softDeleteUserAccount)
 
         //NUBAN verification and creation
@@ -108,8 +108,26 @@ class UserController implements IController {
         }
     }
 
+    private getUserDetails = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
+        try {
+            const user = await this.UserService.getUser(req.user)
+
+            res.status(200).json({
+                success: true,
+                message: "Details retrieved",
+                data: {
+                    user
+                }
+            })
+        } catch (error: any) {
+            console.log(error)
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
     private login = async (req: Request, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
+            console.log(req.body)
             const token = await this.UserService.login(req.body)
             res.status(200).json({
                 success: true,

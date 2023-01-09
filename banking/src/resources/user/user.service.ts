@@ -7,7 +7,6 @@ import generateOtp from "@/services/otp"
 import moment from "moment"
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
 import MailService from "@/services/sendEmails";
-const Paystack = require("paystack-api")(process.env.GATEWAY_SECRET_KEY)
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
 import MessageBroker from "@/utils/broker"
