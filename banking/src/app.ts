@@ -11,6 +11,7 @@ import helmet from 'helmet'
 import process from 'process'
 import smsService from './services/sms.service'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
+import corsOption from './utils/corsOption'
 class App {
     public express: Application
     public port: number
@@ -27,7 +28,7 @@ class App {
 
     private initialiseMiddlewares():void {
         this.express.use(helmet())
-        this.express.use(cors())
+        this.express.use(corsOption)
         this.express.use(morgan('dev'))
         this.express.use(express.json())
         this.express.use(express.urlencoded({ extended: false }))
@@ -48,12 +49,10 @@ class App {
     private async initialiseDatabaseConnection(): Promise<void> {
         const { MONGODB_URI, MONGODB_URI_CLOUD, NODE_ENV } = process.env
 
-        // await mongoose.connect(`${NODE_ENV == 'development' ? MONGODB_URI : MONGODB_URI_CLOUD}`)
         await mongoose.connect(`${MONGODB_URI_CLOUD}`)
         .then(() => {
             this.listen()
             this.connectSmtp()
-            // this.connectVonage()
             console.log('DB connected.')
         })
         .catch((error) => {

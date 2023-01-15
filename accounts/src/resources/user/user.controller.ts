@@ -177,7 +177,7 @@ class UserController implements IController {
                 const mailService = MailService.getInstance();
                 mailService.sendMail({
                     to: req.body.email,
-                    subject: 'RetroPay Wallet - Password Reset.',
+                    subject: 'Retro Wallet - Password Reset.',
                     text: emailTemplate.text,
                     html: emailTemplate.html,
                 });
@@ -212,7 +212,7 @@ class UserController implements IController {
                 const mailService = MailService.getInstance();
                 mailService.sendMail({
                     to: req.email,
-                    subject: 'RetroPay Wallet - Verify Your Email.',
+                    subject: 'Retro Wallet - Verify Your Email.',
                     text: emailTemplate.text,
                     html: emailTemplate.html,
                 });

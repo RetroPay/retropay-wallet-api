@@ -7,6 +7,7 @@ import helmet from 'helmet'
 import proxy from 'express-http-proxy'
 import ErrorMiddleware from './middlewares/error.middleware'
 import IController from './utils/interfaces/controller.interface'
+import rateLimit from 'express-rate-limit'
 
 
 class App {
@@ -31,6 +32,12 @@ class App {
         this.express.use(express.json())
         this.express.use(express.urlencoded({ extended: true }))
         this.express.use(compression())
+        this.express.use(rateLimit({
+            windowMs: 10*60*1000,
+            max: 50,
+            standardHeaders: false,
+            legacyHeaders: false
+        }))
     }
 
     private initialiseControllers(controllers: IController[]): void {
@@ -50,8 +57,8 @@ class App {
     }
 
     private proxyHandler() {
-        const account_host = process.env.ACCOUNTS_HOST
-        const banking_host = process.env.BANKING_HOST
+        const account_host = process.env.NODE_ENV == 'development' ? process.env.STAGING_ACCOUNTS_HOST : process.env.ACCOUNTS_HOST
+        const banking_host = process.env.NODE_ENV == 'development' ? process.env.STAGING_BANKING_HOST : process.env.BANKING_HOST
 
         this.express.use("/banking", proxy(banking_host != undefined ? banking_host : "http://localhost:4001", {
             proxyErrorHandler: function(err, res, next) {

@@ -115,11 +115,15 @@ class UserService {
     public async updateNubanDetails(reqData: {id: string, accountNumber: string}): Promise<void> {
         try {
             const { id, accountNumber } = reqData
-            const updateUser = await userModel.findOneAndUpdate({ referenceId: id }, {nubanAccountDetails: { nuban: accountNumber }, $set: { transferPermission: true }},{ new: true })
+            const updateUser = await userModel.findOneAndUpdate({ referenceId: id }, 
+                {nubanAccountDetails: { nuban: accountNumber }, 
+                $set: { transferPermission: true }},
+                { new: true }
+            )
             console.log(updateUser)
-            if(!updateUser) throw new Error("Unable to delete user account.")
+            if(!updateUser) throw new Error("'Unable to update nuban details.")
         } catch (error) {
-            throw new Error(translateError(error)[0] || 'Unable to add update nuban details.')
+            throw new Error(translateError(error)[0] || 'Unable to update nuban details.')
         }
     }
 
@@ -155,7 +159,7 @@ class UserService {
                 case 'rejected': 
                 case 'reviewNeeded': await userModel.findOneAndUpdate({username}, {verificationStatus: status == "reviewNeeded" ? "in review" : status})
                     break;
-                case 'verified': await userModel.findOneAndUpdate({username}, {verificationStatus: status, $set: { isIdentityVerified: true }})
+                case 'verified': await userModel.findOneAndUpdate({username}, {verificationStatus: status, $set: { isIdentityVerified: true, withdrawPermission: true }})
                     break;
             }
         } catch (error: any) {

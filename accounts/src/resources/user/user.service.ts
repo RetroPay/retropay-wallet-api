@@ -27,7 +27,7 @@ class UserService {
 
     public async getUser(id: string): Promise<IUser | Error> {
         try {
-            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto username isIdentityVerified verificationStatus transferPermission nubanAccountDetails')
+            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto username isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
             
             if(!user) throw new Error("Unable to retrieve details")
 
@@ -247,11 +247,11 @@ class UserService {
                     "email": foundUser.email, 
                     "phone": phoneNumber
                 },
-                "sender": "Retro Wallet by RETROSTACK",
+                "sender": "Retro Wallet by Retrostack",
                 "send": true,
                 "medium": [
                     "email",
-                    "sms"
+                    // "sms"
                 ],
                 "expiry": 5
             }
@@ -308,9 +308,10 @@ class UserService {
             if(foundUser.nubanAccountDetails) throw new Error("Nuban has already been created")
             const { email, firstname, lastname, middlename, phoneNumber, id } = foundUser
             
-            /* Phone numbers are stored with their respective country codes e.g 234, 
-            the following line of code removes the country code which is the first 3 numbers */
-            const formatPhoneNumber = '0' + phoneNumber?.substring(3)
+            /* Phone numbers are stored with their respective country codes e.g +234, 
+            the following line of code removes the country code which is the first 4 characters */
+            const formatPhoneNumber = '0' + phoneNumber?.substring(4)
+            console.log(formatPhoneNumber)
 
             const response = await axios({
                 method: 'POST',
