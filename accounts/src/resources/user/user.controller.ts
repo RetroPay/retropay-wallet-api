@@ -71,7 +71,7 @@ class UserController implements IController {
             const mailService = MailService.getInstance();
             mailService.sendMail({
                 to: req.body.email,
-                subject: `Howdy, ${firstname} welcome aboard!`,
+                subject: `Howdy ${firstname}, welcome aboard!`,
                 text: emailTemplate.text,
                 html: emailTemplate.html,
             });
