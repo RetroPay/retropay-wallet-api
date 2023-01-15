@@ -12,6 +12,10 @@ const photoSchema = new Schema({
     publicId: String,
 }, { timestamps: true})
 
+const notificationsSchema = new Schema({
+    message: { type: String }
+}, { timestamps: true})
+
 
 const UserSchema = new Schema({
     firstname: { type: String, required: true, trim: true },
@@ -39,7 +43,8 @@ const UserSchema = new Schema({
     customerCode: { type: String, },
     nubanAccountDetails: Object,
     favoritedRecipients: { type: Array },
-    isAccountActive: { type: Boolean, default: true }
+    isAccountActive: { type: Boolean, default: true }, 
+    notifications: []
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {

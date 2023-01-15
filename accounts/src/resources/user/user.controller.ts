@@ -12,6 +12,7 @@ import passwordResetEmail from "@/templates/passwordReset.template";
 import verifyEmailTemplate from "@/templates/verifyEmail.template";
 import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable"
+import welcomeEmail from "@/templates/welcome.template";
 import { brokerChannel } from "../../server"
 import { subscribeMessage, publishMessage} from "@/utils/broker"
 
@@ -45,6 +46,7 @@ class UserController implements IController {
         this.router.get('/user/profile/account-tag/verify/:username', authenticatedMiddleware, this.verifyAvailableAccountTag)
         this.router.patch('/user/profile/account-tag/setup', authenticatedMiddleware, validationMiddleware(validate.setupUsername), this.setupUsername)
         this.router.put('/user/profile/upload-photo', authenticatedMiddleware, this.uploadProfilePhoto)
+        this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
 
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.sertPin), this.setPin)
         this.router.get("/user/:username/resolve", authenticatedMiddleware, this.resolveAccountTag)
@@ -55,7 +57,6 @@ class UserController implements IController {
         this.router.delete("/user/deactivate", authenticatedMiddleware, this.softDeleteUserAccount)
 
         //NUBAN verification and creation
-        // this.router.post('/user/profile/verify-identity', authenticatedMiddleware, validationMiddleware(validate.verifyIdentity), this.verifyUserIdentity)
         this.router.post('/user/nuban/create', authenticatedMiddleware, kudaTokenHandler, this.createNubanAccount)
 
     }
@@ -63,22 +64,18 @@ class UserController implements IController {
     private register = async (req: Request, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const user = await this.UserService.register(req.body)
-            console.log(user)
-
-            //Redesign a new welcome mail
-
-            // if(user) {
-            //     const emailTemplate = welcomeEmail(req.body.firstname)
-            //     const mailService = MailService.getInstance();
-            //     mailService.sendMail({
-            //         to: req.body.email,
-            //         subject: 'Welcome to RetroPay!',
-            //         text: emailTemplate.text,
-            //         html: emailTemplate.html,
-            //     });
-            // }
             
             const { firstname, lastname, email, username, _id } = user.user
+
+            const emailTemplate = welcomeEmail(req.body.firstname)
+            const mailService = MailService.getInstance();
+            mailService.sendMail({
+                to: req.body.email,
+                subject: `Howdy, ${firstname} welcome aboard!`,
+                text: emailTemplate.text,
+                html: emailTemplate.html,
+            });
+
             //Notify banking service
             publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'NEW_USER_CREATED',
@@ -127,13 +124,12 @@ class UserController implements IController {
 
     private login = async (req: Request, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            console.log(req.body)
-            const token = await this.UserService.login(req.body)
+            const user = await this.UserService.login(req.body)
             res.status(200).json({
                 success: true,
                 message: "Login successful",
                 data: {
-                    token
+                    user
                 }
             })
         } catch (error: any) {
@@ -245,11 +241,6 @@ class UserController implements IController {
     private sendVerifyPhoneToken = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const result = await this.UserService.generatePhoneToken(req.user, req.body.phoneNumber)
-            if(result) {
-                console.log(result)
-                // const smsInstance = new smsService
-                // await smsInstance.sendSms(result.phoneNumber, `Hi There, here's a one-time code to use to verify your phone number. Code: ${result.otp}. \n`)
-            }
             res.status(200).json({
                 success: true,
                 message: "Phone verification token sent.",
@@ -382,18 +373,21 @@ class UserController implements IController {
         }
     }
 
-    // private verifyUserIdentity = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
-    //     try {
-    //         const verificationStatus = await this.UserService.verifyIdentity(req.body, req.user)
-    //         console.log(verificationStatus)
-    //         res.status(200).json({
-    //             success: true,
-    //             message: verificationStatus.message,
-    //         })
-    //     } catch (error: any) {
-    //         return next(new HttpExeception(400, error.message))
-    //     }
-    // }
+    private getVerificationStatus = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const verificationStatus = await this.UserService.getUserVerificationStatus(req.user)
+            console.log(verificationStatus)
+            res.status(200).json({
+                success: true,
+                message: 'Verification status retrieved',
+                data: {
+                    verificationStatus
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
 
     public resolveAccountTag = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {

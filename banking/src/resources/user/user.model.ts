@@ -22,7 +22,6 @@ const UserSchema = new Schema({
     verificationStatus: { type: String, enum: ['pending', 'rejected', 'verified', 'not started', 'in review'], default: 'not started' },
     transferPermission: { type: Boolean, default: false },
     withdrawPermission: { type: Boolean, default: true },
-    customerCode: { type: String, },
     nubanAccountDetails: nubanAccountSchema,
     favoritedRecipients: { type: Array },
     isAccountActive: { type: Boolean, default: true },

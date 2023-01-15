@@ -19,6 +19,10 @@ class WalletService {
           { $expr: {$eq: [{$month: "$createdAt"}, Number(month)]} },
           { $expr: {$eq: [{$year: "$createdAt"}, Number(year)]} }
         ]
+      }, {
+        fundOriginatorAccount: 0, 
+        fundRecipientAccount: 0, 
+        WebhookAcknowledgement:0
       }).sort({createdAt: -1})
 
       const debitTransactions: any = await walletModel.find({
@@ -28,8 +32,12 @@ class WalletService {
           { $expr: {$eq: [{$month: "$createdAt"}, month]} },
           { $expr: {$eq: [{$year: "$createdAt"}, year]} }
         ]
+      }, {
+        fundOriginatorAccount: 0, 
+        WebhookAcknowledgement:0
       }).sort({createdAt: -1})
-      return { creditTransactions, debitTransactions}
+
+      return {creditTransactions, debitTransactions}
     } catch (error: any) {
       console.log(translateError(error))
       throw new Error(translateError(error)[0] || 'Unable to retrieve transactions')
@@ -89,16 +97,8 @@ class WalletService {
           $sort: { _id: 1 }
         }
       ])
-
-      const months = {
-        1: {
-          debit: '',
-          credit: ''
-        },
-      }
       
-      console.log(debitTransaction, creditTransaction)
-      return debitTransaction
+      return {debitTransaction, creditTransaction}
     } catch (error) {
       console.log(translateError(error))
       throw new Error(translateError(error)[0] || 'Unable to retrieve yearly analytics')
@@ -201,6 +201,9 @@ class WalletService {
 
   public async getAccountBalance(referenceId: string, k_token: string): Promise<any> {
     try {
+
+      const foundUser = await userModel.findOne({referenceId})
+      if(!foundUser?.nubanAccountDetails) throw new Error("You don't have an account number yet. Kindly create a nuban account to get started.")
       const response = await axios({
         method: 'POST',
         url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
@@ -266,6 +269,9 @@ class WalletService {
 
       console.log(foundRecipient)
       if (!foundRecipient) throw new Error("Invalid recipient account.")
+
+      //If intended recipient doesn't have a nuban account created yet
+      if(!foundRecipient?.nubanAccountDetails?.nuban) throw new Error("Unable to process transaction.")
 
       const foundUser = await userModel.findById(userId).select("firstname lastname")
       if(!foundUser) throw new Error('Unable to process transaction.')
@@ -337,17 +343,20 @@ class WalletService {
           transactionType: 'transfer',
           status: 'pending',
           referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
+          // referenceId: 'test-transfer' + v4(),
           comment,
           recepientTag: fundRecipientAccountTag,
           senderTag,
           responseCode: data.responseCode,
           beneficiaryName,
-          currency: 'NGN'
+          currency: 'NGN',
+          processingFees: 5,
         });
             
         return {
           amount, 
           transactionId: data.transactionReference,
+          // transactionId: newTransaction.referenceId,
           fundRecipientAccountTag,
           transactionType: 'Transfer',
           createdAt: newTransaction?.createdAt
@@ -405,7 +414,21 @@ class WalletService {
         console.log(data)
             
         //if axios call is successful but kuda status returns failed e'g 400 errors
-        if(!data.status) throw new Error(data.message)
+        if(!data.status) {
+          const { responseCode } = data
+
+          switch (responseCode) {
+            case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
+              break;
+            case '-2' : throw new Error('Transfer failed.')
+              break;
+            case '-3' : throw new Error('Transfer failed - Unable to process transaction')
+              break;
+            case '91' : throw new Error('Transfer failed - Request timeout.')
+              break;
+            default: throw new Error('Unable to process transaction')
+          }
+        }
 
         const newTransaction = await walletModel.create({
           fundOriginatorAccount: userId,
@@ -413,8 +436,9 @@ class WalletService {
           transactionType: 'withdrawal',
           status: 'pending',
           referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
+          processingFees: 20,
           comment,
-          beneficiaryBankCode,
+          beneficiaryBankCode, 
           beneficiaryBank,
           beneficiaryName,
           nameEnquiryId,
@@ -603,20 +627,19 @@ class WalletService {
   public async recieveFunds(payingBank: string,  amount: string, transactionReference: string, narrations: string, accountName: string, accountNumber: string, transactionType: string, senderName: string, recipientName: string, sessionId: string): Promise<void> {
     try {
       const foundRecipient = await userModel.findOne({'nubanAccountDetails.nuban': accountNumber})
+      console.log(foundRecipient)
       if(!foundRecipient) throw new Error('No account with that nuban found')
 
-      const newTransaction = await walletModel.create({
-          fundRecipientAccount: foundRecipient._id,
-          amount: (Number(amount)/100), //convert from kobo
-          transactionType: payingBank.includes('kuda') ? 'transfer' : 'fund',
-          status: 'pending',
-          referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
-          comment: narrations,
-          beneficiaryName: accountName,
-          beneficiaryAccount: accountNumber,
-          currency: 'NGN',
-          senderName,
-      })
+      /* 
+        When this webhook is fired, it is due to either a retro wallet user sent funds to the recipient or it's a transfer from an external bank (wallet funding).
+        If the transaction is from a retro wallet user, then there is no need to create/log a new transacrion object, because we already do that when the sender sends the funds,
+        what should be done it to acknowledge that the recipient has recieved the funds and update the status of the transaction.
+      */
+      const updatedTransaction = await walletModel.findOneAndUpdate(
+        { referenceId: transactionReference }, 
+        { $set: { fundsReceivedbyRecipient: true }, status: 'success' },
+        { new: true }
+      )
 
       // If paying bank isn't kuda bank, charge a NGN100 deposit fee
       if(!payingBank.includes('kuda')) {
@@ -629,9 +652,9 @@ class WalletService {
               "serviceType": "WITHDRAW_VIRTUAL_ACCOUNT",
               "requestRef": v4(),
               data: {
-                trackingReference: foundRecipient._id, //Unique identifier of user with Kuda
+                trackingReference: foundRecipient.referenceId, //Unique identifier of user with Kuda
                 amount: 100 * 100, //amount in Kobo
-                narration: 'Retro Wallet deposit fee.',
+                narration: 'Retro Wallet deposit processing fee.',
               }
             },
             headers: {
@@ -640,9 +663,24 @@ class WalletService {
           })
 
           await redisClient.disconnect();
+
+          // Log transaction if it is a funding transaction
+          const newTransaction = await walletModel.create({
+              fundRecipientAccount: foundRecipient._id,
+              amount: (Number(amount)/100), //convert from kobo
+              transactionType: 'fund',
+              status: 'success',
+              referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
+              comment: narrations,
+              beneficiaryName: accountName,
+              beneficiaryAccount: accountNumber,
+              currency: 'NGN',
+              senderName,
+              processingFees: 100
+          })
+          console.log(newTransaction)
       }
 
-      console.log(newTransaction)
     } catch (error) {
       console.log(error)
       //LogSnag call here
@@ -654,7 +692,7 @@ class WalletService {
     try {
       const transaction = await walletModel.findOneAndUpdate(
         { referenceId: transactionReference }, 
-        { $set: { webhookAcknowledgement: true }, status: 'success' },
+        { $set: { WebhookAcknowledgement: true }, status: 'success' },
         { new: true }
       )
       console.log(transaction)

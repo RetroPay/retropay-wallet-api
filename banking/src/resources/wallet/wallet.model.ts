@@ -8,11 +8,10 @@ const WalletSchema = new Schema(
     transactionType: {
       type: String,
       trim: true,
-      enum: ['deposit', 'withdrawal', 'transfer'],
+      enum: ['funding', 'withdrawal', 'transfer'],
       required: true
     },
     currency: {type: String, enum: ['NGN', 'USD']},
-    accessCode: { type: String },
     fundRecipientAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     fundOriginatorAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     status: {
@@ -38,7 +37,8 @@ const WalletSchema = new Schema(
     beneficiaryName: { type: String },
     nameEnquiryId: { type: String },
     beneficiaryAccount: { type: String },
-    webhookAcknowledgement: {type: Boolean, default: false},
+    senderWebhookAcknowledgement: {type: Boolean, default: false},
+    fundsReceivedbyRecipient: {type: Boolean, default: false},
     instrumentNumber: String
   },
   {

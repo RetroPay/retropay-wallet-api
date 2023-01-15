@@ -1,6 +1,5 @@
 export default interface IWallet {
     transactionType: string
-    accessCode?: string
     operationType: string
     fundRecipientAccount?: string
     fundOriginatorAccount?: string
@@ -8,7 +7,6 @@ export default interface IWallet {
     processingFees?: number
     amount: number,
     referenceId: string
-    authorization?: object
     comment?: string
     recepientTag?: string
     senderTag?: string

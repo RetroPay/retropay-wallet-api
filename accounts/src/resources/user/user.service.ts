@@ -49,6 +49,8 @@ class UserService {
                 username: email,
             })
 
+            if(!newUser) throw new Error('Unable to create user account.')
+
             const { 
                 username, isPhoneVerified, isEmailVerified, 
                 isIdentityVerified, transferPermission, withdrawPermission, 
@@ -68,14 +70,33 @@ class UserService {
         }
     }
 
-    public async login(reqData: {emailOrUsername: string, password: string }): Promise<string | Error> {
+    public async login(reqData: {emailOrUsername: string, password: string }): Promise<any | Error> {
         try {
-            const foundUser = await userModel.findOne({ $or: [{email: reqData.emailOrUsername }, {username: reqData.emailOrUsername }] }).select("_id username password isAccountActive")
+            const foundUser = await userModel.findOne({ $or: [{email: reqData.emailOrUsername }, {username: reqData.emailOrUsername }] })
 
             if(!foundUser) throw new Error('Incorrect username or password');
             if(foundUser.isAccountActive == false) throw new Error("Account is disabled. Contact support")
 
-            if (await foundUser.isValidPassword(reqData.password)) return createToken(foundUser)
+            const { 
+                username, isPhoneVerified, isEmailVerified, 
+                isIdentityVerified, transferPermission, withdrawPermission, 
+                fundPermission, favoritedRecipients, _id,
+                firstname, lastname, email, profilePhoto,
+                verificationStatus
+            } = foundUser
+
+            if (await foundUser.isValidPassword(reqData.password)) { 
+                return { 
+                    token: createToken(foundUser), 
+                    user: {
+                        firstname, lastname, email,
+                        username, isPhoneVerified, isEmailVerified,
+                        isIdentityVerified, transferPermission, withdrawPermission, 
+                        fundPermission, favoritedRecipients, profilePhoto,
+                        verificationStatus
+                    } 
+                }
+            }
             
             throw new Error("Incorrect username or pasword")
         } catch (error: any) {
@@ -226,17 +247,17 @@ class UserService {
                     "email": foundUser.email, 
                     "phone": phoneNumber
                 },
-                "sender": "RetroPay Wallet",
+                "sender": "Retro Wallet by RETROSTACK",
                 "send": true,
                 "medium": [
                     "email",
-                    // "sms"
+                    "sms"
                 ],
                 "expiry": 5
             }
             const response = await flw.Otp.create(payload)
 
-            if(!response) throw new Error("Unable to send verification sms.")
+            if(response.status == 'error') throw new Error("Unable to send verification sms.")
 
             console.log(response)
             const phoneVerification = {
@@ -350,7 +371,7 @@ class UserService {
             const updatedUser = await userModel.findByIdAndUpdate(id, { username }, { new: true }).select("username");
             if (!updatedUser) throw new Error('Unable to update username') 
               
-              return updatedUser
+            return updatedUser
         } catch (error: any) {
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || "Unable to update username")
@@ -442,6 +463,17 @@ class UserService {
             if(!foundUser) throw new Error("Unable to delete user account.")
         } catch (error: any) {
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+        }
+    }
+
+    public async getUserVerificationStatus(userId: string): Promise<any> {
+        try {
+            const userStatus = await userModel.findById(userId, {_id: 0, verificationStatus: 1, isIdentityVerified: 1})
+            console.log(userStatus)
+            if(!userStatus) throw new Error("Unable to retrieve verification status.")
+            return userStatus
+        } catch (error: any) {
+            throw new Error(translateError(error)[0] || 'Unable to retrieve verification status.')
         }
     }
 

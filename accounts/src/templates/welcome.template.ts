@@ -1,35 +1,506 @@
 const welcomeEmail = function (firstname: string) {
     const html = `
-        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" style="font-family:'trebuchet ms', 'lucida grande', 'lucida sans unicode', 'lucida sans', tahoma, sans-serif"><head><meta charset="UTF-8"><meta content="width=device-width, initial-scale=1" name="viewport"><meta name="x-apple-disable-message-reformatting"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta content="telephone=no" name="format-detection"><title>New message</title><!--[if (mso 16)]><style type="text/css">     a {text-decoration: none;}     </style><![endif]--><!--[if gte mso 9]><style>sup { font-size: 100% !important; }</style><![endif]--><!--[if gte mso 9]><xml> <o:OfficeDocumentSettings> <o:AllowPNG></o:AllowPNG> <o:PixelsPerInch>96</o:PixelsPerInch> </o:OfficeDocumentSettings> </xml><![endif]--><!--[if !mso]><!-- --><link href="https://fonts.googleapis.com/css?family=Roboto:400,400i,700,700i" rel="stylesheet"><!--<![endif]--><style type="text/css">.rollover div {	font-size:0;}#outlook a {	padding:0;}.es-button {	mso-style-priority:100!important;	text-decoration:none!important;}a[x-apple-data-detectors] {	color:inherit!important;	text-decoration:none!important;	font-size:inherit!important;	font-family:inherit!important;	font-weight:inherit!important;	line-height:inherit!important;}.es-desk-hidden {	display:none;	float:left;	overflow:hidden;	width:0;	max-height:0;	line-height:0;	mso-hide:all;}[data-ogsb] .es-button {	border-width:0!important;	padding:15px 30px 15px 30px!important;}@media only screen and (max-width:600px) {p, ul li, ol li, a { line-height:150%!important } h1, h2, h3, h1 a, h2 a, h3 a { line-height:120% } h1 { font-size:40px!important; text-align:center } h2 { font-size:28px!important; text-align:center } h3 { font-size:20px!important; text-align:left } .es-header-body h1 a, .es-content-body h1 a, .es-footer-body h1 a { font-size:40px!important; text-align:center } .es-header-body h2 a, .es-content-body h2 a, .es-footer-body h2 a { font-size:28px!important; text-align:center } .es-header-body h3 a, .es-content-body h3 a, .es-footer-body h3 a { font-size:20px!important; text-align:left } .es-menu td a { font-size:14px!important } .es-header-body p, .es-header-body ul li, .es-header-body ol li, .es-header-body a { font-size:14px!important } .es-content-body p, .es-content-body ul li, .es-content-body ol li, .es-content-body a { font-size:14px!important } .es-footer-body p, .es-footer-body ul li, .es-footer-body ol li, .es-footer-body a { font-size:14px!important } .es-infoblock p, .es-infoblock ul li, .es-infoblock ol li, .es-infoblock a { font-size:12px!important } *[class="gmail-fix"] { display:none!important } .es-m-txt-c, .es-m-txt-c h1, .es-m-txt-c h2, .es-m-txt-c h3 { text-align:center!important } .es-m-txt-r, .es-m-txt-r h1, .es-m-txt-r h2, .es-m-txt-r h3 { text-align:right!important } .es-m-txt-l, .es-m-txt-l h1, .es-m-txt-l h2, .es-m-txt-l h3 { text-align:left!important } .es-m-txt-r img, .es-m-txt-c img, .es-m-txt-l img { display:inline!important } .es-button-border { display:inline-block!important } a.es-button, button.es-button { font-size:18px!important; display:inline-block!important } .es-adaptive table, .es-left, .es-right { width:100%!important } .es-content table, .es-header table, .es-footer table, .es-content, .es-footer, .es-header { width:100%!important; max-width:600px!important } .es-adapt-td { display:block!important; width:100%!important } .adapt-img { width:100%!important; height:auto!important } .es-m-p0 { padding:0!important } .es-m-p0r { padding-right:0!important } .es-m-p0l { padding-left:0!important } .es-m-p0t { padding-top:0!important } .es-m-p0b { padding-bottom:0!important } .es-m-p20b { padding-bottom:20px!important } .es-mobile-hidden, .es-hidden { display:none!important } tr.es-desk-hidden, td.es-desk-hidden, table.es-desk-hidden { width:auto!important; overflow:visible!important; float:none!important; max-height:inherit!important; line-height:inherit!important } tr.es-desk-hidden { display:table-row!important } table.es-desk-hidden { display:table!important } td.es-desk-menu-hidden { display:table-cell!important } .es-menu td { width:1%!important } table.es-table-not-adapt, .esd-block-html table { width:auto!important } table.es-social { display:inline-block!important } table.es-social td { display:inline-block!important } .es-m-p5 { padding:5px!important } .es-m-p5t { padding-top:5px!important } .es-m-p5b { padding-bottom:5px!important } .es-m-p5r { padding-right:5px!important } .es-m-p5l { padding-left:5px!important } .es-m-p10 { padding:10px!important } .es-m-p10t { padding-top:10px!important } .es-m-p10b { padding-bottom:10px!important } .es-m-p10r { padding-right:10px!important } .es-m-p10l { padding-left:10px!important } .es-m-p15 { padding:15px!important } .es-m-p15t { padding-top:15px!important } .es-m-p15b { padding-bottom:15px!important } .es-m-p15r { padding-right:15px!important } .es-m-p15l { padding-left:15px!important } .es-m-p20 { padding:20px!important } .es-m-p20t { padding-top:20px!important } .es-m-p20r { padding-right:20px!important } .es-m-p20l { padding-left:20px!important } .es-m-p25 { padding:25px!important } .es-m-p25t { padding-top:25px!important } .es-m-p25b { padding-bottom:25px!important } .es-m-p25r { padding-right:25px!important } .es-m-p25l { padding-left:25px!important } .es-m-p30 { padding:30px!important } .es-m-p30t { padding-top:30px!important } .es-m-p30b { padding-bottom:30px!important } .es-m-p30r { padding-right:30px!important } .es-m-p30l { padding-left:30px!important } .es-m-p35 { padding:35px!important } .es-m-p35t { padding-top:35px!important } .es-m-p35b { padding-bottom:35px!important } .es-m-p35r { padding-right:35px!important } .es-m-p35l { padding-left:35px!important } .es-m-p40 { padding:40px!important } .es-m-p40t { padding-top:40px!important } .es-m-p40b { padding-bottom:40px!important } .es-m-p40r { padding-right:40px!important } .es-m-p40l { padding-left:40px!important } .es-desk-hidden { display:table-row!important; width:auto!important; overflow:visible!important; max-height:inherit!important } }</style></head>
-        <body style="width:100%;font-family:'trebuchet ms', 'lucida grande', 'lucida sans unicode', 'lucida sans', tahoma, sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;padding:0;Margin:0"><div class="es-wrapper-color" style="background-color:#31424A"><!--[if gte mso 9]><v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t"> <v:fill type="tile" src="https://jhfekz.stripocdn.email/content/guids/CABINET_aa83d65acafa6b305303fe689592eb6e/images/group_4.png" color="#31424A" origin="0.5, 0" position="0.5, 0"></v:fill> </v:background><![endif]--><table class="es-wrapper" width="100%" cellspacing="0" cellpadding="0" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;padding:0;Margin:0;width:100%;height:100%;background-repeat:repeat;background-position:center top;background-image:url(https://jhfekz.stripocdn.email/content/guids/CABINET_aa83d65acafa6b305303fe689592eb6e/images/group_4.png)" background="https://jhfekz.stripocdn.email/content/guids/CABINET_aa83d65acafa6b305303fe689592eb6e/images/group_4.png"><tr><td valign="top" style="padding:0;Margin:0"><table cellpadding="0" cellspacing="0" class="es-header" align="center" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;table-layout:fixed !important;width:100%;background-color:transparent;background-repeat:repeat;background-position:center top"><tr><td align="center" style="padding:0;Margin:0"><table class="es-header-body" align="center" cellpadding="0" cellspacing="0" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;width:560px"><tr><td align="left" style="Margin:0;padding-top:20px;padding-left:20px;padding-right:20px;padding-bottom:30px"><table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td class="es-m-p0r" valign="top" align="center" style="padding:0;Margin:0;width:520px"><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" style="padding:0;Margin:0;font-size:0px"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img src="https://jhfekz.stripocdn.email/content/guids/CABINET_aa83d65acafa6b305303fe689592eb6e/images/temp_logo.png" alt="RetroPay Wallet logo" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" height="45" title="RetroPay Wallet logo"></a></td>
-        </tr><tr><td align="center" style="padding:0;Margin:0;padding-bottom:10px;padding-top:20px"><h1 style="Margin:0;line-height:60px;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-size:50px;font-style:normal;font-weight:bold;color:#ffffff">Welcome to<br>RetroPay Wallet!</h1></td></tr><tr><td align="center" style="padding:0;Margin:0;padding-left:10px;padding-bottom:20px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:helvetica, 'helvetica neue', arial, verdana, sans-serif;line-height:23px;color:#ffffff;font-size:15px">We are glad to have you join us on our journey of empowering individuals and businesses to own their finances.</p></td></tr></table></td></tr></table></td></tr></table></td>
-        </tr></table><table class="es-content" cellspacing="0" cellpadding="0" align="center" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;table-layout:fixed !important;width:100%"><tr><td align="center" style="padding:0;Margin:0;background-image:url(https://jhfekz.stripocdn.email/content/guids/CABINET_95d6ab65a170f3e2567f04fb3b1cb14b/images/object_1kj.png);background-repeat:no-repeat;background-position:center top" background="https://jhfekz.stripocdn.email/content/guids/CABINET_95d6ab65a170f3e2567f04fb3b1cb14b/images/object_1kj.png"><table class="es-content-body" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;width:560px" cellspacing="0" cellpadding="0" align="center"><tr><td align="left" style="padding:0;Margin:0;padding-top:20px;padding-left:20px;padding-right:20px"><table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" valign="top" style="padding:0;Margin:0;width:520px"><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" height="90" style="padding:0;Margin:0"></td>
-        </tr></table></td></tr></table></td></tr><tr><td class="es-m-p20r es-m-p20l" align="left" bgcolor="#F2F3F4" style="padding:0;Margin:0;padding-top:20px;padding-left:40px;padding-right:40px;background-color:#f2f3f4"><table width="100%" cellspacing="0" cellpadding="0" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td class="es-m-p0r es-m-p20b" valign="top" align="center" style="padding:0;Margin:0;width:480px"><table width="100%" cellspacing="0" cellpadding="0" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" bgcolor="#F2F3F4" style="padding:0;Margin:0"><h2 style="Margin:0;line-height:43px;mso-line-height-rule:exactly;font-family:roboto, 'helvetica neue', helvetica, arial, sans-serif;font-size:36px;font-style:normal;font-weight:bold;color:#333333">Explore Your<br>RetroPay Wallet.</h2></td>
-        </tr><tr><td align="center" style="padding:20px;Margin:0;font-size:0"><table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td style="padding:0;Margin:0;border-bottom:1px solid #cccccc;background:unset;height:1px;width:100%;margin:0px"></td></tr></table></td></tr></table></td></tr></table></td>
-        </tr><tr><td class="es-m-p20r es-m-p20l" align="left" bgcolor="#F2F3F4" style="padding:0;Margin:0;padding-top:30px;padding-left:40px;padding-right:40px;background-color:#f2f3f4"><!--[if mso]><table style="width:480px" cellpadding="0" cellspacing="0"><tr><td style="width:141px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" class="es-left" align="left" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:left"><tr><td class="es-m-p20b" align="left" style="padding:0;Margin:0;width:141px"><table cellpadding="0" cellspacing="0" width="100%" bgcolor="#F2F3F4" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:#f2f3f4" role="presentation"><tr><td align="center" style="padding:0;Margin:0;font-size:0px"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img src="https://res.cloudinary.com/mosope-dev/image/upload/v1664870968/wallet_with_cash_vlkzau.png" alt style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" width="141"></a></td>
-        </tr></table></td></tr></table><!--[if mso]></td><td style="width:5px"></td><td style="width:334px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" class="es-right" align="right" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:right"><tr><td align="left" style="padding:0;Margin:0;width:334px"><table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;border-left:2px solid #cccccc;background-color:#f2f3f4" bgcolor="#F2F3F4" role="presentation"><tr><td align="left" style="padding:0;Margin:0;padding-top:10px;padding-left:10px"><h3 style="Margin:0;line-height:24px;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-size:20px;font-style:normal;font-weight:bold;color:#333333">Fund wallet</h3></td>
-        </tr><tr><td align="left" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px;padding-left:10px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:'trebuchet ms', 'lucida grande', 'lucida sans unicode', 'lucida sans', tahoma, sans-serif;line-height:23px;color:#333333;font-size:15px">Get started by depositing funds nto to your wallet, via card payments, bank transfer or USSD.</p></td></tr></table></td></tr></table><!--[if mso]></td></tr></table><![endif]--></td>
-        </tr><tr><td class="es-m-p20r es-m-p20l" align="left" bgcolor="#F2F3F4" style="padding:0;Margin:0;padding-top:30px;padding-left:40px;padding-right:40px;background-color:#f2f3f4"><!--[if mso]><table style="width:480px" cellpadding="0" cellspacing="0"><tr><td style="width:141px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" class="es-left" align="left" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:left"><tr><td class="es-m-p20b" align="left" style="padding:0;Margin:0;width:141px"><table cellpadding="0" cellspacing="0" width="100%" bgcolor="#F2F3F4" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:#f2f3f4" role="presentation"><tr><td align="center" style="padding:0;Margin:0;font-size:0px"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img src="https://jhfekz.stripocdn.email/content/guids/CABINET_aa83d65acafa6b305303fe689592eb6e/images/cost_and_benefit.png" alt style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" width="141"></a></td>
-        </tr></table></td></tr></table><!--[if mso]></td><td style="width:5px"></td><td style="width:334px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" class="es-right" align="right" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:right"><tr><td align="left" style="padding:0;Margin:0;width:334px"><table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;border-left:2px solid #cccccc;background-color:#f2f3f4" bgcolor="#F2F3F4" role="presentation"><tr><td align="left" style="padding:0;Margin:0;padding-top:10px;padding-left:10px"><h3 style="Margin:0;line-height:24px;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-size:20px;font-style:normal;font-weight:bold;color:#333333">Transfer funds</h3></td>
-        </tr><tr><td align="left" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px;padding-left:10px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:'trebuchet ms', 'lucida grande', 'lucida sans unicode', 'lucida sans', tahoma, sans-serif;line-height:23px;color:#333333;font-size:15px">Transfer funds to other users or&nbsp;pay for services with Zero transfer charges or hidden fees. Just dial in their username and send!</p></td></tr></table></td></tr></table><!--[if mso]></td></tr></table><![endif]--></td>
-        </tr><tr><td class="es-m-p20r es-m-p20l" align="left" bgcolor="#F2F3F4" style="padding:0;Margin:0;padding-top:30px;padding-left:40px;padding-right:40px;background-color:#f2f3f4"><!--[if mso]><table style="width:480px" cellpadding="0" cellspacing="0"><tr><td style="width:141px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" class="es-left" align="left" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:left"><tr><td class="es-m-p20b" align="left" style="padding:0;Margin:0;width:141px"><table cellpadding="0" cellspacing="0" width="100%" bgcolor="#F2F3F4" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:#f2f3f4" role="presentation"><tr><td align="center" style="padding:0;Margin:0;font-size:0px"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img src="https://res.cloudinary.com/mosope-dev/image/upload/v1664870960/cash_c9wgak.png" alt style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" width="141"></a></td>
-        </tr></table></td></tr></table><!--[if mso]></td><td style="width:5px"></td><td style="width:334px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" class="es-right" align="right" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:right"><tr><td align="left" style="padding:0;Margin:0;width:334px"><table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;border-left:2px solid #cccccc;background-color:#f2f3f4" bgcolor="#F2F3F4" role="presentation"><tr><td align="left" style="padding:0;Margin:0;padding-top:10px;padding-left:10px"><h3 style="Margin:0;line-height:24px;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-size:20px;font-style:normal;font-weight:bold;color:#333333">Withdraw funds</h3></td>
-        </tr><tr><td align="left" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px;padding-left:10px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:'trebuchet ms', 'lucida grande', 'lucida sans unicode', 'lucida sans', tahoma, sans-serif;line-height:24px;color:#333333;font-size:16px">Withdraw funds from your RetroPay Wallet into any Nigerian Bank account.&nbsp;</p></td></tr></table></td></tr></table><!--[if mso]></td></tr></table><![endif]--></td>
-        </tr><tr><td class="es-m-p20r es-m-p20l" align="left" bgcolor="#F2F3F4" style="padding:0;Margin:0;padding-left:40px;padding-right:40px;background-color:#f2f3f4"><table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" valign="top" style="padding:0;Margin:0;width:480px"><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" style="padding:0;Margin:0;padding-top:20px;padding-bottom:20px;font-size:0"><table border="0" width="100%" height="100%" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td style="padding:0;Margin:0;border-bottom:2px solid #cccccc;background:none;height:1px;width:100%;margin:0px"></td>
-        </tr></table></td></tr></table></td></tr></table></td></tr><tr><td class="es-m-p20l" align="left" bgcolor="#F2F3F4" style="padding:0;Margin:0;padding-top:10px;padding-left:40px;background-color:#f2f3f4;border-radius:0px 0px 40px 45px"><!--[if mso]><table style="width:520px" cellpadding="0" cellspacing="0"><tr><td style="width:279px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" align="left" class="es-left" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:left"><tr><td class="es-m-p20b" align="left" style="padding:0;Margin:0;width:279px"><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr class="es-mobile-hidden"><td align="center" height="24" style="padding:0;Margin:0"></td>
-        </tr><tr><td align="left" class="es-m-p20r" bgcolor="#F2F3F4" style="padding:0;Margin:0;padding-top:20px;padding-bottom:20px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:'trebuchet ms', 'lucida grande', 'lucida sans unicode', 'lucida sans', tahoma, sans-serif;line-height:33px;color:#333333;font-size:22px"><span style="font-family:roboto, 'helvetica neue', helvetica, arial, sans-serif;font-size:18px">Please feel free to reach out to us through any of our socials, we are happy to help!</span><br><br><span style="font-size:20px">With love,</span><br><span style="font-family:helvetica, 'helvetica neue', arial, verdana, sans-serif"><strong>The RetroPay Team</strong></span></p></td></tr></table></td></tr></table><!--[if mso]></td><td style="width:20px"></td>
-        <td style="width:221px" valign="top"><![endif]--><table cellpadding="0" cellspacing="0" class="es-right" align="right" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;float:right"><tr><td align="left" style="padding:0;Margin:0;width:221px"><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" class="es-m-txt-r" style="padding:0;Margin:0;font-size:0px"><img src="https://jhfekz.stripocdn.email/content/guids/CABINET_aa83d65acafa6b305303fe689592eb6e/images/woman2.png" alt style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" width="141"></td></tr></table></td></tr></table><!--[if mso]></td></tr></table><![endif]--></td>
-        </tr><tr><td align="left" style="padding:0;Margin:0;padding-top:20px;padding-left:20px;padding-right:20px"><table cellpadding="0" cellspacing="0" width="100%" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" valign="top" style="padding:0;Margin:0;width:520px"><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" height="70" style="padding:0;Margin:0"></td></tr></table></td></tr></table></td></tr></table></td>
-        </tr></table>
-        <tr><td align="center" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px;font-size:0"><table cellpadding="0" cellspacing="0" class="es-table-not-adapt es-social" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px"><tr><td align="center" valign="top" style="padding:0;Margin:0;padding-right:20px"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img title="Facebook" src="https://jhfekz.stripocdn.email/content/assets/img/social-icons/circle-black/facebook-circle-black.png" alt="Fb" width="24" height="24" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic"></a></td>
-        <td align="center" valign="top" style="padding:0;Margin:0;padding-right:20px"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img title="Twitter" src="https://jhfekz.stripocdn.email/content/assets/img/social-icons/circle-black/twitter-circle-black.png" alt="Tw" width="24" height="24" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic"></a></td>
-        <td align="center" valign="top" style="padding:0;Margin:0;padding-right:20px"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img title="Instagram" src="https://jhfekz.stripocdn.email/content/assets/img/social-icons/circle-black/instagram-circle-black.png" alt="Inst" width="24" height="24" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic"></a></td>
-        <td align="center" valign="top" style="padding:0;Margin:0"><a target="_blank" href="https://viewstripo.email" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#2CB543;font-size:14px"><img title="Youtube" src="https://jhfekz.stripocdn.email/content/assets/img/social-icons/circle-black/youtube-circle-black.png" alt="Yt" width="24" height="24" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic"></a></td></tr></table></td>
-        </tr><tr><td align="center" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:'trebuchet ms', 'lucida grande', 'lucida sans unicode', 'lucida sans', tahoma, sans-serif;line-height:18px;color:#ffffff;font-size:12px">You are receiving this email because you have visited our site or asked us about the regular newsletter. Make sure our messages get to your Inbox (and not your bulk or junk folders).<br><strong><a target="_blank" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:none;color:#ffffff;font-size:12px" href="https://viewstripo.email">Privacy police</a> | <a target="_blank" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:none;color:#ffffff;font-size:12px" href="">Unsubscribe</a></strong></p></td>
-        </tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></div></body></html>
+    <!doctype html>
+    <html ⚡4email data-css-strict>
+     <head><meta charset="utf-8"><style amp4email-boilerplate>body{visibility:hidden}</style><script async src="https://cdn.ampproject.org/v0.js"></script>
+      
+      <style amp-custom>
+    .es-desk-hidden {
+        display:none;
+        float:left;
+        overflow:hidden;
+        width:0;
+        max-height:0;
+        line-height:0;
+    }
+    body {
+        width:100%;
+        font-family:arial, "helvetica neue", helvetica, sans-serif;
+    }
+    table {
+        border-collapse:collapse;
+        border-spacing:0px;
+    }
+    table td, body, .es-wrapper {
+        padding:0;
+        Margin:0;
+    }
+    .es-content, .es-header, .es-footer {
+        table-layout:fixed;
+        width:100%;
+    }
+    p, hr {
+        Margin:0;
+    }
+    h1, h2, h3, h4, h5 {
+        Margin:0;
+        line-height:120%;
+        font-family:lato, "helvetica neue", helvetica, arial, sans-serif;
+    }
+    .es-left {
+        float:left;
+    }
+    .es-right {
+        float:right;
+    }
+    .es-p5 {
+        padding:5px;
+    }
+    .es-p5t {
+        padding-top:5px;
+    }
+    .es-p5b {
+        padding-bottom:5px;
+    }
+    .es-p5l {
+        padding-left:5px;
+    }
+    .es-p5r {
+        padding-right:5px;
+    }
+    .es-p10 {
+        padding:10px;
+    }
+    .es-p10t {
+        padding-top:10px;
+    }
+    .es-p10b {
+        padding-bottom:10px;
+    }
+    .es-p10l {
+        padding-left:10px;
+    }
+    .es-p10r {
+        padding-right:10px;
+    }
+    .es-p15 {
+        padding:15px;
+    }
+    .es-p15t {
+        padding-top:15px;
+    }
+    .es-p15b {
+        padding-bottom:15px;
+    }
+    .es-p15l {
+        padding-left:15px;
+    }
+    .es-p15r {
+        padding-right:15px;
+    }
+    .es-p20 {
+        padding:20px;
+    }
+    .es-p20t {
+        padding-top:20px;
+    }
+    .es-p20b {
+        padding-bottom:20px;
+    }
+    .es-p20l {
+        padding-left:20px;
+    }
+    .es-p20r {
+        padding-right:20px;
+    }
+    .es-p25 {
+        padding:25px;
+    }
+    .es-p25t {
+        padding-top:25px;
+    }
+    .es-p25b {
+        padding-bottom:25px;
+    }
+    .es-p25l {
+        padding-left:25px;
+    }
+    .es-p25r {
+        padding-right:25px;
+    }
+    .es-p30 {
+        padding:30px;
+    }
+    .es-p30t {
+        padding-top:30px;
+    }
+    .es-p30b {
+        padding-bottom:30px;
+    }
+    .es-p30l {
+        padding-left:30px;
+    }
+    .es-p30r {
+        padding-right:30px;
+    }
+    .es-p35 {
+        padding:35px;
+    }
+    .es-p35t {
+        padding-top:35px;
+    }
+    .es-p35b {
+        padding-bottom:35px;
+    }
+    .es-p35l {
+        padding-left:35px;
+    }
+    .es-p35r {
+        padding-right:35px;
+    }
+    .es-p40 {
+        padding:40px;
+    }
+    .es-p40t {
+        padding-top:40px;
+    }
+    .es-p40b {
+        padding-bottom:40px;
+    }
+    .es-p40l {
+        padding-left:40px;
+    }
+    .es-p40r {
+        padding-right:40px;
+    }
+    .es-menu td {
+        border:0;
+    }
+    s {
+        text-decoration:line-through;
+    }
+    p, ul li, ol li {
+        font-family:lato, "helvetica neue", helvetica, arial, sans-serif;
+        line-height:150%;
+    }
+    ul li, ol li {
+        Margin-bottom:15px;
+        margin-left:0;
+    }
+    a {
+        text-decoration:none;
+    }
+    .es-menu td a {
+        text-decoration:none;
+        display:block;
+        font-family:lato, "helvetica neue", helvetica, arial, sans-serif;
+    }
+    .es-menu amp-img, .es-button amp-img {
+        vertical-align:middle;
+    }
+    .es-wrapper {
+        width:100%;
+        height:100%;
+    }
+    .es-wrapper-color, .es-wrapper {
+        background-color:#F0F0F0;
+    }
+    .es-header {
+        background-color:transparent;
+    }
+    .es-header-body {
+        background-color:#FFFFFF;
+    }
+    .es-header-body p, .es-header-body ul li, .es-header-body ol li {
+        color:#333333;
+        font-size:14px;
+    }
+    .es-header-body a {
+        color:#2CB543;
+        font-size:14px;
+    }
+    .es-content-body {
+        background-color:#FFFFFF;
+    }
+    .es-content-body p, .es-content-body ul li, .es-content-body ol li {
+        color:#666666;
+        font-size:18px;
+    }
+    .es-content-body a {
+        color:#555555;
+        font-size:18px;
+    }
+    .es-footer {
+        background-color:transparent;
+    }
+    .es-footer-body {
+        background-color:#A1A1A2;
+    }
+    .es-footer-body p, .es-footer-body ul li, .es-footer-body ol li {
+        color:#EFEFEF;
+        font-size:14px;
+    }
+    .es-footer-body a {
+        color:#EFEFEF;
+        font-size:14px;
+    }
+    .es-infoblock, .es-infoblock p, .es-infoblock ul li, .es-infoblock ol li {
+        line-height:120%;
+        font-size:12px;
+        color:#CCCCCC;
+    }
+    .es-infoblock a {
+        font-size:12px;
+        color:#CCCCCC;
+    }
+    h1 {
+        font-size:30px;
+        font-style:normal;
+        font-weight:bold;
+        color:#262E3A;
+    }
+    h2 {
+        font-size:22px;
+        font-style:normal;
+        font-weight:bold;
+        color:#262E3A;
+    }
+    h3 {
+        font-size:18px;
+        font-style:normal;
+        font-weight:bold;
+        color:#262E3A;
+    }
+    .es-header-body h1 a, .es-content-body h1 a, .es-footer-body h1 a {
+        font-size:30px;
+    }
+    .es-header-body h2 a, .es-content-body h2 a, .es-footer-body h2 a {
+        font-size:22px;
+    }
+    .es-header-body h3 a, .es-content-body h3 a, .es-footer-body h3 a {
+        font-size:18px;
+    }
+    a.es-button, button.es-button {
+        border-style:solid;
+        border-color:#FF6600;
+        border-width:15px 40px 15px 40px;
+        display:inline-block;
+        background:#FF6600;
+        border-radius:0px;
+        font-size:18px;
+        font-family:lato, "helvetica neue", helvetica, arial, sans-serif;
+        font-weight:bold;
+        font-style:normal;
+        line-height:120%;
+        color:#FFFFFF;
+        text-decoration:none;
+        width:auto;
+        text-align:center;
+    }
+    .es-button-border {
+        border-style:solid solid solid solid;
+        border-color:#2CB543 #2CB543 #2CB543 #2CB543;
+        background:#FF6600;
+        border-width:0px 0px 0px 0px;
+        display:inline-block;
+        border-radius:0px;
+        width:auto;
+    }
+    .es-button img {
+        display:inline-block;
+        vertical-align:middle;
+    }
+    body {
+        font-family:lato, "helvetica neue", helvetica, arial, sans-serif;
+    }
+    @media only screen and (max-width:600px) {p, ul li, ol li, a { line-height:150% } h1, h2, h3, h1 a, h2 a, h3 a { line-height:120% } h1 { font-size:30px; text-align:left } h2 { font-size:24px; text-align:left } h3 { font-size:20px; text-align:left } .es-header-body h1 a, .es-content-body h1 a, .es-footer-body h1 a { font-size:30px; text-align:left } .es-header-body h2 a, .es-content-body h2 a, .es-footer-body h2 a { font-size:24px; text-align:left } .es-header-body h3 a, .es-content-body h3 a, .es-footer-body h3 a { font-size:20px; text-align:left } .es-menu td a { font-size:14px } .es-header-body p, .es-header-body ul li, .es-header-body ol li, .es-header-body a { font-size:14px } .es-content-body p, .es-content-body ul li, .es-content-body ol li, .es-content-body a { font-size:14px } .es-footer-body p, .es-footer-body ul li, .es-footer-body ol li, .es-footer-body a { font-size:14px } .es-infoblock p, .es-infoblock ul li, .es-infoblock ol li, .es-infoblock a { font-size:12px } *[class="gmail-fix"] { display:none } .es-m-txt-c, .es-m-txt-c h1, .es-m-txt-c h2, .es-m-txt-c h3 { text-align:center } .es-m-txt-r, .es-m-txt-r h1, .es-m-txt-r h2, .es-m-txt-r h3 { text-align:right } .es-m-txt-l, .es-m-txt-l h1, .es-m-txt-l h2, .es-m-txt-l h3 { text-align:left } .es-m-txt-r amp-img { float:right } .es-m-txt-c amp-img { margin:0 auto } .es-m-txt-l amp-img { float:left } .es-button-border { display:inline-block } a.es-button, button.es-button { font-size:18px; display:inline-block } .es-adaptive table, .es-left, .es-right { width:100% } .es-content table, .es-header table, .es-footer table, .es-content, .es-footer, .es-header { width:100%; max-width:600px } .es-adapt-td { display:block; width:100% } .adapt-img { width:100%; height:auto } td.es-m-p0 { padding:0 } td.es-m-p0r { padding-right:0 } td.es-m-p0l { padding-left:0 } td.es-m-p0t { padding-top:0 } td.es-m-p0b { padding-bottom:0 } td.es-m-p20b { padding-bottom:20px } .es-mobile-hidden, .es-hidden { display:none } tr.es-desk-hidden, td.es-desk-hidden, table.es-desk-hidden { width:auto; overflow:visible; float:none; max-height:inherit; line-height:inherit } tr.es-desk-hidden { display:table-row } table.es-desk-hidden { display:table } td.es-desk-menu-hidden { display:table-cell } .es-menu td { width:1% } table.es-table-not-adapt, .esd-block-html table { width:auto } table.es-social { display:inline-block } table.es-social td { display:inline-block } td.es-m-p5 { padding:5px } td.es-m-p5t { padding-top:5px } td.es-m-p5b { padding-bottom:5px } td.es-m-p5r { padding-right:5px } td.es-m-p5l { padding-left:5px } td.es-m-p10 { padding:10px } td.es-m-p10t { padding-top:10px } td.es-m-p10b { padding-bottom:10px } td.es-m-p10r { padding-right:10px } td.es-m-p10l { padding-left:10px } td.es-m-p15 { padding:15px } td.es-m-p15t { padding-top:15px } td.es-m-p15b { padding-bottom:15px } td.es-m-p15r { padding-right:15px } td.es-m-p15l { padding-left:15px } td.es-m-p20 { padding:20px } td.es-m-p20t { padding-top:20px } td.es-m-p20r { padding-right:20px } td.es-m-p20l { padding-left:20px } td.es-m-p25 { padding:25px } td.es-m-p25t { padding-top:25px } td.es-m-p25b { padding-bottom:25px } td.es-m-p25r { padding-right:25px } td.es-m-p25l { padding-left:25px } td.es-m-p30 { padding:30px } td.es-m-p30t { padding-top:30px } td.es-m-p30b { padding-bottom:30px } td.es-m-p30r { padding-right:30px } td.es-m-p30l { padding-left:30px } td.es-m-p35 { padding:35px } td.es-m-p35t { padding-top:35px } td.es-m-p35b { padding-bottom:35px } td.es-m-p35r { padding-right:35px } td.es-m-p35l { padding-left:35px } td.es-m-p40 { padding:40px } td.es-m-p40t { padding-top:40px } td.es-m-p40b { padding-bottom:40px } td.es-m-p40r { padding-right:40px } td.es-m-p40l { padding-left:40px } .es-desk-hidden { display:table-row; width:auto; overflow:visible; max-height:inherit } }
+    </style>
+     </head>
+     <body>
+      <div class="es-wrapper-color">
+       <!--[if gte mso 9]>
+                <v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">
+                    <v:fill type="tile" color="#F0F0F0"></v:fill>
+                </v:background>
+            <![endif]-->
+       <table class="es-wrapper" width="100%" cellspacing="0" cellpadding="0">
+         <tr>
+          <td valign="top">
+           <table cellpadding="0" cellspacing="0" class="es-header" align="center">
+             <tr>
+              <td align="center">
+               <table bgcolor="#ffffff" class="es-header-body" align="center" cellpadding="0" cellspacing="0" width="600">
+                 <tr>
+                  <td class="esdev-adapt-off es-p20l" align="left">
+                   <!--[if mso]><table width="580" cellpadding="0" cellspacing="0"><tr><td width="170" valign="top"><![endif]-->
+                   <table cellpadding="0" cellspacing="0" align="left" class="es-left">
+                     <tr>
+                      <td width="170" class="es-m-p0r es-m-p20b" valign="top" align="center">
+                       <table cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                         <tr>
+                          <td align="center" class="es-p20t es-p20b" style="font-size: 0px"><a target="_blank" href="https://viewstripo.email"><amp-img src="https://jhfekz.stripocdn.email/content/guids/CABINET_2b068280ebfc2d54ae1c3614324c566f2b59bea83072dd6913b0213bd1770318/images/logo_inner_shadow.png" alt="Logo" style="display: block" title="Logo" class="adapt-img" height="155" width="155" layout="responsive"></amp-img></a></td>
+                         </tr>
+                         <tr class="es-mobile-hidden">
+                          <td align="center" height="59"></td>
+                         </tr>
+                         <tr>
+                          <td align="left"><h1 style="font-size: 27px">Howdy, ${firstname}!</h1></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table> 
+                   <!--[if mso]></td><td width="20"></td><td width="390" valign="top"><![endif]-->
+                   <table cellpadding="0" cellspacing="0" class="es-right" align="right">
+                     <tr class="es-mobile-hidden">
+                      <td width="390" align="left">
+                       <table cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                         <tr>
+                          <td align="center" style="font-size: 0px"><a target="_blank" href="https://viewstripo.email"><amp-img class="adapt-img" src="https://jhfekz.stripocdn.email/content/guids/CABINET_cb2be5825fa5d03154dd7b2a9d321a1f/images/34915783_8240719_2_OhJ.png" alt style="display: block" width="365" height="321" layout="responsive"></amp-img></a></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table> 
+                   <!--[if mso]></td></tr></table><![endif]--></td>
+                 </tr>
+               </table></td>
+             </tr>
+           </table>
+           <table cellpadding="0" cellspacing="0" class="es-content" align="center">
+             <tr>
+              <td align="center">
+               <table bgcolor="#ffffff" class="es-content-body" align="center" cellpadding="0" cellspacing="0" width="600">
+                 <tr>
+                  <td class="esdev-adapt-off es-p40t es-p20b es-p20r es-p20l" align="left">
+                   <table cellpadding="0" cellspacing="0" width="100%">
+                     <tr>
+                      <td width="560" align="left">
+                       <table cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                         <tr>
+                          <td align="left" class="es-p10t"><h2 style="text-align: center">SEND &amp; RECEIVE MONEY THE RETRO WAY</h2></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table></td>
+                 </tr>
+               </table></td>
+             </tr>
+           </table>
+           <table class="es-content" cellspacing="0" cellpadding="0" align="center">
+             <tr>
+              <td align="center">
+               <table class="es-content-body" style="background-color: #ffffff" width="600" cellspacing="0" cellpadding="0" bgcolor="#ffffff" align="center">
+                 <tr>
+                  <td class="es-p20r es-p20l" align="left" bgcolor="#ffffff" style="background-color: #ffffff">
+                   <table cellpadding="0" cellspacing="0" width="100%">
+                     <tr>
+                      <td width="560" align="left">
+                       <table cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                         <tr>
+                          <td align="left" class="es-p25t es-p20b"><p style="font-family: 'open sans', 'helvetica neue', helvetica, arial, sans-serif;font-size: 17px;color: #000000">We are excited to have you join our community of users who are experiencing the thrill of swift and secure fund transfers.</p></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table></td>
+                 </tr>
+               </table></td>
+             </tr>
+           </table>
+           <table cellpadding="0" cellspacing="0" class="es-content" align="center">
+             <tr>
+              <td align="center">
+               <table bgcolor="#ffffff" class="es-content-body" align="center" cellpadding="0" cellspacing="0" width="600">
+                 <tr>
+                  <td class="es-p20" align="left" bgcolor="#ffffff" style="background-color: #ffffff">
+                   <table cellpadding="0" cellspacing="0" width="100%">
+                     <tr>
+                      <td width="560" align="center" valign="top">
+                       <table cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                         <tr>
+                          <td align="left"><p style="color: #000000;font-size: 17px;font-family: 'open sans', 'helvetica neue', helvetica, arial, sans-serif"><span style="font-size:16px">With Retro Wallet, you'll be able to send and receive money from friends, family, and other users, all with just a few simple taps without hassle. Send funds via account tags and worry less about account numbers. Fund your wallet to get started exploring&nbsp;right away!<br><br>We have exciting new features and promotions in the works that we can't wait to share with you. We hope you find them full of value and enjoy them as much as we do building them.<br><br>Welcome aboard!<br><strong>Retro&nbsp;Wallet Team.</strong></span><br><strong><span style="font-size:14px">#PayWithRetro #PayTheRetroWay #RetroFunds</span></strong><br><br></p></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table></td>
+                 </tr>
+                 <tr>
+                  <td class="es-p20t es-p20r es-p20l" style="background-color: #511291;background-image: url(https://jhfekz.stripocdn.email/content/guids/CABINET_2b068280ebfc2d54ae1c3614324c566f2b59bea83072dd6913b0213bd1770318/images/bookmark_instagram_post_square.png);background-repeat: no-repeat;background-position: left top" bgcolor="#511291" align="left">
+                   <!--[if mso]><table width="560" cellpadding="0" cellspacing="0"><tr><td width="270" valign="top"><![endif]-->
+                   <table class="es-left" cellspacing="0" cellpadding="0" align="left">
+                     <tr>
+                      <td width="270" valign="top" align="center">
+                       <table style="background-position: center top" width="100%" cellspacing="0" cellpadding="0" role="presentation">
+                         <tr>
+                          <td class="es-p10t" align="left"><h4 style="color: #ffffff;font-size: 21px">Follow Us.</h4></td>
+                         </tr>
+                         <tr>
+                          <td class="es-p5t" align="left"><p style="color: #efefef;font-size: 16px">Connect with us on our socials</p></td>
+                         </tr>
+                         <tr>
+                          <td class="es-p20t es-p30b" align="left" style="font-size: 0px">
+                           <table class="es-table-not-adapt es-social" cellspacing="0" cellpadding="0" role="presentation">
+                             <tr>
+                              <td class="es-p10r" valign="top" align="center"><a target="_blank" href="https://twitter.com/retrostackhq"><amp-img title="Twitter" src="https://jhfekz.stripocdn.email/content/assets/img/social-icons/rounded-colored-bordered/twitter-rounded-colored-bordered.png" alt="Tw" width="32" height="32"></amp-img></a></td>
+                              <td valign="top" align="center" class="es-p10r"><amp-img title="Youtube" src="https://jhfekz.stripocdn.email/content/assets/img/social-icons/rounded-colored-bordered/youtube-rounded-colored-bordered.png" alt="Yt" width="32" height="32"></amp-img></td>
+                              <td valign="top" align="center"><a target="_blank" href="https://www.linkedin.com/company/retrostack/"><amp-img title="Linkedin" src="https://jhfekz.stripocdn.email/content/assets/img/social-icons/rounded-colored-bordered/linkedin-rounded-colored-bordered.png" alt="In" width="32" height="32"></amp-img></a></td>
+                             </tr>
+                           </table></td>
+                         </tr>
+                         <tr>
+                          <td align="left"><h4 style="color: #ffffff;font-size: 21px">Contact Us.</h4></td>
+                         </tr>
+                         <tr>
+                          <td class="es-p5t" align="left"><p style="color: #efefef;font-size: 16px">Reach out to our support team.</p></td>
+                         </tr>
+                         <tr>
+                          <td class="es-p10t es-p20b" align="left"><p style="color: #00ce8d;font-size: 16px">support<a target="_blank" href="mailto:support@retropay.app" style="font-size: 16px;color: #00ce8d;text-decoration: none">@retropay.a</a>pp</p></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table> 
+                   <!--[if mso]></td><td width="20"></td><td width="270" valign="top"><![endif]-->
+                   <table class="es-right" cellspacing="0" cellpadding="0" align="right">
+                     <tr>
+                      <td width="270" align="left">
+                       <table style="background-position: center top" width="100%" cellspacing="0" cellpadding="0" role="presentation">
+                         <tr class="es-mobile-hidden">
+                          <td height="17" align="center"></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table> 
+                   <!--[if mso]></td></tr></table><![endif]--></td>
+                 </tr>
+               </table></td>
+             </tr>
+           </table>
+           <table cellpadding="0" cellspacing="0" class="es-footer" align="center">
+             <tr>
+              <td align="center">
+               <table class="es-footer-body" align="center" cellpadding="0" cellspacing="0" width="600" style="background-color: transparent">
+                 <tr>
+                  <td class="es-p20t es-p20b es-p20r es-p20l" align="left" bgcolor="#ffffff" style="background-color: #ffffff">
+                   <table cellpadding="0" cellspacing="0" width="100%">
+                     <tr>
+                      <td width="560" align="left">
+                       <table cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                         <tr>
+                          <td align="center" class="es-p30b"><p style="color: #666666">Retro Wallet © ${(new Date).getFullYear()}. All rights reserved<br>Built by&nbsp;by&nbsp;<strong>Retrostack Technologies</strong></p></td>
+                         </tr>
+                         <tr>
+                          <td>
+                           <table cellpadding="0" cellspacing="0" width="100%" class="es-menu" role="presentation">
+                             <tr class="links">
+                              <td align="center" valign="top" width="33.33%" class="es-p10t es-p10b es-p5r es-p5l" style="padding-top: 5px;padding-bottom: 5px"><a target="_blank" href="link-here" style="color: #666666">Visit Us </a></td>
+                              <td align="center" valign="top" width="33.33%" class="es-p10t es-p10b es-p5r es-p5l" style="padding-top: 5px;padding-bottom: 5px;border-left: 1px solid #cccccc"><a target="_blank" href="link-here" style="color: #666666">Privacy Policy</a></td>
+                              <td align="center" valign="top" width="33.33%" class="es-p10t es-p10b es-p5r es-p5l" style="padding-top: 5px;padding-bottom: 5px;border-left: 1px solid #cccccc"><a target="_blank" href="link-here" style="color: #666666">Terms of Use</a></td>
+                             </tr>
+                           </table></td>
+                         </tr>
+                       </table></td>
+                     </tr>
+                   </table></td>
+                 </tr>
+               </table></td>
+             </tr>
+           </table></td>
+         </tr>
+       </table>
+      </div>
+     </body>
+    </html>
     `;
     const text = `
-        Welcome to RetroPay ${firstname}, you're one step closer to experiencing a modern world of personal finance. Here are few things to help you get started!`;
+        Welcome to Retro Wallet ${firstname}, you're one step closer to experiencing a modern world of personal finance. Here are few things to help you get started!`;
     return {
         html: html,
         text: text,
