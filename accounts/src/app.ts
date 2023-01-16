@@ -47,12 +47,10 @@ class App {
     private async initialiseDatabaseConnection(): Promise<void> {
         const { MONGODB_URI, MONGODB_URI_CLOUD, NODE_ENV } = process.env
 
-        // await mongoose.connect(`${NODE_ENV == 'development' ? MONGODB_URI : MONGODB_URI_CLOUD}`)
         await mongoose.connect(`${MONGODB_URI_CLOUD}`)
         .then(() => {
             this.listen()
             this.connectSmtp()
-            // this.connectVonage()
             console.log('DB connected.')
         })
         .catch((error) => {
@@ -73,12 +71,6 @@ class App {
         await mailService.createConnection();
         console.log('live smtp')
     }
-
-    // private async connectVonage(): Promise<void> {
-    //     const smsInstance = new smsService
-    //     smsInstance.initialiseVonage()
-    //     console.log('live sms service')
-    // }
     
     public createConnection(): void {
         this.initialiseDatabaseConnection()
