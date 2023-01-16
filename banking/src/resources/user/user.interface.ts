@@ -25,8 +25,11 @@ export default interface IUser {
     fundPermission?: boolean
     passwordReset?: object,
     customerCode? : string,
-    nubanAccountDetails?: object
+    nubanAccountDetails?: {
+        nuban: string
+    }
     favoritedRecipients?: string[]
+    isAccountActive: boolean
 
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>

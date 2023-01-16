@@ -4,19 +4,30 @@ import validateEnv from './utils/validateEnv'
 import App from './app'
 import DemoController from "@/resources/status/status.controller"
 import UserController from "@/resources/user/user.controller"
-import WebhookController from "@/resources/webhooks/paystackHooks/hook.controller"
+import metaMapWebhookController from './resources/webhooks/metamap/hook.controller'
 import { createChannel } from "@/utils/broker"
+import { createClient } from "redis"
 
 validateEnv()
 
-const brokerChannel = createChannel()
-console.log(brokerChannel)
-export default brokerChannel
+export const brokerChannel = createChannel()
+
+const url = process.env.REDIS_CONNECTION_STRING
+export const redisClient = url != undefined ? createClient({
+    url: `${process.env.REDIS_CONNECTION_STRING}`
+}) : createClient()
+
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+
+export default {
+    brokerChannel,
+    redisClient
+}
 
 const app = new App([
     new DemoController, 
-    new UserController, 
-    new WebhookController,
+    new UserController,
+    new metaMapWebhookController
 ], Number(process.env.PORT) || 4002)
 
 //Connect to DB and run server

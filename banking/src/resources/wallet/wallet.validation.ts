@@ -8,7 +8,8 @@ const transferFunds = Joi.object({
     pin: Joi.string().required().min(4).max(4),
     amount: Joi.number().required(),
     comment: Joi.string().required(),
-    recipientTag: Joi.string().required()
+    recipientTag: Joi.string().required(),
+    beneficiaryName: Joi.string().required()
 })
 
 const resolveAccount= Joi.object({
@@ -16,9 +17,26 @@ const resolveAccount= Joi.object({
     accountNumber: Joi.string().required()
 })
 
+const resolveAccountTag = Joi.object({
+    accountTag: Joi.string().required()
+})
+
+const withdrawFunds = Joi.object({
+    pin: Joi.string().required(),
+    amount: Joi.number().required(),
+    beneficiaryAccount: Joi.string().required(),
+    comment: Joi.string().required(), 
+    beneficiaryBankCode: Joi.string().required(), 
+    beneficiaryName: Joi.string().required(), 
+    nameEnquiryId: Joi.string().required(),
+    beneficiaryBank: Joi.string().required()
+})
+
 
 export default {
     fundWallet,
     transferFunds,
-    resolveAccount
+    resolveAccount,
+    withdrawFunds,
+    resolveAccountTag,
 }

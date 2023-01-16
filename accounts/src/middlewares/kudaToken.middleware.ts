@@ -12,7 +12,6 @@ async function kudaTokenHandler(
         await redisClient.connect()
         let k_token = await redisClient.get("K_TOKEN")
         console.log(k_token)
-
         if(!k_token) {
             const response = await axios({
                 method: 'POST',

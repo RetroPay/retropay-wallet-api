@@ -7,7 +7,6 @@ import generateOtp from "@/services/otp"
 import moment from "moment"
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
 import MailService from "@/services/sendEmails";
-const Paystack = require("paystack-api")(process.env.GATEWAY_SECRET_KEY)
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
 import MessageBroker from "@/utils/broker"
@@ -28,7 +27,16 @@ class UserService {
             case 'DEACTIVATE_USER_ACOUNT': await this.deactivateUserAccount(data)
                 break;
             case 'ADD_FAVORITE_RECIPIENT': await this.addToFavoritedRecipients(data)
-            default: throw new Error("=== Invalid event ===")
+                break;
+            case 'USER_NUBAN_CREATED': await this.updateNubanDetails(data)
+                break;
+            case 'DELETE_FAVORITE_RECIPIENT': await this.deleteFavoritedRecipient(data)
+                break;
+            case 'UPLOAD_PROFILE_PHOTO': await this.setProfilePhoto(data)
+                break;
+            case 'UPDATE_USER_IDENTITY_STATUS': await this.updateUserVerification(data)
+                break;
+            default:    console.log("== invalid event == ")
                 break;
         }
     }
@@ -56,7 +64,8 @@ class UserService {
         try {
             const { id, pin } = reqData
 
-            await userModel.findOneAndUpdate({referenceId: id}, { pin }, { new: true})
+            const updated = await userModel.findOneAndUpdate({referenceId: id}, { pin }, { new: true})
+            console.log(updated)
         } catch (error) {
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to set transaction pin.')
@@ -103,6 +112,62 @@ class UserService {
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
         }
     }
+    public async updateNubanDetails(reqData: {id: string, accountNumber: string}): Promise<void> {
+        try {
+            const { id, accountNumber } = reqData
+            const updateUser = await userModel.findOneAndUpdate({ referenceId: id }, 
+                {nubanAccountDetails: { nuban: accountNumber }, 
+                $set: { transferPermission: true }},
+                { new: true }
+            )
+            console.log(updateUser)
+            if(!updateUser) throw new Error("'Unable to update nuban details.")
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to update nuban details.')
+        }
+    }
+
+    public async deleteFavoritedRecipient(reqData: {id: string, recipientId: string}): Promise<void> {
+        try {
+            const { id, recipientId } = reqData
+
+            const updatedUser = await userModel.findOneAndUpdate({ referenceId: id }, { $pull: {favoritedRecipients: recipientId } }, { new: true })
+            console.log(updatedUser)
+            if(!updatedUser) throw new Error("Unable to delete recipient.")
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to delete recipient.')
+        }
+    }
+
+    public async setProfilePhoto(reqData: {id: string, profilePhoto: string}): Promise<void> {
+        try {
+            const { id, profilePhoto } = reqData
+            const updatedUser = await userModel.findOneAndUpdate({referenceId: id}, { profilePhoto }, { new: true })
+
+            console.log(updatedUser)
+            if(!updatedUser) throw new Error("Unable to upload profile photo.")
+        } catch (error: any) {
+            throw new Error(translateError(error)[0] || 'Unable to upload profile photo.')
+        }
+    }
+
+    public async updateUserVerification(reqData: {username: string, status: string}): Promise<void> {
+        try {
+            const { status, username } = reqData
+
+            switch(status) {
+                case 'rejected': 
+                case 'reviewNeeded': await userModel.findOneAndUpdate({username}, {verificationStatus: status == "reviewNeeded" ? "in review" : status})
+                    break;
+                case 'verified': await userModel.findOneAndUpdate({username}, {verificationStatus: status, $set: { isIdentityVerified: true, withdrawPermission: true }})
+                    break;
+            }
+        } catch (error: any) {
+            console.log(error)
+            throw new Error(translateError(error)[0] || 'Unable to update identity status.')
+            //LogSnag call here
+        }
+       }
 }
 
 export default UserService

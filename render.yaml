@@ -63,7 +63,7 @@ services:
           type: redis
           name: retropay-wallet-redis
           property: connectionString
-      - fromGroup: retropay-wallet-account-envs
+      - fromGroup: retropay-wallet-account-envs-staging
 
   - type: web
     name: retropay-wallet-banking-serivce-staging
@@ -84,7 +84,7 @@ services:
           type: redis
           name: retropay-wallet-redis
           property: connectionString
-      - fromGroup: retropay-wallet-banking-envs
+      - fromGroup: retropay-wallet-banking-envs-staging
 
   - type: web
     name: retropay-wallet-banking-serivce-prod

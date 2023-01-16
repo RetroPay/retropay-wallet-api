@@ -26,13 +26,17 @@ async function authenticatedMiddleware(
             return next(new HttpException(401, 'Unauthorised'))
         }
 
-        const user = await UserModel.findOne({referenceId: payload.id}).select('username email').exec()
+        const user = await UserModel.findOne({referenceId: payload.id}).select('username email referenceId').exec()
 
         if (!user) {
             return next(new HttpException(401, 'Unauthorised'))
         }
 
+        //if account is suspended or deactivated
+        if(user.isAccountActive == false) return next(new HttpException(401, 'Your account is inactive, contact support.'))
+
         req.user = user.id
+        req.referenceId = user.referenceId
         req.username = user.username
         req.email = user.email
 

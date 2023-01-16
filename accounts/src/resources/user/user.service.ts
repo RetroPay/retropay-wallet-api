@@ -6,15 +6,10 @@ import { createToken } from "@/utils/token"
 import generateOtp from "@/services/otp"
 import moment from "moment"
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
-import MailService from "@/services/sendEmails";
-// const Paystack = require("paystack-api")(process.env.GATEWAY_SECRET_KEY)
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
-// import MessageBroker from "@/utils/broker"
-// import app from '../../server'
-import App from "../../app"
-import amqplib from 'amqplib'
-import MessageBroker from '@/utils/broker'
+import axios from 'axios'
+import { v4 } from "uuid"
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
@@ -30,6 +25,19 @@ class UserService {
         }
     }
 
+    public async getUser(id: string): Promise<IUser | Error> {
+        try {
+            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto username isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
+            
+            if(!user) throw new Error("Unable to retrieve details")
+
+            return user
+        } catch (error) {
+            console.log(translateError(error))
+            throw new Error('Unable to retrieve user details.')
+        }
+    }
+
     public async register(reqData: IUser): Promise<any | Error> {
         try {
             const { firstname, lastname, email, password } = reqData
@@ -40,6 +48,8 @@ class UserService {
                 password,
                 username: email,
             })
+
+            if(!newUser) throw new Error('Unable to create user account.')
 
             const { 
                 username, isPhoneVerified, isEmailVerified, 
@@ -60,13 +70,33 @@ class UserService {
         }
     }
 
-    public async login(reqData: {emailOrUsername: string, password: string }): Promise<string | Error> {
+    public async login(reqData: {emailOrUsername: string, password: string }): Promise<any | Error> {
         try {
-            const foundUser = await userModel.findOne({ $or: [{email: reqData.emailOrUsername }, {username: reqData.emailOrUsername }] }).select("_id username password")
+            const foundUser = await userModel.findOne({ $or: [{email: reqData.emailOrUsername }, {username: reqData.emailOrUsername }] })
 
-            if(!foundUser) throw new Error(`${process.env.NODE_ENV == 'development' ? 'Email does not exists' : 'Incorrect userame or password'}`);
+            if(!foundUser) throw new Error('Incorrect username or password');
+            if(foundUser.isAccountActive == false) throw new Error("Account is disabled. Contact support")
 
-            if (await foundUser.isValidPassword(reqData.password)) return createToken(foundUser)
+            const { 
+                username, isPhoneVerified, isEmailVerified, 
+                isIdentityVerified, transferPermission, withdrawPermission, 
+                fundPermission, favoritedRecipients, _id,
+                firstname, lastname, email, profilePhoto,
+                verificationStatus
+            } = foundUser
+
+            if (await foundUser.isValidPassword(reqData.password)) { 
+                return { 
+                    token: createToken(foundUser), 
+                    user: {
+                        firstname, lastname, email,
+                        username, isPhoneVerified, isEmailVerified,
+                        isIdentityVerified, transferPermission, withdrawPermission, 
+                        fundPermission, favoritedRecipients, profilePhoto,
+                        verificationStatus
+                    } 
+                }
+            }
             
             throw new Error("Incorrect username or pasword")
         } catch (error: any) {
@@ -84,12 +114,10 @@ class UserService {
             if(!await foundUser.isValidPassword(reqData.oldPassword)) throw new Error("Incorrect password.")
             
             const updatedUser = await userModel.findOneAndUpdate({ _id: user }, {password: await bcrypt.hash(reqData.newPassword, 10) }, { new: true})
-                
-            if(updatedUser) {
-               return updatedUser 
-            } else {
-                throw new Error("Unable to update password")
-            }
+
+            if(!updatedUser) throw new Error("Unable to update password") 
+            
+            return updatedUser 
         } catch (error: any) {
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to updated password.')
@@ -219,7 +247,7 @@ class UserService {
                     "email": foundUser.email, 
                     "phone": phoneNumber
                 },
-                "sender": "RetroPay Wallet",
+                "sender": "Retro Wallet by Retrostack",
                 "send": true,
                 "medium": [
                     "email",
@@ -229,7 +257,7 @@ class UserService {
             }
             const response = await flw.Otp.create(payload)
 
-            if(!response) throw new Error("Unable to send verification sms.")
+            if(response.status == 'error') throw new Error("Unable to send verification sms.")
 
             console.log(response)
             const phoneVerification = {
@@ -260,16 +288,9 @@ class UserService {
             if((Date.now() > new Date(phoneVerification.expires).getTime()) || phoneVerification.token != token) {
                 throw new Error("Invalid or expired token.")
             }
-            // const createdCustomer = await Paystack.customer.create({
-            //     email: email,
-            //     first_name: firstname,
-            //     last_name: lastname,
-            //     phone: '+' + phoneNumber,
-            // })
-            // console.log(createdCustomer)
+
             const updatedUser = await userModel.findByIdAndUpdate(userId, {$set: {
                     isPhoneVerified: true,
-                // customerCode: createdCustomer.data.customer_code 
                 }
             }, { new: true })
             return updatedUser
@@ -279,9 +300,59 @@ class UserService {
         }
     }
 
+    public async createNubanAccount(userId: string, k_token: string): Promise<IUser | null> {
+        try {
+            const foundUser = await userModel.findById(userId).select("email firstname lastname phoneNumber middlename nubanAccountDetails")
+            if(!foundUser) throw new Error("Unable to create nuban.")
+
+            if(foundUser.nubanAccountDetails) throw new Error("Nuban has already been created")
+            const { email, firstname, lastname, middlename, phoneNumber, id } = foundUser
+            
+            /* Phone numbers are stored with their respective country codes e.g +234, 
+            the following line of code removes the country code which is the first 4 characters */
+            const formatPhoneNumber = '0' + phoneNumber?.substring(4)
+            console.log(formatPhoneNumber)
+
+            const response = await axios({
+                method: 'POST',
+                url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
+                data: {
+                    ServiceType :"ADMIN_CREATE_VIRTUAL_ACCOUNT",
+                    RequestRef: v4(),
+                    data: {
+                        email,
+                        phoneNumber: formatPhoneNumber,
+                        lastName: lastname,
+                        firstName: firstname,
+                        middleName: middlename || '',
+                        trackingReference: id
+                    }
+                },
+                headers: {
+                    Authorization: `Bearer ${k_token}`
+                }
+              })
+
+            const data = response.data
+            
+            //if axios call is successful but kuda status returns failed e'g 400 errors
+            if(!data.status) throw new Error(data.message)
+
+            await userModel.findByIdAndUpdate(userId, {
+                nubanAccountDetails: { nuban: data.data.accountNumber },
+                $set: { transferPermission: true }
+            })
+
+            return data.data
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to create nuban.')
+        }
+    }
+
     public async chackTagAvailability(username: string): Promise<boolean> {
         try {
             const foundUser = await userModel.findOne({ username }).select("username")
+            
             //If there is no existing user found with that username, that means it's available
             if(!foundUser) {
                 return true
@@ -296,30 +367,30 @@ class UserService {
 
     public async setUsername(username: string, id: string): Promise<IUser | null> {
         try {
-            //Still check if username already exists
             if(await userModel.findOne({username})) throw new Error('Username already exists')
 
             const updatedUser = await userModel.findByIdAndUpdate(id, { username }, { new: true }).select("username");
             if (!updatedUser) throw new Error('Unable to update username') 
               
-              return updatedUser
+            return updatedUser
         } catch (error: any) {
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || "Unable to update username")
         }
     }
 
-    public async setPhotoUrl(id: string, uploadResponse: ICloudinaryResponse): Promise<IUser | null> {
+    public async setPhotoUrl(id: string, uploadResponse: ICloudinaryResponse): Promise<IUser | any> {
         try {
 
-            const updatedUser = await userModel.findOneAndUpdate({ id },
-                { profilePhoto: { url: uploadResponse.secure_url, publicIid: uploadResponse.public_id } },
+            const updatedUser = await userModel.findByIdAndUpdate(id,
+                { $set: {profilePhoto: { url: uploadResponse.secure_url, publicIid: uploadResponse.public_id }}},
                 { new: true }
             )
+            console.log(updatedUser)
 
             if (!updatedUser) throw new Error('Unable to upload profile photo.')
 
-            return updatedUser
+            return updatedUser?.profilePhoto
         } catch (error: any) {
             console.log(translateError(error))
             throw new Error("Unable to upload profile photo.")
@@ -358,6 +429,34 @@ class UserService {
         }
     }
 
+    public async removeFavoritedRecicpient(userId: string, username: string): Promise<IUser | null> {
+        try {
+            const foundRecipient = await userModel.findOne({ username })
+            if(!foundRecipient) throw new Error("Invalid recipient tag.")
+            console.log(foundRecipient)
+
+            const updatedUser = await userModel.findByIdAndUpdate(userId, {$pull: {favoritedRecipients: foundRecipient.id }}, { new: true })
+
+            console.log(updatedUser)
+            return foundRecipient.id
+        } catch (error: any) {
+            throw new Error(translateError(error)[0] || 'Unable to unfavourite this recipient.')
+        }
+    }
+
+    public async retrieveFavorites(userId: string): Promise<IUser[]> {
+        try {
+            const foundUser = await userModel.findById(userId).select("favoritedRecipients")
+
+            if(!foundUser) throw new Error("Unable to retrieve favorites")
+
+            const favorites = await userModel.find({_id: {$in: foundUser.favoritedRecipients }}, { _id: 0, firstname: 1 }).select("firstname lastname isIdentityVerified profilePhoto.url username")
+            return favorites
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to retrieve favorites.')
+        }
+    }
+
     public async deactivateUserAccount(userId: string): Promise<void> {
         try {
             const foundUser = await userModel.findByIdAndUpdate(userId, {$set: {isAccountActive: false}}, { new: true })
@@ -368,84 +467,41 @@ class UserService {
         }
     }
 
-    //user services for identity verification webhook events
-    public async updateIdentityVerificationStatus(webhookRes: { customer_id: string, email: string, reason?: string }, status: string): Promise<void> {
+    public async getUserVerificationStatus(userId: string): Promise<any> {
         try {
-            if(status == 'failed'){
-                const updatedUser = await userModel.findOneAndUpdate(
-                    { id: webhookRes.customer_id }, 
-                    { identityerificationStatus: 
-                        { status, reason: webhookRes.reason || "Verification failed. That's all we know for now. Please contact support." }}, 
-                    { new: true });
-                console.log(updatedUser)
-                //Notify User of verification status
-                if(updatedUser) {
-                    const mailService = MailService.getInstance();
-                    mailService.sendMail({
-                        to: updatedUser.email,
-                        subject: 'RetroPay - Identity Verification Failed.',
-                        text: `Hey There, Your identity verification failed. Try again or contact support`,
-                        html: `<h3> Hey There, Your identity verification failed. </h3> <br> Try again or contact support if the issue persists. <br><br> Failure Reason: ${ webhookRes.reason || "Verification failed. That's all we know for now."}`,
-                    });
-                }
-            }
-
-            if(status == 'success'){
-                const updatedUser = await userModel.findOneAndUpdate(
-                    { id: webhookRes.customer_id }, 
-                    { identityerificationStatus:  { status, },
-                        isIdentityVerified: true,
-                        fundPermission: true,
-                        withdrawPermission: true,
-                        transferPermission: true
-                    }, 
-                    { new: true }
-                );
-
-                console.log(updatedUser)
-                //Notify User of verification status
-                if(updatedUser) {
-                    const mailService = MailService.getInstance();
-                    mailService.sendMail({
-                        to: updatedUser.email,
-                        subject: 'RetroPay - Identity Verification Successful.',
-                        text: `Hey There, Your identity verification was successful.`,
-                        html: `Hey There, Your identity verification was succesful. Head over to your Retro Pay Wallet and complete your account setup. Welcome aboard Retro Payer!`,
-                    });
-                }
-            }
+            const userStatus = await userModel.findById(userId, {_id: 0, verificationStatus: 1, isIdentityVerified: 1})
+            console.log(userStatus)
+            if(!userStatus) throw new Error("Unable to retrieve verification status.")
+            return userStatus
         } catch (error: any) {
-            console.log(translateError(error))
-            throw new Error(translateError(error)[0] || "Unable to verify identity")
+            throw new Error(translateError(error)[0] || 'Unable to retrieve verification status.')
         }
-    }    
-    
-    // public async verifyIdentity(reqData: { accountNumber: string, BVN: string, bankCode: string }, id: string): Promise<any> {
-    //     try {
-    //         const foundUser = await userModel.findById(id).exec()
+    }
 
-    //         if(!foundUser) throw new Error("unable to verify user identity.")
+   //user services for identity verification webhook events
+   public async startUserVerification(accountTag: string): Promise<void> {
+    try {
+        await userModel.findOneAndUpdate({username: accountTag}, { verificationStatus: 'pending' })
+    } catch (error) {
+        console.log(error)
+        //LogSnag call here
+    }
+   }
 
-    //         const result = await Paystack.customer.validate({
-    //             country: "NG",
-    //             type: "bank_account",
-    //             account_number: reqData.accountNumber,
-    //             bvn: reqData.BVN,
-    //             bank_code: reqData.bankCode,
-    //             first_name: foundUser.firstname,
-    //             last_name: foundUser.lastname,
-    //             id: foundUser.customerCode,
-    //             value: id
-    //         })
-    //         if(!result) throw new Error("unable to verify user identity.")
-
-    //         return result
-            
-    //     } catch (error: any) {
-    //         console.log(translateError(error.error))
-    //         throw new Error(translateError(error.error)[0] || translateError(error)[0] || 'unable to verify user identity.')
-    //     }
-    // }
+   public async updateUserVerification(accountTag: string, status: string): Promise<void> {
+    try {
+        switch(status) {
+            case 'rejected': 
+            case 'reviewNeeded': await userModel.findOneAndUpdate({username: accountTag}, {verificationStatus: status == "reviewNeeded" ? "in review" : status})
+                break;
+            case 'verified': await userModel.findOneAndUpdate({username: accountTag}, {verificationStatus: status, $set: { isIdentityVerified: true }})
+                break;
+        }
+    } catch (error: any) {
+        console.log(error)
+        //LogSnag call here
+    }
+   }
 }
 
 export default UserService
