@@ -9,7 +9,6 @@ import MailService from './services/sendEmails'
 import cors from 'cors'
 import helmet from 'helmet'
 import process from 'process'
-import smsService from './services/sms.service'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
 import corsOption from './utils/corsOption'
 class App {
@@ -73,12 +72,6 @@ class App {
         console.log('live smtp')
     }
 
-    private async connectVonage(): Promise<void> {
-        const smsInstance = new smsService
-        smsInstance.initialiseVonage()
-        console.log('live sms service')
-    }
-    
     public async createConnection(): Promise<void> {
         this.initialiseDatabaseConnection()
     }
