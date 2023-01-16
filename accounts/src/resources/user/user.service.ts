@@ -137,6 +137,39 @@ class UserService {
         }
     }
 
+    public async changePin(userId: string, oldPin: string, newPin: string, confirmPin: string): Promise<IUser> {
+        try{
+            if(newPin !== confirmPin) throw new Error("Pin does not match.")
+
+            if(!await this.validatePin(oldPin, userId)) throw new Error('Incorrect transaction pin')
+
+            const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(newPin, 10)}, {new: true})
+            if(!updatedUser) throw new Error('Unable to change transaction pin')
+
+            return updatedUser
+        } catch(error: any){
+            console.log(translateError(error))
+            throw new Error(translateError(error)[0] || 'Unable to set transaction pin.')
+        }
+    }
+
+    private async validatePin(formPin: string, userId: string):Promise<boolean> {
+        try {
+          const foundUser = await userModel.findById(userId)
+      
+          if(!foundUser) throw new Error("Error validating your pin")
+          
+          if (await foundUser.isValidPin(formPin)) {
+            return true;
+          }
+          return false;
+          
+        } catch (error) {
+          console.log(error)
+          throw new Error('Unable to validate pin.')
+        }
+      }
+
     public async forgotPassword(reqData: { email: string }): Promise<object | null> {
         try {
             const foundUser: any = await userModel.findOne({email: reqData.email})
