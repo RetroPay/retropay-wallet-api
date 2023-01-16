@@ -49,9 +49,15 @@ const verifyIdentity = Joi.object({
     bankCode: Joi.string().required()
 })
 
-const sertPin = Joi.object({
+const setPin = Joi.object({
     pin: Joi.string().required().min(4).max(4),
     confirmPin: Joi.string().required().min(4).max(4)
+})
+
+const changePin = Joi.object({
+    oldPin: Joi.string().required().min(4).max(4),
+    newPin: Joi.string().required().min(4).max(4),
+    confirmNewPin: Joi.string().required().min(4).max(4),
 })
 
 const addFavorites = Joi.object({
@@ -73,7 +79,8 @@ export default {
     verifyPhone,
     setupUsername,
     verifyIdentity,
-    sertPin,
+    setPin,
+    changePin,
     addFavorites,
     removeFavorite,
 }
