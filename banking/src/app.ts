@@ -11,6 +11,7 @@ import helmet from 'helmet'
 import process from 'process'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
 import corsOption from './utils/corsOption'
+import rateLimit from 'express-rate-limit'
 class App {
     public express: Application
     public port: number
@@ -33,6 +34,12 @@ class App {
         this.express.use(express.urlencoded({ extended: false }))
         this.express.use(compression())
         this.express.use(ExpressMongoSanitize())
+        // this.express.use(rateLimit({
+        //     windowMs: 10*60*1000,
+        //     max: 500,
+        //     standardHeaders: false,
+        //     legacyHeaders: false,
+        // }))
     }
 
     private initialiseControllers(controllers: IController[]): void {

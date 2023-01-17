@@ -32,11 +32,12 @@ class App {
         this.express.use(express.json())
         this.express.use(express.urlencoded({ extended: true }))
         this.express.use(compression())
+        //1000 requests in an hour
         this.express.use(rateLimit({
-            windowMs: 10*60*1000,
-            max: 50,
+            windowMs: 60*60*1000,
+            max: 1000,
             standardHeaders: false,
-            legacyHeaders: false
+            legacyHeaders: false,
         }))
     }
 
@@ -63,7 +64,8 @@ class App {
         this.express.use("/banking", proxy(banking_host != undefined ? banking_host : "http://localhost:4001", {
             proxyErrorHandler: function(err, res, next) {
                 return res.status(503).send('Service Unavailable');
-            }
+            },
+            https: process.env.NODE_ENV == 'development' ? true : false
         }))
         
         /* This particular proxy only exists because no optimal solution was found for parsing request body for image upload. 
@@ -75,13 +77,16 @@ class App {
             proxyErrorHandler: function(err, res, next) {
                 return res.status(503).send('Service Unavailable');
             },
-            parseReqBody: false
+            parseReqBody: false,
+            https: process.env.NODE_ENV == 'development' ? true : false
         }))
 
         this.express.use("/account", proxy(account_host != undefined ? account_host : "http://localhost:4002", {
             proxyErrorHandler: function(err, res, next) {
+                console.log(err)
                 return res.status(503).send('Service Unavailable');
             },
+            https: process.env.NODE_ENV == 'development' ? true : false
         }))
 
         

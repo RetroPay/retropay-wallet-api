@@ -54,14 +54,14 @@ class UserService {
             const { 
                 username, isPhoneVerified, isEmailVerified, 
                 isIdentityVerified, transferPermission, withdrawPermission, 
-                fundPermission, favoritedRecipients, _id
+                fundPermission, _id
             } = newUser
 
             return { token: createToken(newUser), user: {
                 firstname, lastname, email,
                 username, isPhoneVerified, isEmailVerified,
                 isIdentityVerified, transferPermission, withdrawPermission, 
-                fundPermission, favoritedRecipients, _id
+                fundPermission, _id
             } }
 
         } catch (error: any) {
@@ -153,11 +153,34 @@ class UserService {
         }
     }
 
+    public async forgotPin(userId: string, password: string, newPin: string, confirmPin: string): Promise<IUser> {
+        try{
+            if(newPin !== confirmPin) throw new Error("Pin does not match.")
+
+            const foundUser = await userModel.findById(userId)
+
+            if(!foundUser) throw new Error("Unable to change transaction pin.")
+
+            if(!await foundUser.isValidPassword(password)) throw new Error('Incorrect password')
+
+            const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(newPin, 10)}, {new: true})
+            
+            if(!updatedUser) throw new Error('Unable to change transaction pin')
+
+            return updatedUser
+        } catch(error: any){
+            console.log(translateError(error))
+            throw new Error(translateError(error)[0] || 'Unable to change transaction pin.')
+        }
+    }
+
     private async validatePin(formPin: string, userId: string):Promise<boolean> {
         try {
           const foundUser = await userModel.findById(userId)
-      
+
           if(!foundUser) throw new Error("Error validating your pin")
+
+          if(!foundUser.pin) throw new Error("Create a transaction pin to continue")
           
           if (await foundUser.isValidPin(formPin)) {
             return true;

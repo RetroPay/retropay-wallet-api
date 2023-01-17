@@ -50,6 +50,7 @@ class UserController implements IController {
 
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.setPin), this.setPin)
         this.router.patch('/user/pin/change', authenticatedMiddleware, validationMiddleware(validate.changePin), this.changeTransactionPin)
+        this.router.patch('/user/pin/forgot', authenticatedMiddleware, validationMiddleware(validate.forgotPin), this.forgotTransactionPin)
         this.router.get("/user/:username/resolve", authenticatedMiddleware, this.resolveAccountTag)
         this.router.post("/user/profile/favorite-recipients/add", authenticatedMiddleware, validationMiddleware(validate.addFavorites), this.favoriteRecipient)
         this.router.delete("/user/profile/favorite-recipients/delete", authenticatedMiddleware, validationMiddleware(validate.removeFavorite), this.unfavoriteRecipient)
@@ -108,6 +109,7 @@ class UserController implements IController {
 
     private getUserDetails = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
+            console.log(req.ip)
             const user = await this.UserService.getUser(req.user)
 
             res.status(200).json({
@@ -162,6 +164,27 @@ class UserController implements IController {
         try {
             const {  oldPin, newPin, confirmNewPin } = req.body
             const updatedUser = await this.UserService.changePin(req.user, oldPin, newPin, confirmNewPin)
+
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'USER_CREATE_PIN',
+                data: {
+                    id: req.user,
+                    pin: updatedUser.pin
+                }
+            }));
+            res.status(201).json({
+                success: true,
+                message: "Transaction pin changed successfully",
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private forgotTransactionPin = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
+        try {
+            const {  password, newPin, confirmNewPin } = req.body
+            const updatedUser = await this.UserService.forgotPin(req.user, password, newPin, confirmNewPin)
 
             publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'USER_CREATE_PIN',

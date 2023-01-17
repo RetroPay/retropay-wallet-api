@@ -68,6 +68,12 @@ const removeFavorite = Joi.object({
     recipientTag: Joi.string().required()
 })
 
+const forgotPin = Joi.object({
+    password: Joi.string().min(6).required(),
+    newPin: Joi.string().required().min(4).max(4),
+    confirmNewPin: Joi.string().required().min(4).max(4),
+})
+
 export default { 
     register,
     login,
@@ -83,4 +89,5 @@ export default {
     changePin,
     addFavorites,
     removeFavorite,
+    forgotPin
 }
