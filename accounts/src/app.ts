@@ -11,6 +11,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import process from 'process'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
+import rateLimit from 'express-rate-limit'
 
 class App {
     public express: Application
@@ -32,6 +33,12 @@ class App {
         this.express.use(express.json())
         this.express.use(compression())
         this.express.use(ExpressMongoSanitize())
+        // this.express.use(rateLimit({
+        //     windowMs: 10*60*1000,
+        //     max: 500, //Accepts 500
+        //     standardHeaders: false,
+        //     legacyHeaders: false,
+        // }))
     }
 
     private initialiseControllers(controllers: IController[]): void {
