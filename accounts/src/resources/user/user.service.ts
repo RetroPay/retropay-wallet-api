@@ -82,7 +82,7 @@ class UserService {
                 isIdentityVerified, transferPermission, withdrawPermission, 
                 fundPermission, favoritedRecipients, _id,
                 firstname, lastname, email, profilePhoto,
-                verificationStatus
+                verificationStatus, nubanAccountDetails
             } = foundUser
 
             if (await foundUser.isValidPassword(reqData.password)) { 
@@ -92,7 +92,7 @@ class UserService {
                         firstname, lastname, email,
                         username, isPhoneVerified, isEmailVerified,
                         isIdentityVerified, transferPermission, withdrawPermission, 
-                        fundPermission, favoritedRecipients, profilePhoto,
+                        fundPermission, profilePhoto, nubanAccountDetails,
                         verificationStatus
                     } 
                 }
