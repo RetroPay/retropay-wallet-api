@@ -285,54 +285,54 @@ class WalletService {
   
       if (!await this.validatePin(formPin, userId)) throw new Error("Transfer failed - Incorrect transaction pin")
 
-      await redisClient.connect()
+      // await redisClient.connect()
 
-      const response = await axios({
-          method: 'post',
-          url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
-          data: {
-            "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
-            "requestRef": v4(),
-            data: {
-              trackingReference: referenceId, //Unique identifier of user with Kuda
-              beneficiaryAccount: foundRecipient?.nubanAccountDetails?.nuban,
-              amount: amount * 100, //amount in Kobo
-              narration: comment,
-              beneficiaryBankCode: await redisClient.get("kudaBankCode") || '999129',
-              beneficiaryName,
-              senderName: foundUser.lastname + ' ' + foundUser.firstname,
-            }
-          },
-          headers: {
-            "Authorization": `Bearer ${k_token}`
-          }
-        })
+      // const response = await axios({
+      //     method: 'post',
+      //     url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+      //     data: {
+      //       "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+      //       "requestRef": v4(),
+      //       data: {
+      //         trackingReference: referenceId, //Unique identifier of user with Kuda
+      //         beneficiaryAccount: foundRecipient?.nubanAccountDetails?.nuban,
+      //         amount: amount * 100, //amount in Kobo
+      //         narration: comment,
+      //         beneficiaryBankCode: await redisClient.get("kudaBankCode") || '999129',
+      //         beneficiaryName,
+      //         senderName: foundUser.lastname + ' ' + foundUser.firstname,
+      //       }
+      //     },
+      //     headers: {
+      //       "Authorization": `Bearer ${k_token}`
+      //     }
+      //   })
 
-        await redisClient.disconnect();
+      //   await redisClient.disconnect();
   
-        const data = response.data
-        console.log(data)
+      //   const data = response.data
+      //   console.log(data)
             
-        //if axios call is successful but kuda status returns failed e'g 400 errors
-        if(!data.status) {
-          const { responseCode } = data
+      //   //if axios call is successful but kuda status returns failed e'g 400 errors
+      //   if(!data.status) {
+      //     const { responseCode } = data
 
-          switch (responseCode) {
-            case '06' : throw new Error('Transfer failed - processng error.')
-              break;
-            case '52' : throw new Error('Transfer failed - Inactive recipient account.')
-              break;
-            case '23' : throw new Error('Transfer failed - A PND is active on your account. Kindly contact support.')
-              break;
-            case '51' : throw new Error('Transfer failed - Insufficient funds on account.')
-              break;
-            case '93' : throw new Error('Transfer failed - Cash limit exceeded for your account tier.')
-              break;
-            case 'k91' : throw new Error('Transfer error - Transaction timeout, Kindly contact support to confirm transaction status.')
-              break;
-            default: throw new Error(data.message)
-          }
-        }
+      //     switch (responseCode) {
+      //       case '06' : throw new Error('Transfer failed - processng error.')
+      //         break;
+      //       case '52' : throw new Error('Transfer failed - Inactive recipient account.')
+      //         break;
+      //       case '23' : throw new Error('Transfer failed - A PND is active on your account. Kindly contact support.')
+      //         break;
+      //       case '51' : throw new Error('Transfer failed - Insufficient funds on account.')
+      //         break;
+      //       case '93' : throw new Error('Transfer failed - Cash limit exceeded for your account tier.')
+      //         break;
+      //       case 'k91' : throw new Error('Transfer error - Transaction timeout, Kindly contact support to confirm transaction status.')
+      //         break;
+      //       default: throw new Error(data.message)
+      //     }
+      //   }
 
 
         //Log new transaction
@@ -342,12 +342,12 @@ class WalletService {
           amount,
           transactionType: 'transfer',
           status: 'pending',
-          referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
-          // referenceId: 'test-transfer' + v4(),
+          // referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
+          referenceId: 'test-transfer' + v4(),
           comment,
           recepientTag: fundRecipientAccountTag,
           senderTag,
-          responseCode: data.responseCode,
+          // responseCode: data.responseCode,
           beneficiaryName,
           currency: 'NGN',
           processingFees: 5,
@@ -355,8 +355,8 @@ class WalletService {
             
         return {
           amount, 
-          transactionId: data.transactionReference,
-          // transactionId: newTransaction.referenceId,
+          // transactionId: data.transactionReference,
+          transactionId: newTransaction.referenceId,
           fundRecipientAccountTag,
           transactionType: 'Transfer',
           createdAt: newTransaction?.createdAt
