@@ -27,7 +27,7 @@ class UserService {
 
     public async getUser(id: string): Promise<IUser | Error> {
         try {
-            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto username isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
+            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
             
             if(!user) throw new Error("Unable to retrieve details")
 
