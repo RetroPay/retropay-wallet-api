@@ -4,7 +4,7 @@ import Token from '@/utils/interfaces/token.interface';
 
 export const createToken = (user: IUser): string => {
     return jwt.sign({ id: user._id }, process.env.JWT_SECRET as jwt.Secret, {
-        expiresIn: "1d",
+        expiresIn: "10m",
     });
 };
 
@@ -15,9 +15,8 @@ export const verifyToken = async (
         jwt.verify(
             token,
             process.env.JWT_SECRET as jwt.Secret,
-            (err, payload) => {
-                if (err) return reject(err);
-
+            (err, payload) => { 
+                if (err) return reject(process.env.NODE_ENV == 'development' ? 'Session Expired - Unauthorized' : 'Unauthorized');
                 resolve(payload as Token);
             }
         );

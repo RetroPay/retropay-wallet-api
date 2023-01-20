@@ -34,6 +34,7 @@ class UserController implements IController {
         //Auth routes
         this.router.post('/auth/user/signup', validationMiddleware(validate.register), this.register)
         this.router.post('/auth/user/login', validationMiddleware(validate.login), this.login)
+        this.router.post('/auth/user/reauthenticate', validationMiddleware(validate.authByPin), authenticatedMiddleware, this.authenticateWithPin)
         this.router.post('/auth/user/forgot-password', validationMiddleware(validate.forgotPassword), this.forgotPassword)
         this.router.patch('/auth/user/reset-password', validationMiddleware(validate.resetPassword), this.resetPassword)
         this.router.patch('/auth/user/change-password', authenticatedMiddleware, validationMiddleware(validate.changePassword) ,this.changePassword)
@@ -109,7 +110,6 @@ class UserController implements IController {
 
     private getUserDetails = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            console.log(req.ip)
             const user = await this.UserService.getUser(req.user)
 
             res.status(200).json({
@@ -133,6 +133,22 @@ class UserController implements IController {
                 message: "Login successful",
                 data: {
                     user
+                }
+            })
+        } catch (error: any) {
+            console.log(error)
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private authenticateWithPin = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const token: IUser = await this.UserService.authenticateWithPin(req.user, req.body.pin)
+            res.status(200).json({
+                success: true,
+                message: "Authentication successful",
+                data: {
+                    token
                 }
             })
         } catch (error: any) {

@@ -74,9 +74,14 @@ const forgotPin = Joi.object({
     confirmNewPin: Joi.string().required().min(4).max(4),
 })
 
+const authByPin = Joi.object({
+    pin: Joi.string().required().min(4).max(4)
+})
+
 export default { 
     register,
     login,
+    authByPin,
     changePassword,
     forgotPassword,
     resetPassword,

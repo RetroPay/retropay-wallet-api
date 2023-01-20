@@ -11,7 +11,6 @@ async function kudaTokenHandler(
     try {
         await redisClient.connect()
         let k_token = await redisClient.get("K_TOKEN")
-        console.log(k_token)
         if(!k_token) {
             const response = await axios({
                 method: 'POST',
@@ -21,8 +20,6 @@ async function kudaTokenHandler(
                     apiKey: process.env.KUDA_PRIVATE_KEY
                 }
               })
-
-              console.log(response)
             
             const accessToken = response.data
             k_token = accessToken
@@ -34,7 +31,6 @@ async function kudaTokenHandler(
         next()
     } catch (error) {
         await redisClient.disconnect();
-        console.log(error)
         return next(new HttpException(500, 'An error occured. Try again later'))
     }
 }

@@ -8,8 +8,6 @@ function validateEnv(): void {
         MONGODB_URI_CLOUD: str(),
         MONGODB_URI: str(),
         PORT: port({default: 5000}),
-        // GATEWAY_SECRET_KEY: str(),
-        // GATEWAY_SUB_ACCT: str(),
         JWT_SECRET: str(),
         OTP_DIGITS: str(),
         SMTP_HOST: str(),
@@ -24,10 +22,9 @@ function validateEnv(): void {
         EXCHANGE_NAME: str(),
         MESSAGE_BROKER_URL: str(),
         ACCOUNT_BINDING_KEY: str(),
-        QUEUE_NAME: str()
-        // GATEWAY_SPLIT_CODE: str(),
-        // FLW_PUBLIC_KEY: str(),
-        // FLW_SECRET_KEY: str()
+        QUEUE_NAME: str(),
+        FLW_PUBLIC_KEY: str(),
+        FLW_SECRET_KEY: str()
     })
 }
 

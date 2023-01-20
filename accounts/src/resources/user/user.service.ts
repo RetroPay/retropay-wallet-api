@@ -141,10 +141,10 @@ class UserService {
         try{
             if(newPin !== confirmPin) throw new Error("Pin does not match.")
 
-            if(!await this.validatePin(oldPin, userId)) throw new Error('Incorrect transaction pin')
+            if(!await this.validatePin(oldPin, userId)) throw new Error('Incorrect transaction pin.')
 
             const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(newPin, 10)}, {new: true})
-            if(!updatedUser) throw new Error('Unable to change transaction pin')
+            if(!updatedUser) throw new Error('Unable to change transaction pin.')
 
             return updatedUser
         } catch(error: any){
@@ -161,16 +161,30 @@ class UserService {
 
             if(!foundUser) throw new Error("Unable to change transaction pin.")
 
-            if(!await foundUser.isValidPassword(password)) throw new Error('Incorrect password')
+            if(!await foundUser.isValidPassword(password)) throw new Error('Incorrect password.')
 
             const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(newPin, 10)}, {new: true})
             
-            if(!updatedUser) throw new Error('Unable to change transaction pin')
+            if(!updatedUser) throw new Error('Unable to change transaction pin.')
 
             return updatedUser
         } catch(error: any){
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to change transaction pin.')
+        }
+    }
+
+    public async authenticateWithPin(userId: string, pin: string): Promise<IUser | any> {
+        try {
+            const foundUser = await userModel.findById(userId)
+            if(!foundUser) throw new Error('Unable to validate your pin')
+
+            if(!await foundUser.isValidPin(pin)) throw new Error('Incorrect transaction pin.')
+
+            return createToken(foundUser)
+        } catch (error) {
+            console.log(translateError(error))
+            throw new Error(translateError(error)[0] || 'Request failed, Try signing in.')
         }
     }
 
