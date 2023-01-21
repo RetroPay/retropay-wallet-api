@@ -24,13 +24,13 @@ class WebhookController implements IController {
 
         res.sendStatus(200)
         console.log(req.body)
-        const { eventType  } = req.body
-        const  {payingBank,  amount, transactionReference, narrations, accountName, accountNumber, transactionType, senderName, recipientName, sessionId} = req.body
+        const { transactionType  } = req.body
+        const  {payingBank,  amount, transactionReference, narrations, accountName, accountNumber, senderName, recipientName, sessionId} = req.body
 
-        switch (eventType ) {
-            case 'Recieve.money': this.walletService.recieveFunds(payingBank,  amount, transactionReference, narrations, accountName, accountNumber, transactionType, senderName, recipientName, sessionId)
+        switch (transactionType.toLowerCase() ) {
+            case 'credit': this.walletService.recieveFunds(payingBank,  amount, transactionReference, narrations, accountName, accountNumber, transactionType, senderName, recipientName, sessionId)
                 break;
-            case 'Money.transfer': this.walletService.acknowledgeFundsTransfer(amount, transactionReference, sessionId)
+            case 'debit': this.walletService.acknowledgeFundsTransfer(amount, transactionReference, sessionId)
                 break;
             default:
                 break;
