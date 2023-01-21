@@ -88,20 +88,20 @@ class UserService {
             if (await foundUser.isValidPassword(reqData.password)) { 
                 return { 
                     token: createToken(foundUser), 
-                    user: {
-                        firstname, lastname, email,
-                        username, isPhoneVerified, isEmailVerified,
-                        isIdentityVerified, transferPermission, withdrawPermission, 
-                        fundPermission, profilePhoto, nubanAccountDetails,
-                        verificationStatus
-                    } 
+                    // user: {
+                    //     firstname, lastname, email,
+                    //     username, isPhoneVerified, isEmailVerified,
+                    //     isIdentityVerified, transferPermission, withdrawPermission, 
+                    //     fundPermission, profilePhoto, nubanAccountDetails,
+                    //     verificationStatus
+                    // } 
                 }
             }
             
-            throw new Error("Incorrect username or pasword")
+            throw new Error("Incorrect username or password.")
         } catch (error: any) {
             console.log(translateError(error))
-            throw new Error(translateError(error)[0] || 'Unable to login')
+            throw new Error(translateError(error)[0] || 'Unable to sign you in, Please try again.')
         }
     }
 
