@@ -5,7 +5,7 @@ import WalletService from "@/resources/wallet/wallet.service"
 import crypto from "crypto"
 
 class WebhookController implements IController {
-    public path = '/webhooks'
+    public path = '/webhook'
     public router = Router()
     private walletService = new WalletService()
 
