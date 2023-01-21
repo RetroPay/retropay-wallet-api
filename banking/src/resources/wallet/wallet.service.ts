@@ -387,55 +387,55 @@ class WalletService {
 
         if (await this.validatePin(formPin, userId) == false) throw new Error("Transfer failed - Incorrect transaction pin")
 
-        console.log(referenceId)
-        const response = await axios({
-          method: 'post',
-          url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
-          data: {
-            "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
-            "requestRef": v4(),
-            data: {
-              trackingReference: referenceId, //Unique identifier of user with Kuda
-              beneficiaryAccount,
-              amount: amount * 100, //amount in Kobo
-              narration: comment,
-              beneficiaryBankCode,
-              beneficiaryName,
-              senderName: foundUser.lastname + ' ' + foundUser.firstname,
-              nameEnquiryId,
-            }
-          },
-          headers: {
-            "Authorization": `Bearer ${k_token}`
-          }
-        })
+        // const response = await axios({
+        //   method: 'post',
+        //   url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+        //   data: {
+        //     "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+        //     "requestRef": v4(),
+        //     data: {
+        //       trackingReference: referenceId, //Unique identifier of user with Kuda
+        //       beneficiaryAccount,
+        //       amount: amount * 100, //amount in Kobo
+        //       narration: comment,
+        //       beneficiaryBankCode,
+        //       beneficiaryName,
+        //       senderName: foundUser.lastname + ' ' + foundUser.firstname,
+        //       nameEnquiryId,
+        //     }
+        //   },
+        //   headers: {
+        //     "Authorization": `Bearer ${k_token}`
+        //   }
+        // })
   
-        const data = response.data
-        console.log(data)
+        // const data = response.data
+        // console.log(data)
             
-        //if axios call is successful but kuda status returns failed e'g 400 errors
-        if(!data.status) {
-          const { responseCode } = data
+        // //if axios call is successful but kuda status returns failed e'g 400 errors
+        // if(!data.status) {
+        //   const { responseCode } = data
 
-          switch (responseCode) {
-            case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
-              break;
-            case '-2' : throw new Error('Transfer failed.')
-              break;
-            case '-3' : throw new Error('Transfer failed - Unable to process transaction')
-              break;
-            case '91' : throw new Error('Transfer failed - Request timeout.')
-              break;
-            default: throw new Error('Unable to process transaction')
-          }
-        }
+        //   switch (responseCode) {
+        //     case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
+        //       break;
+        //     case '-2' : throw new Error('Transfer failed.')
+        //       break;
+        //     case '-3' : throw new Error('Transfer failed - Unable to process transaction')
+        //       break;
+        //     case '91' : throw new Error('Transfer failed - Request timeout.')
+        //       break;
+        //     default: throw new Error('Unable to process transaction')
+        //   }
+        // }
 
         const newTransaction = await walletModel.create({
           fundOriginatorAccount: userId,
           amount,
           transactionType: 'withdrawal',
           status: 'pending',
-          referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
+          referenceId: 'test-withdrawal' + v4(),
+          // referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
           processingFees: 20,
           comment,
           beneficiaryBankCode, 
@@ -443,13 +443,14 @@ class WalletService {
           beneficiaryName,
           nameEnquiryId,
           beneficiaryAccount,
-          responseCode: data.responseCode,
+          // responseCode: data.responseCode,
           currency: 'NGN'
         });
     
         return {
           amount, 
-          transactionId: data.transactionReference, 
+          // transactionId: data.transactionReference,
+          transactionId: newTransaction.referenceId,
           beneficiaryName, 
           beneficiaryBank,
           transactionType: 'Withdrawal',
@@ -462,7 +463,7 @@ class WalletService {
       }
   }
 
-  public async getTransactionStatus(userId: string, k_token: string, transactionReference: string): Promise<any>{
+  public async getTransactionStatus(userId: string, k_token: string, transactionReference: string): Promise<any> {
     try{
       const foundTransaction = await walletModel.findOne({referenceId: transactionReference})
       if(!foundTransaction) throw new Error("Record not found.")
