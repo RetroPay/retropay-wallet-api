@@ -19,7 +19,7 @@ class WebhookController implements IController {
 
     private processWebhooks = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
        try {
-        console.log(req.body)
+        console.log(req.body, req.headers)
         await webhookModel.create(req.body)
 
         res.sendStatus(200)
