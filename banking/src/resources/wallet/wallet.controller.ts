@@ -119,7 +119,7 @@ class WalletController implements IController {
     private getWalletBalance = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             console.log(req.user)
-            const balance = await this.walletService.getAccountBalance(req.referenceId, req.k_token)
+            const balance = await this.walletService.getAccountBalance(req.referenceId, req.k_token, req.user)
             
             res.status(200).json({
                 success: true,

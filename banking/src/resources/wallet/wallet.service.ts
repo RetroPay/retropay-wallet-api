@@ -179,12 +179,14 @@ class WalletService {
   public async calculateWalletBalance(userId: string): Promise<number> {
     try {
       const credits = await walletModel.aggregate([
-        { $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        // { $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        { $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId)} },
         { $group: { _id: null, totalCredits: { $sum:'$amount'} } }
       ])
 
       const debits = await walletModel.aggregate([
-        { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        // { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId)} },
         { $group: { _id: null, totalDebits: { $sum:'$amount'} } }
       ])
 
@@ -199,32 +201,34 @@ class WalletService {
     }
   }
 
-  public async getAccountBalance(referenceId: string, k_token: string): Promise<any> {
+  public async getAccountBalance(referenceId: string, k_token: string, userId: string): Promise<any> {
     try {
 
       const foundUser = await userModel.findOne({referenceId})
       if(!foundUser?.nubanAccountDetails) throw new Error("You don't have an account number yet. Kindly create a nuban account to get started.")
-      const response = await axios({
-        method: 'POST',
-        url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
-        data: {
-            ServiceType :"RETRIEVE_VIRTUAL_ACCOUNT_BALANCE",
-            RequestRef: v4(),
-            data: {
-              trackingReference: referenceId,
-            }
-        },
-        headers: {
-            Authorization: `Bearer ${k_token}`
-        }
-      })
+      // const response = await axios({
+      //   method: 'POST',
+      //   url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
+      //   data: {
+      //       ServiceType :"RETRIEVE_VIRTUAL_ACCOUNT_BALANCE",
+      //       RequestRef: v4(),
+      //       data: {
+      //         trackingReference: referenceId,
+      //       }
+      //   },
+      //   headers: {
+      //       Authorization: `Bearer ${k_token}`
+      //   }
+      // })
 
-      const data = response.data
-      console.log(data)
+      // const data = response.data
+      // console.log(data)
 
-      if(!data.status) throw new Error(data.message)
+      // if(!data.status) throw new Error(data.message)
 
-      return data.data.availableBalance
+      // return data.data.availableBalance
+
+      return this.calculateWalletBalance(userId)
     } catch (error) {
       console.log(error)
       throw new Error(translateError(error)[0] || 'Transfer failed - Unable to process transfer.')
