@@ -35,8 +35,6 @@ class WebhookController implements IController {
             default:
                 break;
         }
-
-        
        } catch (error) {
             console.log(error)
        } 
