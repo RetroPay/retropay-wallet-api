@@ -3,7 +3,7 @@ import { v4 } from "uuid"
 import userModel from "../user/user.model"
 import IWallet from "./wallet.interface"
 import translateError from "@/helpers/mongod.helper"
-import mongoose, { StringExpressionOperatorReturningBoolean } from "mongoose"
+import mongoose from "mongoose"
 import axios from "axios"
 import { redisClient } from "../../server"
 import IUser from "../user/user.interface"
@@ -617,7 +617,9 @@ class WalletService {
 
       // Store current Kuda bank code
       await redisClient.connect()
+
       await redisClient.set("kudaBankCode", kudaBankObject.bankCode)
+      
       await redisClient.disconnect();
 
       return response.data.data.banks
