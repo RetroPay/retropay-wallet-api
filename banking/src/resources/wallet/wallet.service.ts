@@ -457,6 +457,7 @@ class WalletService {
           transactionId: newTransaction.referenceId,
           beneficiaryName, 
           beneficiaryBank,
+          beneficiaryAccount,
           transactionType: 'Withdrawal',
           createdAt: newTransaction?.createdAt
         }
@@ -631,11 +632,11 @@ class WalletService {
 
   //KUDA WEBHOOK SERVICES
 
-  public async recieveFunds(payingBank: string,  amount: string, transactionReference: string, narrations: string, accountName: string, accountNumber: string, transactionType: string, senderName: string, recipientName: string, sessionId: string): Promise<void> {
+  public async recieveFunds(payingBank: string,  amount: string | number, transactionReference: string, narrations: string, accountName: string, accountNumber: string, transactionType: string, senderName: string, recipientName: string, sessionId: string): Promise<IWallet | any> {
     try {
       const foundRecipient = await userModel.findOne({'nubanAccountDetails.nuban': accountNumber})
       console.log(foundRecipient)
-      if(!foundRecipient) throw new Error('No account with that nuban found')
+      if(!foundRecipient) throw new Error('No account with nuban found')
 
       /* 
         When this webhook is fired, it is due to either a retro wallet user sent funds to the recipient or it's a transfer from an external bank (wallet funding).
@@ -648,36 +649,37 @@ class WalletService {
         { new: true }
       )
 
-      // If paying bank isn't kuda bank, charge a NGN100 deposit fee
+      // If paying bank isn't kuda bank, charge a NGN100 deposit fee and create new transaction log for funding transaction
       if(!payingBank.includes('kuda')) {
-        await redisClient.connect()
+        // await redisClient.connect()
 
-        const response = await axios({
-            method: 'post',
-            url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
-            data: {
-              "serviceType": "WITHDRAW_VIRTUAL_ACCOUNT",
-              "requestRef": v4(),
-              data: {
-                trackingReference: foundRecipient.referenceId, //Unique identifier of user with Kuda
-                amount: 100 * 100, //amount in Kobo
-                narration: 'Retro Wallet deposit processing fee.',
-              }
-            },
-            headers: {
-              "Authorization": `Bearer ${await redisClient.get('K_TOKEN')}`
-            }
-          })
+        // const response = await axios({
+        //     method: 'post',
+        //     url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+        //     data: {
+        //       "serviceType": "WITHDRAW_VIRTUAL_ACCOUNT",
+        //       "requestRef": v4(),
+        //       data: {
+        //         trackingReference: foundRecipient.referenceId, //Unique identifier of user with Kuda
+        //         amount: 100 * 100, //amount in Kobo
+        //         narration: 'Retro Wallet deposit processing fee.',
+        //       }
+        //     },
+        //     headers: {
+        //       "Authorization": `Bearer ${await redisClient.get('K_TOKEN')}`
+        //     }
+        //   })
 
-          await redisClient.disconnect();
+        //   await redisClient.disconnect();
 
           // Log transaction if it is a funding transaction
           const newTransaction = await walletModel.create({
               fundRecipientAccount: foundRecipient._id,
               amount: (Number(amount)/100), //convert from kobo
-              transactionType: 'fund',
+              transactionType: 'funding',
               status: 'success',
-              referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
+              // referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
+              referenceId: 'test-funding' + v4(),
               comment: narrations,
               beneficiaryName: accountName,
               beneficiaryAccount: accountNumber,
@@ -686,6 +688,28 @@ class WalletService {
               processingFees: 100
           })
           console.log(newTransaction)
+
+          return {
+            amount,
+            // transactionId: data.transactionReference,
+            transactionId: newTransaction?.referenceId,
+            senderName: senderName, 
+            senderBank: payingBank,
+            // beneficiaryAccount: newTransaction.beneficiaryAccount,
+            transactionType: 'Funding',
+            createdAt: newTransaction.createdAt,
+            id: foundRecipient.referenceId
+          }
+      }
+
+      return {
+        amount,
+        // transactionId: data.transactionReference,
+        transactionId: updatedTransaction?.referenceId,
+        senderTag: updatedTransaction?.senderTag,
+        transactionType: 'Transfer',
+        createdAt: updatedTransaction?.createdAt,
+        id: foundRecipient.referenceId
       }
 
     } catch (error) {

@@ -137,6 +137,18 @@ class WalletController implements IController {
         try {
             const { pin, amount, recipientTag, comment, beneficiaryName } = req.body
             const transaction = await this.walletService.transferFunds(pin, amount, recipientTag, comment, req.user, req.username, req.referenceId, req.k_token, beneficiaryName)
+            
+            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+                event: 'QUEUE_NOTIFICATION',
+                data: {
+                    id: req.referenceId,
+                    trType: 'transfer-out',
+                    amount: transaction.amount,
+                    recipientTag: transaction.fundRecipientAccountTag,
+                    timestamp: transaction.createdAt
+                }
+            }));
+
             res.status(201).json({
                 success: true,
                 message: "Transaction successfull",
@@ -156,6 +168,18 @@ class WalletController implements IController {
 
             console.log(req.body)
             const transaction = await this.walletService.withdrawFunds(pin, req.referenceId, req.user, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryBank, beneficiaryName, nameEnquiryId, req.k_token)
+            
+            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+                event: 'QUEUE_NOTIFICATION',
+                data: {
+                    id: req.referenceId,
+                    trType: 'withdrawal',
+                    amount: transaction.amount,
+                    recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
+                    timestamp: transaction.createdAt
+                }
+            }));
+            
             res.status(201).json({
                 success: true,
                 message: "Transaction successfull",

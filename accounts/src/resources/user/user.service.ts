@@ -13,15 +13,46 @@ import { v4 } from "uuid"
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
-        payload = JSON.parse(payload)
-        const { data, event } = payload
+        try {
+            payload = JSON.parse(payload)
+            const { data, event } = payload
 
-        switch (event) {
-            case 'USER_INITIALISE_FUND_WALLET': console.log("User just initialised wallet funding")
-                break;
+            if(!data || !event) throw new Error('==== Invalid Payload ====')
+
+            switch (event) {
+                case 'QUEUE_NOTIFICATION': await this.queueNotification(data);
+                    break;
+                default: console.log("== invalid event == ")
+                    break;
+            }
+        } catch (error) {
+            console.log(error)
+        }
         
-            default:
-                break;
+    }
+
+    public async queueNotification(reqData: {id: string, trType: string, amount: number, recipientTag: string, timestamp: Date, senderBankInfo: string, recipientBankInfo: string}): Promise<void> {
+        try {
+            const { id, trType, amount, recipientTag, senderBankInfo, recipientBankInfo, timestamp } = reqData;
+            
+            const notification = {
+                amount,
+                trType,
+                recipientTag,
+                senderBankInfo,
+                recipientBankInfo,
+                timestamp,
+            }
+
+            const updated = await userModel.findByIdAndUpdate(id, { 
+                $push: { 
+                    notifications: notification
+                }
+            }, { new: true })
+            console.log(updated)
+
+        } catch (error: any) {
+            console.error(error)
         }
     }
 

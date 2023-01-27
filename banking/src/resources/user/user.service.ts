@@ -14,31 +14,38 @@ import MessageBroker from "@/utils/broker"
 class UserService {
 
     public async handleSubscribedEvents(payload: any): Promise<void> {
-        payload = JSON.parse(payload)
-        const { data, event } = payload
+        try {
+          payload = JSON.parse(payload)
+            const { data, event } = payload
 
-        switch (event) {
-            case 'NEW_USER_CREATED': await this.register(data)
-                break;
-            case 'USERNAME_UPDATED': await this.setUsername(data)
-                break;
-            case 'USER_CREATE_PIN': await this.setTransactionPin(data)
-                break;
-            case 'DEACTIVATE_USER_ACOUNT': await this.deactivateUserAccount(data)
-                break;
-            case 'ADD_FAVORITE_RECIPIENT': await this.addToFavoritedRecipients(data)
-                break;
-            case 'USER_NUBAN_CREATED': await this.updateNubanDetails(data)
-                break;
-            case 'DELETE_FAVORITE_RECIPIENT': await this.deleteFavoritedRecipient(data)
-                break;
-            case 'UPLOAD_PROFILE_PHOTO': await this.setProfilePhoto(data)
-                break;
-            case 'UPDATE_USER_IDENTITY_STATUS': await this.updateUserVerification(data)
-                break;
-            default:    console.log("== invalid event == ")
-                break;
+            if(!data || !event) throw new Error('==== Invalid Payload ====')
+
+            switch (event) {
+                case 'NEW_USER_CREATED': await this.register(data)
+                    break;
+                case 'USERNAME_UPDATED': await this.setUsername(data)
+                    break;
+                case 'USER_CREATE_PIN': await this.setTransactionPin(data)
+                    break;
+                case 'DEACTIVATE_USER_ACOUNT': await this.deactivateUserAccount(data)
+                    break;
+                case 'ADD_FAVORITE_RECIPIENT': await this.addToFavoritedRecipients(data)
+                    break;
+                case 'USER_NUBAN_CREATED': await this.updateNubanDetails(data)
+                    break;
+                case 'DELETE_FAVORITE_RECIPIENT': await this.deleteFavoritedRecipient(data)
+                    break;
+                case 'UPLOAD_PROFILE_PHOTO': await this.setProfilePhoto(data)
+                    break;
+                case 'UPDATE_USER_IDENTITY_STATUS': await this.updateUserVerification(data)
+                    break;
+                default:    console.log("== invalid event == ")
+                    break;
+            }  
+        } catch (error: any) {
+            console.error(error)
         }
+        
     }
     
     public async register(reqData: IUser): Promise<void> {

@@ -16,7 +16,7 @@ export const createChannel = async (): Promise<amqplib.Channel> => {
 export const publishMessage = async (channel: amqplib.Channel, binding_key: string, message: any) => {
     try {
         const published = channel.publish(`${process.env.EXCHANGE_NAME}`, binding_key, Buffer.from(message))
-        console.log("=== Message Sent ===")
+        console.log("=== Message Sent ===", message)
     } catch (error: any) {
         throw new Error(error)
     } 
