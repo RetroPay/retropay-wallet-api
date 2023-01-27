@@ -49,6 +49,8 @@ class UserController implements IController {
         this.router.put('/user/profile/upload-photo', authenticatedMiddleware, this.uploadProfilePhoto)
         this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
 
+        this.router.get('/user/notifications', authenticatedMiddleware, this.getNotifications)
+
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.setPin), this.setPin)
         this.router.patch('/user/pin/change', authenticatedMiddleware, validationMiddleware(validate.changePin), this.changeTransactionPin)
         this.router.patch('/user/pin/forgot', authenticatedMiddleware, validationMiddleware(validate.forgotPin), this.forgotTransactionPin)
@@ -520,6 +522,18 @@ class UserController implements IController {
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
+        }
+    }
+    public getNotifications = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const notifications = await this.UserService.getNotifications(req.user)
+            res.status(200).json({
+                success: true,
+                message: "Notifications retrieved succesfully.", 
+                data: { notifications }
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(500, error.message))
         }
     }
 

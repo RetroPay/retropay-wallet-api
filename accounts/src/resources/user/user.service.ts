@@ -236,7 +236,7 @@ class UserService {
           console.log(error)
           throw new Error('Unable to validate pin.')
         }
-      }
+    }
 
     public async forgotPassword(reqData: { email: string }): Promise<object | null> {
         try {
@@ -555,6 +555,15 @@ class UserService {
             return favorites
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to retrieve favorites.')
+        }
+    }
+
+    public async getNotifications(userId: string): Promise<IUser | null> {
+        try {
+            const notifications: any = await userModel.findById(userId).select('notifications')
+            return notifications.notifications;
+        } catch (error) {
+            throw new Error('Unable to retrieve notifications.')
         }
     }
 
