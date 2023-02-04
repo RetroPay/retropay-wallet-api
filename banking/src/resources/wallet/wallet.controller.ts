@@ -149,6 +149,21 @@ class WalletController implements IController {
                 }
             }));
 
+            //temporary log new transaction in recipient notification
+            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+                event: 'QUEUE_NOTIFICATION',
+                data: {
+                    id: transaction.tempAccountRecipientId,
+                    trType: 'transfer-in',
+                    amount: transaction.amount,
+                    senderTag: transaction.tempSenderTag,
+                    timestamp: transaction.createdAt
+                }
+            }));
+
+            delete transaction.tempSenderTag
+            delete transaction.tempAccountRecipientId
+
             res.status(201).json({
                 success: true,
                 message: "Transaction successfull",

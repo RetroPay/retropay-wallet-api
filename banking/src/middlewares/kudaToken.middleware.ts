@@ -22,7 +22,6 @@ async function kudaTokenHandler(
                     apiKey: process.env.KUDA_PRIVATE_KEY
                 }
               })
-              console.log(response)
             
             const accessToken = response.data
             k_token = accessToken

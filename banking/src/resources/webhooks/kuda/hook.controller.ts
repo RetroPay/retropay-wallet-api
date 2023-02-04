@@ -34,12 +34,11 @@ class WebhookController implements IController {
             case 'credit' || 'Credit': {
                     const transaction: any = await this.walletService.recieveFunds(payingBank,  amount, transactionReference, narrations, accountName, accountNumber, transactionType, senderName, recipientName, sessionId)
                     
-                    // let payload
                     switch (transaction.transactionType) {
                         case 'Transfer': {
                                 const payload = {
                                     id: transaction.id,
-                                    trType: 'transfer',
+                                    trType: 'transfer-in',
                                     amount: transaction.amount as Number,
                                     senderTag: transaction.senderTag,
                                     timestamp: transaction.createdAt

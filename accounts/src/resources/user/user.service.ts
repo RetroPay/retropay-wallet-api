@@ -31,14 +31,15 @@ class UserService {
         
     }
 
-    public async queueNotification(reqData: {id: string, trType: string, amount: number, recipientTag: string, timestamp: Date, senderBankInfo: string, recipientBankInfo: string}): Promise<void> {
+    public async queueNotification(reqData: {id: string, trType: string, amount: number, recipientTag: string, senderTag: string, timestamp: Date, senderBankInfo: string, recipientBankInfo: string}): Promise<void> {
         try {
-            const { id, trType, amount, recipientTag, senderBankInfo, recipientBankInfo, timestamp } = reqData;
+            const { id, trType, amount, recipientTag, senderBankInfo, senderTag, recipientBankInfo, timestamp } = reqData;
             
             const notification = {
                 amount,
                 trType,
                 recipientTag,
+                senderTag,
                 senderBankInfo,
                 recipientBankInfo,
                 timestamp,
@@ -561,7 +562,7 @@ class UserService {
     public async getNotifications(userId: string): Promise<IUser | null> {
         try {
             const notifications: any = await userModel.findById(userId).select('notifications')
-            return notifications.notifications;
+            return notifications.notifications.reverse();
         } catch (error) {
             throw new Error('Unable to retrieve notifications.')
         }

@@ -9,7 +9,9 @@ export default interface IUser {
     referenceId: string
     email: string
     dateOfBirth: string
-    profilePhoto?: object
+    profilePhoto?: {
+        url: string
+    }
     phoneNumber?: string
     bankAccounts?: object
     pin?: number

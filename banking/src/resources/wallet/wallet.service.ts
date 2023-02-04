@@ -22,7 +22,9 @@ class WalletService {
       }, {
         fundOriginatorAccount: 0, 
         fundRecipientAccount: 0, 
-        WebhookAcknowledgement:0
+        WebhookAcknowledgement:0,
+        senderWebhookAcknowledgement: 0,
+        fundsReceivedbyRecipient: 0
       }).sort({createdAt: -1})
 
       const debitTransactions: any = await walletModel.find({
@@ -33,8 +35,11 @@ class WalletService {
           { $expr: {$eq: [{$year: "$createdAt"}, year]} }
         ]
       }, {
-        fundOriginatorAccount: 0, 
-        WebhookAcknowledgement:0
+        fundOriginatorAccount: 0,
+        fundRecipientAccount: 0, 
+        WebhookAcknowledgement:0,
+        senderWebhookAcknowledgement: 0,
+        fundsReceivedbyRecipient: 0
       }).sort({createdAt: -1})
 
       return {creditTransactions, debitTransactions}
@@ -277,7 +282,8 @@ class WalletService {
       //If intended recipient doesn't have a nuban account created yet
       if(!foundRecipient?.nubanAccountDetails?.nuban) throw new Error("Unable to process transaction.")
 
-      const foundUser = await userModel.findById(userId).select("firstname lastname")
+      const foundUser = await userModel.findById(userId).select("firstname lastname profilePhoto username")
+      console.log("found user profile", foundUser)
       if(!foundUser) throw new Error('Unable to process transaction.')
 
 
@@ -355,6 +361,8 @@ class WalletService {
           beneficiaryName,
           currency: 'NGN',
           processingFees: 5,
+          senderProfile: foundUser.profilePhoto,
+          recipientProfile: foundRecipient.profilePhoto
         });
             
         return {
@@ -363,7 +371,9 @@ class WalletService {
           transactionId: newTransaction.referenceId,
           fundRecipientAccountTag,
           transactionType: 'Transfer',
-          createdAt: newTransaction?.createdAt
+          createdAt: newTransaction?.createdAt,
+          tempAccountRecipientId: foundRecipient.referenceId,
+          tempSenderTag: foundUser.username
         }
 
     } catch (error) {
@@ -590,7 +600,7 @@ class WalletService {
 
     } catch (error: any) {
       console.error(error)
-      throw new Error(translateError(error)[0] || "Unable to resolve bank account.")
+      throw new Error("Unable to resolve bank account.")
     }
   }
 
@@ -650,7 +660,9 @@ class WalletService {
       )
 
       // If paying bank isn't kuda bank, charge a NGN100 deposit fee and create new transaction log for funding transaction
-      if(!payingBank.includes('kuda')) {
+      if(!payingBank.toLowerCase().includes('kuda')) {
+        console.log(payingBank.toLowerCase().includes('kuda'))
+
         // await redisClient.connect()
 
         // const response = await axios({
@@ -677,7 +689,7 @@ class WalletService {
               fundRecipientAccount: foundRecipient._id,
               amount: (Number(amount)/100), //convert from kobo
               transactionType: 'funding',
-              status: 'success',
+              status: 'success', 
               // referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
               referenceId: 'test-funding' + v4(),
               comment: narrations,
@@ -718,7 +730,7 @@ class WalletService {
     }
   }
 
-  //Aknowledge that funds have left senders account, and kuda is processing transfer
+  //Acknowledge that funds have left senders account, and kuda is processing transfer
   public async acknowledgeFundsTransfer(amount: string, transactionReference: string, sessionId: string): Promise<void> {
     try {
       const transaction = await walletModel.findOneAndUpdate(

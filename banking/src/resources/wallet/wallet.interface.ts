@@ -18,4 +18,6 @@ export default interface IWallet {
     nameEnquiryId?: string
     beneficiaryAccount?: string
     createdAt?: string
+    senderPicture?: string
+    recipientProfile?: string
 }
