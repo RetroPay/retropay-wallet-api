@@ -282,7 +282,7 @@ class WalletService {
       //If intended recipient doesn't have a nuban account created yet
       if(!foundRecipient?.nubanAccountDetails?.nuban) throw new Error("Unable to process transaction.")
 
-      const foundUser = await userModel.findById(userId).select("firstname lastname profilePhoto username")
+      const foundUser = await userModel.findById(userId).select("firstname lastname profilePhoto username email")
       console.log("found user profile", foundUser)
       if(!foundUser) throw new Error('Unable to process transaction.')
 
@@ -373,7 +373,9 @@ class WalletService {
           transactionType: 'Transfer',
           createdAt: newTransaction?.createdAt,
           tempAccountRecipientId: foundRecipient.referenceId,
-          tempSenderTag: foundUser.username
+          tempSenderTag: foundUser.username,
+          tempSenderEmail: foundUser.email,
+          tempRecipientEmail: foundRecipient.email
         }
 
     } catch (error) {
