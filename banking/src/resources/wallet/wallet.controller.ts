@@ -178,9 +178,9 @@ class WalletController implements IController {
             const emailService = MailService.getInstance();
             emailService.sendMail({
                 to: transaction.tempSenderEmail,
-                subject: `Howdy @${transaction.fundRecipientAccountTag}, your transfer is on it way! 🚀`,
+                subject: `Howdy @${transaction.tempSenderTag}, your transfer is on it way! 🚀`,
                 text: transferOutRecieptEmail(transaction.tempSenderTag, transaction.amount, transaction.fundRecipientAccountTag, transaction.transactionId, transaction.createdAt).text,
-                html: transferOutRecieptEmail(transaction.fundRecipientAccountTag, transaction.amount, transaction.tempSenderTag, transaction.transactionId, transaction.createdAt).html,
+                html: transferOutRecieptEmail(transaction.tempSenderTag, transaction.amount, transaction.fundRecipientAccountTag, transaction.transactionId, transaction.createdAt).html,
             });
 
             delete transaction.tempSenderTag
