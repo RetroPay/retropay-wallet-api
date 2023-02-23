@@ -27,3 +27,8 @@ jobs:
       run: 
         npm ci
         npm test
+    - name: Test banking service
+      working-directory: ./banking
+      run: 
+        npm ci
+        npm test
