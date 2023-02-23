@@ -7,19 +7,19 @@ services:
   #   container_name: nosql-db
   #   volumes:
   #     - ./db/:/data/db+
-  account:
+  accounts:
     build:
       dockerfile: Dockerfile
       context: ./accounts
-    container_name: account
+    container_name: accounts
     ports:
       - "8002:8002"
     restart: always
     volumes:
       - .:/app
-      - /app/account/node_modules
+      - /app/accounts/node_modules
     env_file:
-      - ./accounts.env
+      - ./accounts/.env.test
   banking:
     build:
       dockerfile: Dockerfile
@@ -32,13 +32,13 @@ services:
       - .:/app
       - /app/banking/node_modules
     env_file:
-      - ./banking.env
+      - ./banking/.env.test
   nginx-proxy:
     build:
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
       context: ./proxy
     depends_on:
       - banking
-      - account
+      - accounts
     ports:
       - 80:80
