@@ -13,6 +13,7 @@ import verifyEmailTemplate from "@/templates/verifyEmail.template";
 import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable"
 import welcomeEmail from "@/templates/welcome.template";
+import transferInRecieptEmail from "@/templates/transferin-receipt.template";
 import { brokerChannel } from "../../server"
 import { subscribeMessage, publishMessage} from "@/utils/broker"
 
@@ -34,6 +35,7 @@ class UserController implements IController {
         //Auth routes
         this.router.post('/auth/user/signup', validationMiddleware(validate.register), this.register)
         this.router.post('/auth/user/login', validationMiddleware(validate.login), this.login)
+        this.router.post('/auth/user/reauthenticate', validationMiddleware(validate.authByPin), authenticatedMiddleware, this.authenticateWithPin)
         this.router.post('/auth/user/forgot-password', validationMiddleware(validate.forgotPassword), this.forgotPassword)
         this.router.patch('/auth/user/reset-password', validationMiddleware(validate.resetPassword), this.resetPassword)
         this.router.patch('/auth/user/change-password', authenticatedMiddleware, validationMiddleware(validate.changePassword) ,this.changePassword)
@@ -47,6 +49,8 @@ class UserController implements IController {
         this.router.patch('/user/profile/account-tag/setup', authenticatedMiddleware, validationMiddleware(validate.setupUsername), this.setupUsername)
         this.router.put('/user/profile/upload-photo', authenticatedMiddleware, this.uploadProfilePhoto)
         this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
+
+        this.router.get('/user/notifications', authenticatedMiddleware, this.getNotifications)
 
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.setPin), this.setPin)
         this.router.patch('/user/pin/change', authenticatedMiddleware, validationMiddleware(validate.changePin), this.changeTransactionPin)
@@ -109,7 +113,6 @@ class UserController implements IController {
 
     private getUserDetails = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            console.log(req.ip)
             const user = await this.UserService.getUser(req.user)
 
             res.status(200).json({
@@ -133,6 +136,22 @@ class UserController implements IController {
                 message: "Login successful",
                 data: {
                     user
+                }
+            })
+        } catch (error: any) {
+            console.log(error)
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private authenticateWithPin = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const token: IUser = await this.UserService.authenticateWithPin(req.user, req.body.pin)
+            res.status(200).json({
+                success: true,
+                message: "Authentication successful",
+                data: {
+                    token
                 }
             })
         } catch (error: any) {
@@ -504,6 +523,18 @@ class UserController implements IController {
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
+        }
+    }
+    public getNotifications = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const notifications = await this.UserService.getNotifications(req.user)
+            res.status(200).json({
+                success: true,
+                message: "Notifications retrieved succesfully.", 
+                data: { notifications }
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(500, error.message))
         }
     }
 

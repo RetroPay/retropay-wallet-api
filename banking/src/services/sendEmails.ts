@@ -45,7 +45,7 @@ export default class MailService {
         try {
             return await this.transporter
                 .sendMail({ 
-                    from: `"RetroPay Team" ${process.env.SMTP_USER}`,
+                    from: `"Retro Wallet Team" ${process.env.SMTP_USER}`,
                     to: options.to,
                     subject: options.subject,
                     text: options.text,

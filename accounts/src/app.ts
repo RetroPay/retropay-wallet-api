@@ -62,7 +62,7 @@ class App {
         })
         .catch((error) => {
             console.log(`Error connecting to database /n ${error}`)
-            throw new Error(error)
+            // throw new Error(error)
         })
     }
 

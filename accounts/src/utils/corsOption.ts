@@ -1,6 +1,6 @@
 // options for cors
 export const corsOption =  (req: any, res: any, next: any) => {
-  const allowedOrigins = ["http://localhost:4000", "https://retropay-wallet-proxy.onrender.com"];
+  const allowedOrigins = ["http://localhost:4000"];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);

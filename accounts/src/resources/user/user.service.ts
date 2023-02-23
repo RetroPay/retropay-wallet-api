@@ -13,21 +13,53 @@ import { v4 } from "uuid"
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
-        payload = JSON.parse(payload)
-        const { data, event } = payload
+        try {
+            payload = JSON.parse(payload)
+            const { data, event } = payload
 
-        switch (event) {
-            case 'USER_INITIALISE_FUND_WALLET': console.log("User just initialised wallet funding")
-                break;
+            if(!data || !event) throw new Error('==== Invalid Payload ====')
+
+            switch (event) {
+                case 'QUEUE_NOTIFICATION': await this.queueNotification(data);
+                    break;
+                default: console.log("== invalid event == ")
+                    break;
+            }
+        } catch (error) {
+            console.log(error)
+        }
         
-            default:
-                break;
+    }
+
+    public async queueNotification(reqData: {id: string, trType: string, amount: number, recipientTag: string, senderTag: string, timestamp: Date, senderBankInfo: string, recipientBankInfo: string}): Promise<void> {
+        try {
+            const { id, trType, amount, recipientTag, senderBankInfo, senderTag, recipientBankInfo, timestamp } = reqData;
+            
+            const notification = {
+                amount,
+                trType,
+                recipientTag,
+                senderTag,
+                senderBankInfo,
+                recipientBankInfo,
+                timestamp,
+            }
+
+            const updated = await userModel.findByIdAndUpdate(id, { 
+                $push: { 
+                    notifications: notification
+                }
+            }, { new: true })
+            console.log(updated)
+
+        } catch (error: any) {
+            console.error(error)
         }
     }
 
     public async getUser(id: string): Promise<IUser | Error> {
         try {
-            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto username isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
+            const user = await userModel.findById(id, {'_id': 0, 'firstname': 1}).select('firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
             
             if(!user) throw new Error("Unable to retrieve details")
 
@@ -82,26 +114,26 @@ class UserService {
                 isIdentityVerified, transferPermission, withdrawPermission, 
                 fundPermission, favoritedRecipients, _id,
                 firstname, lastname, email, profilePhoto,
-                verificationStatus
+                verificationStatus, nubanAccountDetails
             } = foundUser
 
             if (await foundUser.isValidPassword(reqData.password)) { 
                 return { 
                     token: createToken(foundUser), 
-                    user: {
-                        firstname, lastname, email,
-                        username, isPhoneVerified, isEmailVerified,
-                        isIdentityVerified, transferPermission, withdrawPermission, 
-                        fundPermission, favoritedRecipients, profilePhoto,
-                        verificationStatus
-                    } 
+                    // user: {
+                    //     firstname, lastname, email,
+                    //     username, isPhoneVerified, isEmailVerified,
+                    //     isIdentityVerified, transferPermission, withdrawPermission, 
+                    //     fundPermission, profilePhoto, nubanAccountDetails,
+                    //     verificationStatus
+                    // } 
                 }
             }
             
-            throw new Error("Incorrect username or pasword")
+            throw new Error("Incorrect username or password.")
         } catch (error: any) {
             console.log(translateError(error))
-            throw new Error(translateError(error)[0] || 'Unable to login')
+            throw new Error(translateError(error)[0] || 'Unable to sign you in, Please try again.')
         }
     }
 
@@ -141,10 +173,10 @@ class UserService {
         try{
             if(newPin !== confirmPin) throw new Error("Pin does not match.")
 
-            if(!await this.validatePin(oldPin, userId)) throw new Error('Incorrect transaction pin')
+            if(!await this.validatePin(oldPin, userId)) throw new Error('Incorrect transaction pin.')
 
             const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(newPin, 10)}, {new: true})
-            if(!updatedUser) throw new Error('Unable to change transaction pin')
+            if(!updatedUser) throw new Error('Unable to change transaction pin.')
 
             return updatedUser
         } catch(error: any){
@@ -161,16 +193,30 @@ class UserService {
 
             if(!foundUser) throw new Error("Unable to change transaction pin.")
 
-            if(!await foundUser.isValidPassword(password)) throw new Error('Incorrect password')
+            if(!await foundUser.isValidPassword(password)) throw new Error('Incorrect password.')
 
             const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(newPin, 10)}, {new: true})
             
-            if(!updatedUser) throw new Error('Unable to change transaction pin')
+            if(!updatedUser) throw new Error('Unable to change transaction pin.')
 
             return updatedUser
         } catch(error: any){
             console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to change transaction pin.')
+        }
+    }
+
+    public async authenticateWithPin(userId: string, pin: string): Promise<IUser | any> {
+        try {
+            const foundUser = await userModel.findById(userId)
+            if(!foundUser) throw new Error('Unable to validate your pin')
+
+            if(!await foundUser.isValidPin(pin)) throw new Error('Incorrect transaction pin.')
+
+            return createToken(foundUser)
+        } catch (error) {
+            console.log(translateError(error))
+            throw new Error(translateError(error)[0] || 'Request failed, Try signing in.')
         }
     }
 
@@ -191,7 +237,7 @@ class UserService {
           console.log(error)
           throw new Error('Unable to validate pin.')
         }
-      }
+    }
 
     public async forgotPassword(reqData: { email: string }): Promise<object | null> {
         try {
@@ -510,6 +556,15 @@ class UserService {
             return favorites
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to retrieve favorites.')
+        }
+    }
+
+    public async getNotifications(userId: string): Promise<IUser | null> {
+        try {
+            const notifications: any = await userModel.findById(userId).select('notifications')
+            return notifications.notifications.reverse();
+        } catch (error) {
+            throw new Error('Unable to retrieve notifications.')
         }
     }
 

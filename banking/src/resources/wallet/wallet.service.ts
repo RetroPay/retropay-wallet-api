@@ -3,7 +3,7 @@ import { v4 } from "uuid"
 import userModel from "../user/user.model"
 import IWallet from "./wallet.interface"
 import translateError from "@/helpers/mongod.helper"
-import mongoose, { StringExpressionOperatorReturningBoolean } from "mongoose"
+import mongoose from "mongoose"
 import axios from "axios"
 import { redisClient } from "../../server"
 import IUser from "../user/user.interface"
@@ -22,7 +22,9 @@ class WalletService {
       }, {
         fundOriginatorAccount: 0, 
         fundRecipientAccount: 0, 
-        WebhookAcknowledgement:0
+        WebhookAcknowledgement:0,
+        senderWebhookAcknowledgement: 0,
+        fundsReceivedbyRecipient: 0
       }).sort({createdAt: -1})
 
       const debitTransactions: any = await walletModel.find({
@@ -33,8 +35,11 @@ class WalletService {
           { $expr: {$eq: [{$year: "$createdAt"}, year]} }
         ]
       }, {
-        fundOriginatorAccount: 0, 
-        WebhookAcknowledgement:0
+        fundOriginatorAccount: 0,
+        fundRecipientAccount: 0, 
+        WebhookAcknowledgement:0,
+        senderWebhookAcknowledgement: 0,
+        fundsReceivedbyRecipient: 0
       }).sort({createdAt: -1})
 
       return {creditTransactions, debitTransactions}
@@ -179,12 +184,14 @@ class WalletService {
   public async calculateWalletBalance(userId: string): Promise<number> {
     try {
       const credits = await walletModel.aggregate([
-        { $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        // { $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        { $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId)} },
         { $group: { _id: null, totalCredits: { $sum:'$amount'} } }
       ])
 
       const debits = await walletModel.aggregate([
-        { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        // { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId), status: 'success'} },
+        { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId)} },
         { $group: { _id: null, totalDebits: { $sum:'$amount'} } }
       ])
 
@@ -199,32 +206,34 @@ class WalletService {
     }
   }
 
-  public async getAccountBalance(referenceId: string, k_token: string): Promise<any> {
+  public async getAccountBalance(referenceId: string, k_token: string, userId: string): Promise<any> {
     try {
 
       const foundUser = await userModel.findOne({referenceId})
       if(!foundUser?.nubanAccountDetails) throw new Error("You don't have an account number yet. Kindly create a nuban account to get started.")
-      const response = await axios({
-        method: 'POST',
-        url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
-        data: {
-            ServiceType :"RETRIEVE_VIRTUAL_ACCOUNT_BALANCE",
-            RequestRef: v4(),
-            data: {
-              trackingReference: referenceId,
-            }
-        },
-        headers: {
-            Authorization: `Bearer ${k_token}`
-        }
-      })
+      // const response = await axios({
+      //   method: 'POST',
+      //   url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
+      //   data: {
+      //       ServiceType :"RETRIEVE_VIRTUAL_ACCOUNT_BALANCE",
+      //       RequestRef: v4(),
+      //       data: {
+      //         trackingReference: referenceId,
+      //       }
+      //   },
+      //   headers: {
+      //       Authorization: `Bearer ${k_token}`
+      //   }
+      // })
 
-      const data = response.data
-      console.log(data)
+      // const data = response.data
+      // console.log(data)
 
-      if(!data.status) throw new Error(data.message)
+      // if(!data.status) throw new Error(data.message)
 
-      return data.data.availableBalance
+      // return data.data.availableBalance
+
+      return this.calculateWalletBalance(userId)
     } catch (error) {
       console.log(error)
       throw new Error(translateError(error)[0] || 'Transfer failed - Unable to process transfer.')
@@ -273,7 +282,8 @@ class WalletService {
       //If intended recipient doesn't have a nuban account created yet
       if(!foundRecipient?.nubanAccountDetails?.nuban) throw new Error("Unable to process transaction.")
 
-      const foundUser = await userModel.findById(userId).select("firstname lastname")
+      const foundUser = await userModel.findById(userId).select("firstname lastname profilePhoto username email")
+      console.log("found user profile", foundUser)
       if(!foundUser) throw new Error('Unable to process transaction.')
 
 
@@ -285,54 +295,54 @@ class WalletService {
   
       if (!await this.validatePin(formPin, userId)) throw new Error("Transfer failed - Incorrect transaction pin")
 
-      await redisClient.connect()
+      // await redisClient.connect()
 
-      const response = await axios({
-          method: 'post',
-          url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
-          data: {
-            "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
-            "requestRef": v4(),
-            data: {
-              trackingReference: referenceId, //Unique identifier of user with Kuda
-              beneficiaryAccount: foundRecipient?.nubanAccountDetails?.nuban,
-              amount: amount * 100, //amount in Kobo
-              narration: comment,
-              beneficiaryBankCode: await redisClient.get("kudaBankCode") || '999129',
-              beneficiaryName,
-              senderName: foundUser.lastname + ' ' + foundUser.firstname,
-            }
-          },
-          headers: {
-            "Authorization": `Bearer ${k_token}`
-          }
-        })
+      // const response = await axios({
+      //     method: 'post',
+      //     url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+      //     data: {
+      //       "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+      //       "requestRef": v4(),
+      //       data: {
+      //         trackingReference: referenceId, //Unique identifier of user with Kuda
+      //         beneficiaryAccount: foundRecipient?.nubanAccountDetails?.nuban,
+      //         amount: amount * 100, //amount in Kobo
+      //         narration: comment,
+      //         beneficiaryBankCode: await redisClient.get("kudaBankCode") || '999129',
+      //         beneficiaryName,
+      //         senderName: foundUser.lastname + ' ' + foundUser.firstname,
+      //       }
+      //     },
+      //     headers: {
+      //       "Authorization": `Bearer ${k_token}`
+      //     }
+      //   })
 
-        await redisClient.disconnect();
+      //   await redisClient.disconnect();
   
-        const data = response.data
-        console.log(data)
+      //   const data = response.data
+      //   console.log(data)
             
-        //if axios call is successful but kuda status returns failed e'g 400 errors
-        if(!data.status) {
-          const { responseCode } = data
+      //   //if axios call is successful but kuda status returns failed e'g 400 errors
+      //   if(!data.status) {
+      //     const { responseCode } = data
 
-          switch (responseCode) {
-            case '06' : throw new Error('Transfer failed - processng error.')
-              break;
-            case '52' : throw new Error('Transfer failed - Inactive recipient account.')
-              break;
-            case '23' : throw new Error('Transfer failed - A PND is active on your account. Kindly contact support.')
-              break;
-            case '51' : throw new Error('Transfer failed - Insufficient funds on account.')
-              break;
-            case '93' : throw new Error('Transfer failed - Cash limit exceeded for your account tier.')
-              break;
-            case 'k91' : throw new Error('Transfer error - Transaction timeout, Kindly contact support to confirm transaction status.')
-              break;
-            default: throw new Error(data.message)
-          }
-        }
+      //     switch (responseCode) {
+      //       case '06' : throw new Error('Transfer failed - processng error.')
+      //         break;
+      //       case '52' : throw new Error('Transfer failed - Inactive recipient account.')
+      //         break;
+      //       case '23' : throw new Error('Transfer failed - A PND is active on your account. Kindly contact support.')
+      //         break;
+      //       case '51' : throw new Error('Transfer failed - Insufficient funds on account.')
+      //         break;
+      //       case '93' : throw new Error('Transfer failed - Cash limit exceeded for your account tier.')
+      //         break;
+      //       case 'k91' : throw new Error('Transfer error - Transaction timeout, Kindly contact support to confirm transaction status.')
+      //         break;
+      //       default: throw new Error(data.message)
+      //     }
+      //   }
 
 
         //Log new transaction
@@ -342,24 +352,30 @@ class WalletService {
           amount,
           transactionType: 'transfer',
           status: 'pending',
-          referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
-          // referenceId: 'test-transfer' + v4(),
+          // referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
+          referenceId: 'test-transfer' + v4(),
           comment,
           recepientTag: fundRecipientAccountTag,
           senderTag,
-          responseCode: data.responseCode,
+          // responseCode: data.responseCode,
           beneficiaryName,
           currency: 'NGN',
           processingFees: 5,
+          senderProfile: foundUser.profilePhoto,
+          recipientProfile: foundRecipient.profilePhoto
         });
             
         return {
           amount, 
-          transactionId: data.transactionReference,
-          // transactionId: newTransaction.referenceId,
+          // transactionId: data.transactionReference,
+          transactionId: newTransaction.referenceId,
           fundRecipientAccountTag,
           transactionType: 'Transfer',
-          createdAt: newTransaction?.createdAt
+          createdAt: newTransaction?.createdAt,
+          tempAccountRecipientId: foundRecipient.referenceId,
+          tempSenderTag: foundUser.username,
+          tempSenderEmail: foundUser.email,
+          tempRecipientEmail: foundRecipient.email
         }
 
     } catch (error) {
@@ -387,55 +403,55 @@ class WalletService {
 
         if (await this.validatePin(formPin, userId) == false) throw new Error("Transfer failed - Incorrect transaction pin")
 
-        console.log(referenceId)
-        const response = await axios({
-          method: 'post',
-          url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
-          data: {
-            "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
-            "requestRef": v4(),
-            data: {
-              trackingReference: referenceId, //Unique identifier of user with Kuda
-              beneficiaryAccount,
-              amount: amount * 100, //amount in Kobo
-              narration: comment,
-              beneficiaryBankCode,
-              beneficiaryName,
-              senderName: foundUser.lastname + ' ' + foundUser.firstname,
-              nameEnquiryId,
-            }
-          },
-          headers: {
-            "Authorization": `Bearer ${k_token}`
-          }
-        })
+        // const response = await axios({
+        //   method: 'post',
+        //   url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+        //   data: {
+        //     "serviceType": "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+        //     "requestRef": v4(),
+        //     data: {
+        //       trackingReference: referenceId, //Unique identifier of user with Kuda
+        //       beneficiaryAccount,
+        //       amount: amount * 100, //amount in Kobo
+        //       narration: comment,
+        //       beneficiaryBankCode,
+        //       beneficiaryName,
+        //       senderName: foundUser.lastname + ' ' + foundUser.firstname,
+        //       nameEnquiryId,
+        //     }
+        //   },
+        //   headers: {
+        //     "Authorization": `Bearer ${k_token}`
+        //   }
+        // })
   
-        const data = response.data
-        console.log(data)
+        // const data = response.data
+        // console.log(data)
             
-        //if axios call is successful but kuda status returns failed e'g 400 errors
-        if(!data.status) {
-          const { responseCode } = data
+        // //if axios call is successful but kuda status returns failed e'g 400 errors
+        // if(!data.status) {
+        //   const { responseCode } = data
 
-          switch (responseCode) {
-            case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
-              break;
-            case '-2' : throw new Error('Transfer failed.')
-              break;
-            case '-3' : throw new Error('Transfer failed - Unable to process transaction')
-              break;
-            case '91' : throw new Error('Transfer failed - Request timeout.')
-              break;
-            default: throw new Error('Unable to process transaction')
-          }
-        }
+        //   switch (responseCode) {
+        //     case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
+        //       break;
+        //     case '-2' : throw new Error('Transfer failed.')
+        //       break;
+        //     case '-3' : throw new Error('Transfer failed - Unable to process transaction')
+        //       break;
+        //     case '91' : throw new Error('Transfer failed - Request timeout.')
+        //       break;
+        //     default: throw new Error('Unable to process transaction')
+        //   }
+        // }
 
         const newTransaction = await walletModel.create({
           fundOriginatorAccount: userId,
           amount,
           transactionType: 'withdrawal',
           status: 'pending',
-          referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
+          referenceId: 'test-withdrawal' + v4(),
+          // referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
           processingFees: 20,
           comment,
           beneficiaryBankCode, 
@@ -443,15 +459,17 @@ class WalletService {
           beneficiaryName,
           nameEnquiryId,
           beneficiaryAccount,
-          responseCode: data.responseCode,
+          // responseCode: data.responseCode,
           currency: 'NGN'
         });
     
         return {
           amount, 
-          transactionId: data.transactionReference, 
+          // transactionId: data.transactionReference,
+          transactionId: newTransaction.referenceId,
           beneficiaryName, 
           beneficiaryBank,
+          beneficiaryAccount,
           transactionType: 'Withdrawal',
           createdAt: newTransaction?.createdAt
         }
@@ -462,7 +480,7 @@ class WalletService {
       }
   }
 
-  public async getTransactionStatus(userId: string, k_token: string, transactionReference: string): Promise<any>{
+  public async getTransactionStatus(userId: string, k_token: string, transactionReference: string): Promise<any> {
     try{
       const foundTransaction = await walletModel.findOne({referenceId: transactionReference})
       if(!foundTransaction) throw new Error("Record not found.")
@@ -584,7 +602,7 @@ class WalletService {
 
     } catch (error: any) {
       console.error(error)
-      throw new Error(translateError(error)[0] || "Unable to resolve bank account.")
+      throw new Error("Unable to resolve bank account.")
     }
   }
 
@@ -612,7 +630,9 @@ class WalletService {
 
       // Store current Kuda bank code
       await redisClient.connect()
+
       await redisClient.set("kudaBankCode", kudaBankObject.bankCode)
+      
       await redisClient.disconnect();
 
       return response.data.data.banks
@@ -624,11 +644,11 @@ class WalletService {
 
   //KUDA WEBHOOK SERVICES
 
-  public async recieveFunds(payingBank: string,  amount: string, transactionReference: string, narrations: string, accountName: string, accountNumber: string, transactionType: string, senderName: string, recipientName: string, sessionId: string): Promise<void> {
+  public async recieveFunds(payingBank: string,  amount: string | number, transactionReference: string, narrations: string, accountName: string, accountNumber: string, transactionType: string, senderName: string, recipientName: string, sessionId: string): Promise<IWallet | any> {
     try {
       const foundRecipient = await userModel.findOne({'nubanAccountDetails.nuban': accountNumber})
       console.log(foundRecipient)
-      if(!foundRecipient) throw new Error('No account with that nuban found')
+      if(!foundRecipient) throw new Error('No account with nuban found')
 
       /* 
         When this webhook is fired, it is due to either a retro wallet user sent funds to the recipient or it's a transfer from an external bank (wallet funding).
@@ -641,36 +661,39 @@ class WalletService {
         { new: true }
       )
 
-      // If paying bank isn't kuda bank, charge a NGN100 deposit fee
-      if(!payingBank.includes('kuda')) {
-        await redisClient.connect()
+      // If paying bank isn't kuda bank, charge a NGN100 deposit fee and create new transaction log for funding transaction
+      if(!payingBank.toLowerCase().includes('kuda')) {
+        console.log(payingBank.toLowerCase().includes('kuda'))
 
-        const response = await axios({
-            method: 'post',
-            url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
-            data: {
-              "serviceType": "WITHDRAW_VIRTUAL_ACCOUNT",
-              "requestRef": v4(),
-              data: {
-                trackingReference: foundRecipient.referenceId, //Unique identifier of user with Kuda
-                amount: 100 * 100, //amount in Kobo
-                narration: 'Retro Wallet deposit processing fee.',
-              }
-            },
-            headers: {
-              "Authorization": `Bearer ${await redisClient.get('K_TOKEN')}`
-            }
-          })
+        // await redisClient.connect()
 
-          await redisClient.disconnect();
+        // const response = await axios({
+        //     method: 'post',
+        //     url: 'https://kuda-openapi-uat.kudabank.com/v2.1',
+        //     data: {
+        //       "serviceType": "WITHDRAW_VIRTUAL_ACCOUNT",
+        //       "requestRef": v4(),
+        //       data: {
+        //         trackingReference: foundRecipient.referenceId, //Unique identifier of user with Kuda
+        //         amount: 100 * 100, //amount in Kobo
+        //         narration: 'Retro Wallet deposit processing fee.',
+        //       }
+        //     },
+        //     headers: {
+        //       "Authorization": `Bearer ${await redisClient.get('K_TOKEN')}`
+        //     }
+        //   })
+
+        //   await redisClient.disconnect();
 
           // Log transaction if it is a funding transaction
           const newTransaction = await walletModel.create({
               fundRecipientAccount: foundRecipient._id,
               amount: (Number(amount)/100), //convert from kobo
-              transactionType: 'fund',
-              status: 'success',
-              referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
+              transactionType: 'funding',
+              status: 'success', 
+              // referenceId: process.env.NODE_ENV == 'development' ? v4() : transactionReference,
+              referenceId: 'test-funding' + v4(),
               comment: narrations,
               beneficiaryName: accountName,
               beneficiaryAccount: accountNumber,
@@ -679,6 +702,28 @@ class WalletService {
               processingFees: 100
           })
           console.log(newTransaction)
+
+          return {
+            amount,
+            // transactionId: data.transactionReference,
+            transactionId: newTransaction?.referenceId,
+            senderName: senderName, 
+            senderBank: payingBank,
+            // beneficiaryAccount: newTransaction.beneficiaryAccount,
+            transactionType: 'Funding',
+            createdAt: newTransaction.createdAt,
+            id: foundRecipient.referenceId
+          }
+      }
+
+      return {
+        amount,
+        // transactionId: data.transactionReference,
+        transactionId: updatedTransaction?.referenceId,
+        senderTag: updatedTransaction?.senderTag,
+        transactionType: 'Transfer',
+        createdAt: updatedTransaction?.createdAt,
+        id: foundRecipient.referenceId
       }
 
     } catch (error) {
@@ -687,7 +732,7 @@ class WalletService {
     }
   }
 
-  //Aknowledge that funds have left senders account, and kuda is processing transfer
+  //Acknowledge that funds have left senders account, and kuda is processing transfer
   public async acknowledgeFundsTransfer(amount: string, transactionReference: string, sessionId: string): Promise<void> {
     try {
       const transaction = await walletModel.findOneAndUpdate(

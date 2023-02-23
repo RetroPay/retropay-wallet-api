@@ -39,7 +39,9 @@ const WalletSchema = new Schema(
     beneficiaryAccount: { type: String },
     senderWebhookAcknowledgement: {type: Boolean, default: false},
     fundsReceivedbyRecipient: {type: Boolean, default: false},
-    instrumentNumber: String
+    instrumentNumber: String,
+    senderProfile: String,
+    recipientProfile: String
   },
   {
     timestamps: true

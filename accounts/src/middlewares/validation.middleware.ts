@@ -20,7 +20,7 @@ function validationMiddleware(schema: Joi.Schema): RequestHandler {
             })
             res.status(400).send({
                 success: false,
-                errors
+                errors,
             })
         }
     }
