@@ -19,7 +19,7 @@ services:
       - .:/app
       - /app/accounts/node_modules
     env_file:
-      - ./accounts/.env.test
+      - ./accounts/.env
   banking:
     build:
       dockerfile: Dockerfile
@@ -32,7 +32,7 @@ services:
       - .:/app
       - /app/banking/node_modules
     env_file:
-      - ./banking/.env.test
+      - ./banking/.env
   nginx-proxy:
     build:
       dockerfile: Dockerfile

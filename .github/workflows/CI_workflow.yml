@@ -24,6 +24,11 @@ jobs:
         
     - name: Test accounts service
       working-directory: ./accounts
-      run: 
+      run: |
+        npm ci
+        npm test
+    - name: Test banking service
+      working-directory: ./banking
+      run: |
         npm ci
         npm test

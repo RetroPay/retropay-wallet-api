@@ -22,9 +22,11 @@ function validateEnv(): void {
         EXCHANGE_NAME: str(),
         MESSAGE_BROKER_URL: str(),
         ACCOUNT_BINDING_KEY: str(),
-        QUEUE_NAME: str(),
+        ACCOUNTS_QUEUE_NAME: str(),
         FLW_PUBLIC_KEY: str(),
-        FLW_SECRET_KEY: str()
+        FLW_SECRET_KEY: str(),
+        KUDA_PRIVATE_KEY: str(),
+        KUDA_MAIL: str()
     })
 }
 

@@ -24,7 +24,7 @@ export const publishMessage = async (channel: amqplib.Channel, binding_key: stri
 
 export const subscribeMessage = async (channel: amqplib.Channel, binding_key: string, service: any) => {
     try {
-        const appQueue: any = await channel.assertQueue(`${process.env.QUEUE_NAME}`);
+        const appQueue: any = await channel.assertQueue(`${process.env.BANKING_QUEUE_NAME}`);
 
         channel.bindQueue(appQueue.queue, `${process.env.EXCHANGE_NAME}`, binding_key);
         console.log('==== AMQP Subscribed ====');
