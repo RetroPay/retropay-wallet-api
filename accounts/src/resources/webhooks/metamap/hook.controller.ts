@@ -21,16 +21,12 @@ class metaMapWebhookController implements IController {
 
     private processEvent = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
        try {
-        console.log(req.headers)
-        console.log(req.body)
 
         const signature = req.headers['x-signature']
         const MERCHANT_SECRET = process.env.META_MAP_SECRET
 
         let hash = crypto.createHmac('sha256', `${MERCHANT_SECRET}`).update(JSON.stringify(req.body)).digest('hex')
         const isValidPayload = crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(`${signature}`));
-
-        console.log(isValidPayload)
 
         if(isValidPayload){
             const { eventName, metadata, identityStatus } = req.body
@@ -54,7 +50,7 @@ class metaMapWebhookController implements IController {
 
         res.sendStatus(200)
        } catch (error) {
-            console.log(error)
+            
        } 
     }
 }

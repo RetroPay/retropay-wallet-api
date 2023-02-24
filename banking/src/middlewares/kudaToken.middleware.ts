@@ -16,7 +16,7 @@ async function kudaTokenHandler(
         if(!k_token) {
             const response = await axios({
                 method: 'POST',
-                url: 'http://kuda-openapi-uat.kudabank.com/v2/Account/GetToken',
+                url: process.env.NODE_ENV == "production" ? 'https://kuda-openapi.kuda.com/v2/Account/GetToken' : 'http://kuda-openapi-uat.kudabank.com/v2/Account/GetToken',
                 data: {
                     email: process.env.KUDA_MAIL,
                     apiKey: process.env.KUDA_PRIVATE_KEY
@@ -27,9 +27,9 @@ async function kudaTokenHandler(
             k_token = accessToken
             await redisClient.setEx('K_TOKEN', 720, `${accessToken}`)
         }
+        await redisClient.disconnect();
 
         req.k_token = k_token
-        await redisClient.disconnect();
         next()
     } catch (error) {
         await redisClient.disconnect();

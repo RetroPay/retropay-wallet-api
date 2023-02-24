@@ -73,12 +73,16 @@ class UserService {
     public async register(reqData: IUser): Promise<any | Error> {
         try {
             const { firstname, lastname, email, password } = reqData
+
+            // validate password security
+            if(!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include atleast one uppercase, lowercase, special character and number.');
+
             const newUser: IUser = await userModel.create({
                 firstname,
                 lastname, 
                 email, 
                 password,
-                username: email,
+                username: email.split('@')[0],
             })
 
             if(!newUser) throw new Error('Unable to create user account.')
@@ -139,9 +143,14 @@ class UserService {
 
     public async changePassword(reqData: { oldPassword: string, newPassword: string }, user: string): Promise<IUser | Error> {
         try {
+            // validate password security
+            if(!await this.validatePasswordPolicy(reqData.newPassword)) throw new Error('Password is not secure. Include atleast one uppercase, lowercase, special character and number.');
+            
             const foundUser: any = await userModel.findOne({_id: user})
 
             if(!foundUser) throw new Error("Unable to update password")
+
+
 
             if(!await foundUser.isValidPassword(reqData.oldPassword)) throw new Error("Incorrect password.")
             
@@ -239,6 +248,43 @@ class UserService {
         }
     }
 
+    private async validatePasswordPolicy(password: string): Promise<Boolean> {
+        try {
+            /**
+             * Method to validate user password against password policy.
+             * 
+             * Password Policy: Password must be minimum length of 8 and maximum of 64, 
+             * password should contain atleast one valid special character, uppercase letter, lowercase letter and digit.
+             */
+            const REQUIRED_CHARACTER_CLASSES = 4;
+            const VALID_SPECIAL_CHARACTERS = '@#$%^&+=!';
+          
+            
+            const characterClasses: Record<string, RegExp> = {
+              uppercase: /[A-Z]/,
+              lowercase: /[a-z]/,
+              digit: /\d/,
+              special: new RegExp(`[${VALID_SPECIAL_CHARACTERS}]`),
+            };
+          
+            let count = 0;
+
+            for (const [name, regex] of Object.entries(characterClasses)) {
+              if (regex.test(password)) {
+                count += 1;
+              }
+            }
+          
+            if (count < REQUIRED_CHARACTER_CLASSES) {
+                return false
+            }
+          
+            return true;
+        } catch (error) {
+            throw new Error(translateError(error)[0] || 'Unable to validate password security');
+        }
+    }
+
     public async forgotPassword(reqData: { email: string }): Promise<object | null> {
         try {
             const foundUser: any = await userModel.findOne({email: reqData.email})
@@ -265,9 +311,12 @@ class UserService {
 
     public async resetPassword(reqData: {email: string, newPassword: string, token: string}): Promise<IUser | null> {
         try {
+             // validate password security
+            if(!await this.validatePasswordPolicy(reqData.newPassword)) throw new Error('Password is not secure. Include atleast one uppercase, lowercase, special character and number.');
+           
             const foundUser: IUser | any = await userModel.findOne({ email: reqData.email }).select("passwordReset")
             if(!foundUser) throw new Error("Unable to update password.")
-    
+
             const { passwordReset } = foundUser
             const latestReset = passwordReset[passwordReset.length - 1];
     
@@ -404,8 +453,10 @@ class UserService {
 
     public async createNubanAccount(userId: string, k_token: string): Promise<IUser | null> {
         try {
-            const foundUser = await userModel.findById(userId).select("email firstname lastname phoneNumber middlename nubanAccountDetails")
+            const foundUser = await userModel.findById(userId).select("email firstname lastname phoneNumber middlename nubanAccountDetails isIdentityVerified")
             if(!foundUser) throw new Error("Unable to create nuban.")
+
+            if(!foundUser.isIdentityVerified) throw new Error("Kindly verify your identity to proceed.")
 
             if(foundUser.nubanAccountDetails) throw new Error("Nuban has already been created")
             const { email, firstname, lastname, middlename, phoneNumber, id } = foundUser
@@ -417,7 +468,7 @@ class UserService {
 
             const response = await axios({
                 method: 'POST',
-                url: 'http://kuda-openapi-uat.kudabank.com/v2.1',
+                url: process.env.NODE_ENV == 'production' ? 'https://kuda-openapi.kuda.com/v2.1' : 'https://kuda-openapi-uat.kudabank.com/v2.1',
                 data: {
                     ServiceType :"ADMIN_CREATE_VIRTUAL_ACCOUNT",
                     RequestRef: v4(),
@@ -605,7 +656,7 @@ class UserService {
             case 'rejected': 
             case 'reviewNeeded': await userModel.findOneAndUpdate({username: accountTag}, {verificationStatus: status == "reviewNeeded" ? "in review" : status})
                 break;
-            case 'verified': await userModel.findOneAndUpdate({username: accountTag}, {verificationStatus: status, $set: { isIdentityVerified: true }})
+            case 'verified': await userModel.findOneAndUpdate({username: accountTag}, {verificationStatus: status, $set: { isIdentityVerified: true, withdrawPermission: true }})
                 break;
         }
     } catch (error: any) {
