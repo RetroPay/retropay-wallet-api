@@ -44,7 +44,6 @@ class WalletService {
 
       return { creditTransactions, debitTransactions }
     } catch (error: any) {
-      console.log(translateError(error))
       throw new Error(translateError(error)[0] || 'Unable to retrieve transactions')
     }
   }
@@ -159,7 +158,6 @@ class WalletService {
 
       return { year, debitTransactions, creditTransactions }
     } catch (error) {
-      console.log(translateError(error))
       throw new Error(translateError(error)[0] || 'Unable to retrieve yearly analytics')
     }
   }
@@ -230,7 +228,6 @@ class WalletService {
 
       return transaction[0]
     } catch (error: any) {
-      console.log(translateError(error))
       throw new Error(translateError(error)[0] || 'Unable to retrieve transaction')
     }
   }
@@ -249,7 +246,6 @@ class WalletService {
 
       return credits[0]?.totalCredits - debits[0]?.totalDebits || 0;
     } catch (error) {
-      console.log(translateError(error))
       throw new Error('Balance unavailable.')
     }
   }
@@ -275,7 +271,6 @@ class WalletService {
       // })
 
       // const data = response.data
-      // console.log(data)
 
       // if(!data.status) throw new Error(data.message)
 
@@ -283,7 +278,6 @@ class WalletService {
 
       return this.calculateWalletBalance(userId)
     } catch (error) {
-      console.log(error)
       throw new Error(translateError(error)[0] || 'Transfer failed - Unable to process transfer.')
     }
   }
@@ -291,7 +285,7 @@ class WalletService {
   private async validatePin(formPin: string, userId: string): Promise<boolean> {
     try {
       const foundUser = await userModel.findById(userId)
-      console.log(foundUser)
+  
 
       if (!foundUser) throw new Error("Error validating your pin")
 
@@ -301,7 +295,6 @@ class WalletService {
       return false;
 
     } catch (error) {
-      console.log(error)
       throw new Error('Unable to validate pin.')
     }
   }
@@ -324,26 +317,24 @@ class WalletService {
         username: fundRecipientAccountTag,
       })
 
-      console.log(foundRecipient)
+ 
       if (!foundRecipient) throw new Error("Invalid recipient account.")
 
       //If intended recipient doesn't have a nuban account created yet
       if (!foundRecipient?.nubanAccountDetails?.nuban) throw new Error("Unable to process transaction.")
 
       const foundUser = await userModel.findById(userId).select("firstname lastname profilePhoto username email")
-      console.log("found user profile", foundUser)
+  
       if (!foundUser) throw new Error('Unable to process transaction.')
 
 
       // If user tries to transfer to their own account lol.
       if (foundRecipient._id == userId) throw new Error("Unable to process transaction.")
 
-      //calculate users wallet balance
+      //calculate users wallet balance - Temporary, remove when going live! Kuda already checks for balance
       if ((await this.calculateWalletBalance(userId)) <= Number(amount) + 100) throw new Error("Transafer failed - Insufficient funds")
 
       if (!await this.validatePin(formPin, userId)) throw new Error("Transfer failed - Incorrect transaction pin")
-
-      // await redisClient.connect()
 
       // const response = await axios({
       //     method: 'post',
@@ -366,10 +357,8 @@ class WalletService {
       //     }
       //   })
 
-      //   await redisClient.disconnect();
-
       //   const data = response.data
-      //   console.log(data)
+
 
       //   //if axios call is successful but kuda status returns failed e'g 400 errors
       //   if(!data.status) {
@@ -414,7 +403,7 @@ class WalletService {
       });
 
       // if transfer is succesfull, charge transaction fee
-      // await this.chargeTransactionFees("transfer", referenceId, userId)
+      await this.chargeTransactionFees("transfer", referenceId, userId, k_token)
 
       return {
         amount,
@@ -430,14 +419,12 @@ class WalletService {
       }
 
     } catch (error) {
-      console.log(translateError(error))
       throw new Error(translateError(error)[0] || 'Unable to process transaction.')
     }
   }
 
-  private async chargeTransactionFees(transactionType: string, referenceId: string, userId: string): Promise<void> {
+  private async chargeTransactionFees(transactionType: string, referenceId: string, userId: string, k_token: string): Promise<void> {
     try {
-      await redisClient.connect()
 
       const response = await axios({
         method: 'post',
@@ -452,11 +439,9 @@ class WalletService {
           }
         },
         headers: {
-          "Authorization": `Bearer ${await redisClient.get('K_TOKEN')}`
+          "Authorization": `Bearer ${k_token}`
         }
       })
-
-      await redisClient.disconnect();
 
       const data = response.data
       console.log(data)
@@ -466,7 +451,7 @@ class WalletService {
         const { responseCode } = data
 
         switch (responseCode) {
-          case '06': console.log('Transfer failed - processng error.')
+          case '06': console.log('Transfer failed - processing error.')
             break;
           case '52': console.log('Transfer failed - Inactive recipient account.')
             break;
@@ -483,7 +468,6 @@ class WalletService {
       }
 
     } catch (error) {
-      console.log(error)
       //log snap
     }
   }
@@ -529,7 +513,7 @@ class WalletService {
       // })
 
       // const data = response.data
-      // console.log(data)
+  
 
       // //if axios call is successful but kuda status returns failed e'g 400 errors
       // if(!data.status) {
@@ -555,7 +539,7 @@ class WalletService {
         status: 'pending',
         referenceId: 'test-withdrawal' + v4(),
         // referenceId: process.env.NODE_ENV == 'development' ? v4() : data.transactionReference,
-        processingFees: 20,
+        processingFees: 10,
         comment,
         beneficiaryBankCode,
         beneficiaryBank,
@@ -565,6 +549,9 @@ class WalletService {
         // responseCode: data.responseCode,
         currency: 'NGN'
       });
+
+      // if transfer is succesfull, charge transaction fee
+      // await this.chargeTransactionFees("withdraw", referenceId, userId, k_token)
 
       return {
         amount,
@@ -578,7 +565,6 @@ class WalletService {
       }
 
     } catch (error) {
-      console.log(error)
       throw new Error(translateError(error)[0] || 'Transfer failed - Unable to process transfer.')
     }
   }
@@ -608,7 +594,6 @@ class WalletService {
       })
 
       const data = response.data
-      console.log(data)
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) throw new Error(data.responseCode == 'k25' ? 'Record not found' : data.message)
@@ -617,7 +602,6 @@ class WalletService {
 
       return data.data
     } catch (error: any) {
-      console.log(error)
       throw new Error(translateError(error)[0] || 'Unable to retrieve transaction status')
     }
   }
@@ -643,7 +627,6 @@ class WalletService {
       })
 
       const data = response.data
-      console.log(data)
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) throw new Error(data.message)
@@ -658,12 +641,10 @@ class WalletService {
   public async confirmTransferRecipientByAccountTag(username: string, k_token: string, referenceId: string): Promise<any> {
     try {
       const foundRecipient = await userModel.findOne({ username }).select('nubanAccountDetails transferPermission lastname firstname middlename isIdentityVerified profilePhoto')
-      console.log(foundRecipient)
 
-      /*Check if user exists and has created a nuban to recieve funds in else throw error*/
+
+      /*Check if user exists and has created a nuban to receive funds in else throw error*/
       if (!foundRecipient || !foundRecipient.transferPermission) throw new Error('Invalid recipient.')
-
-      await redisClient.connect()
 
       const response = await axios({
         method: 'POST',
@@ -683,10 +664,10 @@ class WalletService {
         }
       })
 
+      // await redisClient.disconnect();
       const data = response.data
-      console.log(data)
 
-      await redisClient.disconnect();
+
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) throw new Error(data.message)
@@ -724,22 +705,17 @@ class WalletService {
       })
 
       if (!response) throw new Error("Unable to retrieve list of banks.")
-      console.log(response.data.data.banks, "kuda response")
 
       const kudaBankObject = response.data.data.banks.find((obj: any) => {
         return obj.bankName.includes('Kudimoney(Kudabank)' || 'Kuda.')
       })
 
-      console.log(kudaBankObject)
 
       // Store current Kuda bank code
-      await redisClient.connect()
       await redisClient.set("kudaBankCode", kudaBankObject.bankCode)
-      await redisClient.disconnect();
 
       return response.data.data.banks
     } catch (error: any) {
-      console.log(error)
       throw new Error("Unable to retrieve list of banks.")
     }
   }
@@ -749,7 +725,7 @@ class WalletService {
   public async recieveFunds(payingBank: string, amount: string | number, transactionReference: string, narrations: string, accountName: string, accountNumber: string, transactionType: string, senderName: string, recipientName: string, sessionId: string): Promise<IWallet | any> {
     try {
       const foundRecipient = await userModel.findOne({ 'nubanAccountDetails.nuban': accountNumber })
-      console.log(foundRecipient)
+
       if (!foundRecipient) throw new Error('No account with nuban found')
 
       /* 
@@ -768,7 +744,6 @@ class WalletService {
 
       // If paying bank isn't kuda bank, log funding transaction
       if (!payingBank.toLowerCase().includes('kuda')) {
-        console.log(payingBank.toLowerCase().includes('kuda'))
 
         // Log transaction if it is a funding transaction
         const newTransaction = await walletModel.create({
@@ -784,7 +759,6 @@ class WalletService {
           currency: 'NGN',
           senderName,
         })
-        console.log(newTransaction)
 
         return {
           amount,
@@ -808,7 +782,6 @@ class WalletService {
       }
 
     } catch (error) {
-      console.log(error)
       //LogSnag call here
     }
   }
@@ -821,7 +794,6 @@ class WalletService {
         { $set: { WebhookAcknowledgement: true }, status: 'success' },
         { new: true }
       )
-      console.log(transaction)
     } catch (error) {
       console.error(error)
       //LogSnag call here

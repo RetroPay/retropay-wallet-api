@@ -28,6 +28,8 @@ const url = process.env.REDIS_CONNECTION_STRING
 export const redisClient = url != undefined ? createClient({
     url: `${process.env.REDIS_CONNECTION_STRING}`
 }) : createClient()
+redisClient.connect();
+
 
 redisClient.on('error', (err) => console.log('Redis Client Error', err));
 

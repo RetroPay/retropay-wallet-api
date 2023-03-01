@@ -70,13 +70,13 @@ class App {
     private listen(): void {
         this.express.listen(this.port, () => {
             console.log(`Server running at ${this.port}`)
+            // console.clear()
         })
     }
 
     private async connectSmtp(): Promise<void> {
         const mailService = MailService.getInstance();
         await mailService.createConnection();
-        console.log('live smtp')
     }
 
     public async createConnection(): Promise<void> {

@@ -22,11 +22,9 @@ class WebhookController implements IController {
 
     private processWebhooks = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
        try {
-        // console.log(req.body, req.headers)
         await webhookModel.create(req.body)
 
         res.sendStatus(200)
-        // console.log(req.body)
         const { transactionType  } = req.body
         const  {payingBank,  amount, transactionReference, narrations, accountName, accountNumber, senderName, recipientName, sessionId} = req.body
 
@@ -73,7 +71,7 @@ class WebhookController implements IController {
                 break;
         }
        } catch (error) {
-            console.log(error)
+        //logsnag
        } 
     }
 }

@@ -9,7 +9,6 @@ async function kudaTokenHandler(
     next: NextFunction
 ): Promise<Response | void> {
     try {
-        await redisClient.connect()
         let k_token = await redisClient.get("K_TOKEN")
         if(!k_token) {
             const response = await axios({
@@ -27,11 +26,9 @@ async function kudaTokenHandler(
         }
 
         req.k_token = k_token
-        await redisClient.disconnect();
         next()
     } catch (error) {
-        await redisClient.disconnect();
-        return next(new HttpException(500, 'An error occured. Try again later'))
+        return next(new HttpException(500, 'An error occurred. Try again later'))
     }
 }
 
