@@ -52,11 +52,10 @@ export default class MailService {
                     html: options.html,
                 })
                 .then((info: any) => {
-                    console.log(info)
                     return info;
                 })
         } catch (err: any) {
-            console.log(err.message)
+            console.error(err.message)
         }
     }
     //VERIFY CONNECTION

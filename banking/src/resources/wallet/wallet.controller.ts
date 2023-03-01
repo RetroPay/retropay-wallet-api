@@ -57,7 +57,7 @@ class WalletController implements IController {
             const result = await this.walletService.getTransactionsByMonthandYear(monthNumber + 1, year, req.user)
             res.status(200).json({
                 success: true,
-                message: "Transactions retrieved succeesfully",
+                message: "Transactions retrieved successfully",
                 data: result
             })
         } catch (error: any) {
@@ -85,13 +85,13 @@ class WalletController implements IController {
     private queryTransactionStatus = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const { reference } = req.params
-            console.log(reference)
+           
             if(reference == "") throw new Error("Invalid request. Include valid reference.")
 
             const transaction = await this.walletService.getTransactionStatus(req.user, req.k_token, reference)
             res.status(200).json({
                 success: true,
-                message: "Transactions status retrieved succeesfully",
+                message: "Transactions status retrieved successfully",
                 data: transaction
             })
         } catch (error: any) {
@@ -121,12 +121,12 @@ class WalletController implements IController {
 
     private getWalletBalance = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
-            console.log(req.user)
+         
             const balance = await this.walletService.getAccountBalance(req.referenceId, req.k_token, req.user)
             
             res.status(200).json({
                 success: true,
-                message: "Balance retrieved succeesfully",
+                message: "Balance retrieved successfully",
                 data: {
                     balance
                 }
@@ -140,7 +140,7 @@ class WalletController implements IController {
         try {
             const { pin, amount, recipientTag, comment, beneficiaryName } = req.body
             const transaction = await this.walletService.transferFunds(pin, amount, recipientTag, comment, req.user, req.username, req.referenceId, req.k_token, beneficiaryName)
-            console.log('transaction', transaction)
+      
             publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
                 event: 'QUEUE_NOTIFICATION',
                 data: {
@@ -190,7 +190,7 @@ class WalletController implements IController {
 
             res.status(201).json({
                 success: true,
-                message: "Transaction successfull",
+                message: "Transaction successful",
                 data: {
                     transaction
                 }
@@ -205,7 +205,6 @@ class WalletController implements IController {
         try {
             const { pin, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryName, beneficiaryBank, nameEnquiryId } = req.body
 
-            console.log(req.body)
             const transaction = await this.walletService.withdrawFunds(pin, req.referenceId, req.user, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryBank, beneficiaryName, nameEnquiryId, req.k_token)
             
             publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
@@ -221,7 +220,7 @@ class WalletController implements IController {
             
             res.status(201).json({
                 success: true,
-                message: "Transaction successfull",
+                message: "Transaction successful",
                 data: {
                     transaction
                 }
@@ -266,7 +265,7 @@ class WalletController implements IController {
             const banks = await this.walletService.getBankList(req.k_token)
             res.status(200).json({
                 success: true,
-                message: "Bank list retrieved succesfully",
+                message: "Bank list retrieved successfully",
                 data: {
                     banks,
                 }

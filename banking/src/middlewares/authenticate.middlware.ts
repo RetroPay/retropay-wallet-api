@@ -40,8 +40,6 @@ async function authenticatedMiddleware(
         req.username = user.username
         req.email = user.email
 
-        console.log(user)
-
         return next()
     } catch (error: any) {
         return next(new HttpException(401, error.message || error || 'Unauthorised'))

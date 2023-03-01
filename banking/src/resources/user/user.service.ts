@@ -39,7 +39,7 @@ class UserService {
                     break;
                 case 'UPDATE_USER_IDENTITY_STATUS': await this.updateUserVerification(data)
                     break;
-                default:    console.log("== invalid event == ")
+                default:
                     break;
             }  
         } catch (error: any) {
@@ -59,10 +59,7 @@ class UserService {
                 username,
                 referenceId: _id
             })
-            console.log("== new user logged ==")
         } catch (error: any) {
-            console.log("== error logging new user ==")
-            console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to sign up')
         }
     }
@@ -72,9 +69,8 @@ class UserService {
             const { id, pin } = reqData
 
             const updated = await userModel.findOneAndUpdate({referenceId: id}, { pin }, { new: true})
-            console.log(updated)
+          
         } catch (error) {
-            console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to set transaction pin.')
         }
     }
@@ -84,7 +80,6 @@ class UserService {
            const foundUser: IUser | null = await userModel.findOne({email: reqData.email})
             return foundUser
         } catch (error) {
-            console.log(translateError(error))
             throw new Error(translateError(error)[0] || 'Unable to updated password.')
         }
     }
@@ -93,9 +88,8 @@ class UserService {
         try {
             const { _id, username } = reqData 
             const updatedUser = await userModel.findOneAndUpdate({referenceId: _id}, { username }, { new: true }).select("username")
-            if(updatedUser) console.log("== username updated ==")
+            // if(updatedUser) console.log("== username updated ==")
         } catch (error: any) {
-            console.log(translateError(error))
             throw new Error("Unable to update username")
         }
     }
@@ -113,7 +107,7 @@ class UserService {
         try {
             const { id } = reqData
             const foundUser = await userModel.findOneAndUpdate({ referenceId: id }, {$set: {isAccountActive: false}}, { new: true })
-            console.log(foundUser)
+          
             if(!foundUser) throw new Error("Unable to delete user account.")
         } catch (error: any) {
             throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
@@ -127,7 +121,6 @@ class UserService {
                 $set: { transferPermission: true }},
                 { new: true }
             )
-            console.log(updateUser)
             if(!updateUser) throw new Error("'Unable to update nuban details.")
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to update nuban details.')
@@ -139,7 +132,7 @@ class UserService {
             const { id, recipientId } = reqData
 
             const updatedUser = await userModel.findOneAndUpdate({ referenceId: id }, { $pull: {favoritedRecipients: recipientId } }, { new: true })
-            console.log(updatedUser)
+       
             if(!updatedUser) throw new Error("Unable to delete recipient.")
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to delete recipient.')
@@ -151,7 +144,7 @@ class UserService {
             const { id, profilePhoto } = reqData
             const updatedUser = await userModel.findOneAndUpdate({referenceId: id}, { profilePhoto }, { new: true })
 
-            console.log(updatedUser)
+          
             if(!updatedUser) throw new Error("Unable to upload profile photo.")
         } catch (error: any) {
             throw new Error(translateError(error)[0] || 'Unable to upload profile photo.')
@@ -170,7 +163,6 @@ class UserService {
                     break;
             }
         } catch (error: any) {
-            console.log(error)
             throw new Error(translateError(error)[0] || 'Unable to update identity status.')
             //LogSnag call here
         }

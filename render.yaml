@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: retropay-wallet-proxy
+    name: retro-wallet-proxy
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
@@ -9,22 +9,24 @@ services:
     buildFilter: 
       paths: 
         - ./gateway/**
-    envVars: 
-      - key: ACCOUNTS_HOST
-        fromService:
-          type: web
-          name: retropay-wallet-accounts-serivce-staging
-          property: host
-      - key: BANKING_HOST
-        fromService:
-          type: web
-          name: retropay-wallet-banking-serivce-staging
-          property: host
+    buildCommand: npm i; npm build
+    startCommand: npm start
+    
+  - type: web
+    name: retro-wallet-proxy-staging
+    env: node
+    repo: https://github.com/RetroPay/retropay-wallet-api.git
+    branch: staging
+    plan: free
+    rootDir: ./gateway
+    buildFilter: 
+      paths: 
+        - ./gateway/**
     buildCommand: npm i; npm build
     startCommand: npm start
 
   - type: web
-    name: retropay-wallet-accounts-serivce-prod
+    name: retro-wallet-accounts-prod
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
@@ -45,7 +47,7 @@ services:
       - fromGroup: retropay-wallet-account-envs
 
   - type: web
-    name: retropay-wallet-accounts-serivce-staging
+    name: retro-wallet-accounts-staging
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
@@ -66,7 +68,7 @@ services:
       - fromGroup: retropay-wallet-account-envs-staging
 
   - type: web
-    name: retropay-wallet-banking-serivce-staging
+    name: retro-wallet-banking-staging
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
@@ -87,7 +89,7 @@ services:
       - fromGroup: retropay-wallet-banking-envs-staging
 
   - type: web
-    name: retropay-wallet-banking-serivce-prod
+    name: retro-wallet-banking-prod
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master

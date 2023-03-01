@@ -106,7 +106,6 @@ class UserController implements IController {
                 }
             })
         } catch (error: any) {
-            console.log(error)
             return next(new HttpExeception(400, error.message))
         }
     }
@@ -123,7 +122,6 @@ class UserController implements IController {
                 }
             })
         } catch (error: any) {
-            console.log(error)
             return next(new HttpExeception(400, error.message))
         }
     }
@@ -139,7 +137,6 @@ class UserController implements IController {
                 }
             })
         } catch (error: any) {
-            console.log(error)
             return next(new HttpExeception(400, error.message))
         }
     }
@@ -155,7 +152,7 @@ class UserController implements IController {
                 }
             })
         } catch (error: any) {
-            console.log(error)
+            
             return next(new HttpExeception(400, error.message))
         }
     }
@@ -258,7 +255,7 @@ class UserController implements IController {
     private resetPassword = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const updatedUser = await this.UserService.resetPassword(req.body)
-            console.log(updatedUser)
+
             res.status(200).json({
                 success: true,
                 message: "Password reset succesful",
@@ -307,7 +304,7 @@ class UserController implements IController {
             const result = await this.UserService.generatePhoneToken(req.user, req.body.phoneNumber)
             res.status(200).json({
                 success: true,
-                message: "Phone verification token sent.",
+                message: "Phone verification token sent. Expires in 10 minutes",
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message || 'Unable to send verification sms.'))
@@ -319,7 +316,7 @@ class UserController implements IController {
             const updatedUser = await this.UserService.verifyPhoneNumber(req.user, req.body.token)
             res.status(200).json({
                 success: true,
-                message: "Phone number verification succesful",
+                message: "Phone number verification successful",
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
@@ -333,7 +330,7 @@ class UserController implements IController {
             }
             const { username } = req.params
 
-            const isAvailable: boolean = await this.UserService.chackTagAvailability(username)
+            const isAvailable: boolean = await this.UserService.checkTagAvailability(username)
 
             if(!isAvailable) {
                 return next(new HttpExeception(400, 'Username is unavailable'))
@@ -357,7 +354,7 @@ class UserController implements IController {
             }));
             res.status(200).json({
                 success: true,
-                message: 'Username setup succesful',
+                message: 'Username setup successful',
                 data: {
                     user: updatedUser
                 }
@@ -375,14 +372,14 @@ class UserController implements IController {
             form.parse(req, async (err, fields, files) => {
 
                 if (err) {
-                    console.log(err)
+                    
                     return next(new HttpExeception(400, 'Unable to upload photo.'))
                 }
                 // get image file (object)
                 const { profilePhoto }: any = files
 
                 if(profilePhoto == undefined) {
-                    return next(new HttpExeception(400, 'Invald request - profilePhoto not found.'))
+                    return next(new HttpExeception(400, 'Invalid request - profilePhoto not found.'))
                 }
 
                 //upload image to cloud, returns uploadResponse (object)
@@ -405,7 +402,7 @@ class UserController implements IController {
 
                 res.status(200).json({
                     success: true,
-                    message: 'Profile upload succesful',
+                    message: 'Profile upload successful',
                     data: {
                         profilePhoto: updatedUser
                     }
@@ -440,7 +437,7 @@ class UserController implements IController {
     private getVerificationStatus = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {
             const verificationStatus = await this.UserService.getUserVerificationStatus(req.user)
-            console.log(verificationStatus)
+          
             res.status(200).json({
                 success: true,
                 message: 'Verification status retrieved',
@@ -458,13 +455,13 @@ class UserController implements IController {
             const user = await this.UserService.resolveUserByAccountTag(req.params.username)
             res.status(200).json({
                 success: true,
-                message: "Account details resolved succesfully.",
+                message: "Account details resolved successfully.",
                 data: {
                     user
                 }
             })
         } catch (error: any) {
-            console.log(error)
+            
             return next(new HttpExeception(400, error.message))
         }
     }
@@ -518,7 +515,7 @@ class UserController implements IController {
             const favorites = await this.UserService.retrieveFavorites(req.user)
             res.status(200).json({
                 success: true,
-                message: "Favorite recipients retrieved succesfully.", 
+                message: "Favorite recipients retrieved successfully.", 
                 data: { favorites }
             })
         } catch (error: any) {
@@ -530,7 +527,7 @@ class UserController implements IController {
             const notifications = await this.UserService.getNotifications(req.user)
             res.status(200).json({
                 success: true,
-                message: "Notifications retrieved succesfully.", 
+                message: "Notifications retrieved successfully.", 
                 data: { notifications }
             })
         } catch (error: any) {
@@ -541,7 +538,6 @@ class UserController implements IController {
     private createNubanAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {
             const createdAccount: any = await this.UserService.createNubanAccount(req.user, req.k_token)
-            console.log(createdAccount)
 
             //Notify banking service
             publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
@@ -553,11 +549,10 @@ class UserController implements IController {
             }));
             res.status(200).json({
                 success: true,
-                message: "Succesfully created nuban account",
+                message: "Successfully created nuban account",
                 data: createdAccount
             })
         } catch (error: any) {
-            console.log(error)
             return next(new HttpExeception(400, error.message))
         }
     }
