@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: retro-wallet-proxy
+    name: retropay-wallet-proxy
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
@@ -11,7 +11,7 @@ services:
         - ./gateway/**
     buildCommand: npm i; npm build
     startCommand: npm start
-    
+
   - type: web
     name: retro-wallet-proxy-staging
     env: node
@@ -26,7 +26,7 @@ services:
     startCommand: npm start
 
   - type: web
-    name: retro-wallet-accounts-prod
+    name: retropay-wallet-accounts-serivce-prod
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
@@ -47,7 +47,7 @@ services:
       - fromGroup: retropay-wallet-account-envs
 
   - type: web
-    name: retro-wallet-accounts-staging
+    name: retropay-wallet-accounts-serivce-staging
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
@@ -68,7 +68,7 @@ services:
       - fromGroup: retropay-wallet-account-envs-staging
 
   - type: web
-    name: retro-wallet-banking-staging
+    name: retropay-wallet-banking-serivce-staging
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
@@ -89,7 +89,7 @@ services:
       - fromGroup: retropay-wallet-banking-envs-staging
 
   - type: web
-    name: retro-wallet-banking-prod
+    name: retropay-wallet-banking-serivce-prod
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
