@@ -8,8 +8,10 @@ import moment from "moment"
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
+import { createObjectCsvWriter } from "csv-writer"
 import axios from 'axios'
 import { v4 } from "uuid"
+import mongoose from "mongoose"
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
@@ -361,9 +363,6 @@ class UserService {
             if (!foundUser) throw new Error("Unable to send verification sms.")
             if (foundUser.isPhoneVerified == true) throw new Error("Phone number already verified")
 
-            
-
-
             // Generate token of length 5
             const token = generateOtp(5)
 
@@ -542,12 +541,12 @@ class UserService {
             if (favoritedRecipients && favoritedRecipients.includes(foundRecipient.id)) throw new Error("Recipient already added to favorites.")
 
             const updatedUser = await userModel.findByIdAndUpdate(userId, { $push: { favoritedRecipients: foundRecipient.id } }, { new: true })
-            if (!updatedUser) throw new Error("Unable to add to favourites.")
+            if (!updatedUser) throw new Error("Unable to add to favorites.")
 
             //return ID of favorited recipient
             return foundRecipient.id
         } catch (error: any) {
-            throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+            throw new Error(translateError(error)[0] || 'Unable to add to favorites.')
         }
     }
 
@@ -561,7 +560,7 @@ class UserService {
 
             return foundRecipient.id
         } catch (error: any) {
-            throw new Error(translateError(error)[0] || 'Unable to unfavourite this recipient.')
+            throw new Error(translateError(error)[0] || 'Unable to unfavorite this recipient.')
         }
     }
 
@@ -578,10 +577,11 @@ class UserService {
         }
     }
 
-    public async getNotifications(userId: string): Promise<IUser | null> {
-        try {
-            const notifications: any = await userModel.findById(userId).select('notifications')
-            return notifications.notifications.reverse();
+    public async getNotifications(userId: string): Promise<IUser | any> {
+        try { 
+            const notifications: any = await userModel.findById(userId).select("notifications")
+            console.log(notifications)
+            return notifications.notifications.reverse().slice(0, 20);
         } catch (error) {
             throw new Error('Unable to retrieve notifications.')
         }
@@ -593,7 +593,7 @@ class UserService {
           
             if (!foundUser) throw new Error("Unable to delete user account.")
         } catch (error: any) {
-            throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+            throw new Error(translateError(error)[0] || 'Unable to add to favorites.')
         }
     }
 

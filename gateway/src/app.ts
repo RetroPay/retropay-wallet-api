@@ -54,7 +54,7 @@ class App {
     public listen(): void {
         this.express.listen(this.port, () => {
             console.log(`Gateway running on port ${this.port}`)
-            console.clear()
+            // console.clear()
         })
     }
 

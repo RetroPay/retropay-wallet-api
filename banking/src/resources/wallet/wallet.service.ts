@@ -6,7 +6,6 @@ import translateError from "@/helpers/mongod.helper"
 import mongoose from "mongoose"
 import axios from "axios"
 import { redisClient } from "../../server"
-import IUser from "../user/user.interface"
 
 class WalletService {
 
