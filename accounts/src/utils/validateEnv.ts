@@ -6,7 +6,6 @@ function validateEnv(): void {
             choices: ['development', 'production']
         }),
         MONGODB_URI_CLOUD: str(),
-        MONGODB_URI: str(),
         PORT: port({default: 5000}),
         JWT_SECRET: str(),
         OTP_DIGITS: str(),
