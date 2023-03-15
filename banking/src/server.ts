@@ -8,6 +8,7 @@ import WalletController from "@/resources/wallet/wallet.controller"
 import WebhookController from "@/resources/webhooks/kuda/hook.controller"
 import {createChannel} from "@/utils/broker"
 import { createClient } from "redis"
+import { LogSnag } from "logsnag"
 
 validateEnv()
 
@@ -28,12 +29,24 @@ const url = process.env.REDIS_CONNECTION_STRING
 export const redisClient = url != undefined ? createClient({
     url: `${process.env.REDIS_CONNECTION_STRING}`
 }) : createClient()
+
+
+export const logsnag = new LogSnag({
+    token: `${process.env.LOG_SNAG_TOKEN}`,
+    project: 'retro-wallet'
+})
+
 redisClient.connect();
-
-
-redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.on('error', async (err) => {
+    await logsnag.publish({
+        channel: "server",
+        event: "Redis client error",
+        description: `redis client error: ${err}`
+    })
+})
 
 export default {
     brokerChannel,
-    redisClient
+    redisClient,
+    logsnag
 }

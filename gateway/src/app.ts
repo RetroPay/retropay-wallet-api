@@ -8,6 +8,7 @@ import proxy from 'express-http-proxy'
 import ErrorMiddleware from './middlewares/error.middleware'
 import IController from './utils/interfaces/controller.interface'
 import rateLimit from 'express-rate-limit'
+import { logsnag } from './server'
 
 
 class App {
@@ -53,8 +54,7 @@ class App {
 
     public listen(): void {
         this.express.listen(this.port, () => {
-            console.log(`Gateway running on port ${this.port}`)
-            // console.clear()
+            process.env.NODE_ENV == 'development' || 'local' ? console.log(`Gateway running on port ${this.port}`): ''
         })
     }
 
@@ -63,7 +63,13 @@ class App {
         const banking_host = process.env.NODE_ENV == 'development' ? process.env.STAGING_BANKING_HOST : process.env.BANKING_HOST
 
         this.express.use("/banking", proxy(banking_host != undefined ? banking_host : "http://localhost:4001", {
-            proxyErrorHandler: function(err, res, next) {
+            proxyErrorHandler: async function(err, res, next) {
+                await logsnag.publish({
+                    channel: "server",
+                    event: "Banking Service Downtime",
+                    description: `Service Downtime error: ${err}`,
+                    icon: "💥"
+                })
                 return res.status(503).send('Service Unavailable');
             },
             https: process.env.NODE_ENV == 'development' ? true : false
@@ -75,7 +81,13 @@ class App {
             Hence the setting of parseReqBody to false here.
         */
         this.express.use("/uploads/account", proxy(account_host != undefined ? account_host : "http://localhost:4002", {
-            proxyErrorHandler: function(err, res, next) {
+            proxyErrorHandler: async function(err, res, next) {
+                await logsnag.publish({
+                    channel: "server",
+                    event: "Upload Service Downtime",
+                    description: `Service Downtime error: ${err}`,
+                    icon: "💥"
+                })
                 return res.status(503).send('Service Unavailable');
             },
             parseReqBody: false,
@@ -83,8 +95,13 @@ class App {
         }))
 
         this.express.use("/account", proxy(account_host != undefined ? account_host : "http://localhost:4002", {
-            proxyErrorHandler: function(err, res, next) {
-                console.error(err)
+            proxyErrorHandler: async function(err, res, next) {
+                await logsnag.publish({
+                    channel: "server",
+                    event: "Account Service Downtime",
+                    description: `Service Downtime error: ${err}`,
+                    icon: "💥"
+                })
                 return res.status(503).send('Service Unavailable');
             },
             https: process.env.NODE_ENV == 'development' ? true : false

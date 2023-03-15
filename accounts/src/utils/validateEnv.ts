@@ -23,13 +23,12 @@ function validateEnv(): void {
         MESSAGE_BROKER_URL: str(),
         ACCOUNT_BINDING_KEY: str(),
         ACCOUNTS_QUEUE_NAME: str(),
-        FLW_PUBLIC_KEY: str(),
-        FLW_SECRET_KEY: str(),
         KUDA_PRIVATE_KEY: str(),
         KUDA_MAIL: str(),
         TERMII_API_KEY: str(),
         TERMII_SECRET_KEY: str(),
         TERMII_SENDER_ID: str(),
+        LOG_SNAG_TOKEN: str()
     })
 }
 

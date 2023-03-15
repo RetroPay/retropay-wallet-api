@@ -7,8 +7,10 @@ import UserController from "@/resources/user/user.controller"
 import metaMapWebhookController from './resources/webhooks/metamap/hook.controller'
 import { createChannel } from "@/utils/broker"
 import { createClient } from "redis"
+import { LogSnag } from "logsnag"
 
 validateEnv()
+
 
 export const brokerChannel = createChannel()
 
@@ -18,11 +20,23 @@ export const redisClient = url != undefined ? createClient({
 }) : createClient()
 
 redisClient.connect();
-redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.on('error', async (err) => {
+    await logsnag.publish({
+        channel: "server",
+        event: "Redis client error",
+        description: `redis client error: ${err}`
+    })
+})
+
+export const logsnag = new LogSnag({
+    token: `${process.env.LOG_SNAG_TOKEN}`,
+    project: 'retro-wallet'
+})
 
 export default {
     brokerChannel,
-    redisClient
+    redisClient,
+    logsnag
 }
 
 const app = new App([

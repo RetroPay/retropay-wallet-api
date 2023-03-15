@@ -1,15 +1,13 @@
 import IUser from "./user.interface"
 import userModel from "./user.model"
 import translateError from "@/helpers/mongod.helper"
-import bcrypt from "bcrypt"
-import { createToken } from "@/utils/token"
-import generateOtp from "@/services/otp"
-import moment from "moment"
-import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
-import MailService from "@/services/sendEmails";
-const Flutterwave = require('flutterwave-node-v3');
-const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
-import MessageBroker from "@/utils/broker"
+// import bcrypt from "bcrypt"
+// import { createToken } from "@/utils/token"
+// import generateOtp from "@/services/otp"
+// import moment from "moment"
+// import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
+// import MailService from "@/services/sendEmails";
+// import MessageBroker from "@/utils/broker"
 
 class UserService {
 
@@ -43,7 +41,7 @@ class UserService {
                     break;
             }  
         } catch (error: any) {
-            console.error(error)
+            
         }
         
     }
@@ -88,7 +86,6 @@ class UserService {
         try {
             const { _id, username } = reqData 
             const updatedUser = await userModel.findOneAndUpdate({referenceId: _id}, { username }, { new: true }).select("username")
-            // if(updatedUser) console.log("== username updated ==")
         } catch (error: any) {
             throw new Error("Unable to update username")
         }

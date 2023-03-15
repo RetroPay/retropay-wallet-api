@@ -3,7 +3,7 @@ import IController from "@/utils/interfaces/controller.interface"
 import UserService from "@/resources/user/user.service"
 import webhookModel from "../metamap/hook.model"
 import crypto from "crypto"
-import { brokerChannel } from "../../../server"
+import { brokerChannel, logsnag } from "../../../server"
 import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class metaMapWebhookController implements IController {

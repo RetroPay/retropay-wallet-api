@@ -3,7 +3,7 @@ import IController from "@/utils/interfaces/controller.interface"
 import webhookModel from "./hook.model"
 import WalletService from "@/resources/wallet/wallet.service"
 import crypto from "crypto"
-import { brokerChannel } from "../../../server"
+import { brokerChannel, logsnag } from "../../../server"
 import { publishMessage } from "@/utils/broker"
 import IWallet from "@/resources/wallet/wallet.interface"
 
@@ -59,6 +59,13 @@ class WebhookController implements IController {
                                     event: 'QUEUE_NOTIFICATION',
                                     data: payload
                                 }));
+                                await logsnag.publish({
+                                    channel: "user-actions",
+                                    event: "Wallet Funded",
+                                    description: "User's wallet has been successfully funded",
+                                    icon: "🤑",
+                                    notify: true
+                                })
                             }
                             break;
                         default: 
@@ -71,6 +78,13 @@ class WebhookController implements IController {
                 break;
         }
        } catch (error) {
+        await logsnag.publish({
+            channel: "failed-requests",
+            event: "Failed to process wallet webhook",
+            description: "An attempt to withdraw funds to a bank account has failed.",
+            icon: "😭",
+            notify: true
+          })
         //logsnag
        } 
     }

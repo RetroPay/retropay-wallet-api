@@ -6,12 +6,8 @@ import { createToken } from "@/utils/token"
 import generateOtp from "@/services/otp"
 import moment from "moment"
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
-const Flutterwave = require('flutterwave-node-v3');
-const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY)
-import { createObjectCsvWriter } from "csv-writer"
 import axios from 'axios'
 import { v4 } from "uuid"
-import mongoose from "mongoose"
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
@@ -24,7 +20,7 @@ class UserService {
             switch (event) {
                 case 'QUEUE_NOTIFICATION': await this.queueNotification(data);
                     break;
-                default: console.error("== invalid event == ")
+                default:
                     break;
             }
         } catch (error) {
@@ -53,7 +49,6 @@ class UserService {
             }, { new: true })
 
         } catch (error: any) {
-            console.error(error)
         }
     }
 
@@ -580,7 +575,7 @@ class UserService {
     public async getNotifications(userId: string): Promise<IUser | any> {
         try { 
             const notifications: any = await userModel.findById(userId).select("notifications")
-            console.log(notifications)
+
             return notifications.notifications.reverse().slice(0, 20);
         } catch (error) {
             throw new Error('Unable to retrieve notifications.')

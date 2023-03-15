@@ -50,10 +50,10 @@
     "express": "^4.18.1",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^6.7.0",
-    "flutterwave-node-v3": "^1.0.11",
     "helmet": "^6.0.0",
     "joi": "^17.6.2",
     "jsonwebtoken": "^9.0.0",
+    "logsnag": "^0.1.6",
     "module-alias": "^2.2.2",
     "moment": "^2.29.4",
     "mongoose": "^6.6.2",
@@ -64,7 +64,6 @@
     "uuid": "^9.0.0"
   },
   "_moduleAliases": {
-    "@/configs": "./dist/configs",
     "@/utils": "./dist/utils",
     "@/middlewares": "./dist/middlewares",
     "@/resources": "./dist/resources",
