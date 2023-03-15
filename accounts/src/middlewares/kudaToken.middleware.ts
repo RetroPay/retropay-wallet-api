@@ -28,7 +28,7 @@ async function kudaTokenHandler(
         req.k_token = k_token
         next()
     } catch (error) {
-        return next(new HttpException(500, 'An error occurred. Try again later'))
+        return next(new HttpException(500, 'An error occurred on our end. Try again later'))
     }
 }
 

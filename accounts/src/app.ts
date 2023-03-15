@@ -7,11 +7,9 @@ import ErrorMiddleware from '@/middlewares/error.middleware'
 import IController from '@/utils/interfaces/controller.interface'
 import MailService from './services/sendEmails'
 import corsOption from './utils/corsOption'
-import cors from 'cors'
 import helmet from 'helmet'
 import process from 'process'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
-import rateLimit from 'express-rate-limit'
 
 class App {
     public express: Application
@@ -33,12 +31,6 @@ class App {
         this.express.use(express.json())
         this.express.use(compression())
         this.express.use(ExpressMongoSanitize())
-        // this.express.use(rateLimit({
-        //     windowMs: 10*60*1000,
-        //     max: 500, //Accepts 500
-        //     standardHeaders: false,
-        //     legacyHeaders: false,
-        // }))
     }
 
     private initialiseControllers(controllers: IController[]): void {
@@ -52,24 +44,22 @@ class App {
     }
 
     private async initialiseDatabaseConnection(): Promise<void> {
-        const { MONGODB_URI, MONGODB_URI_CLOUD, NODE_ENV } = process.env
+        const { MONGODB_URI_CLOUD } = process.env
 
         await mongoose.connect(`${MONGODB_URI_CLOUD}`)
         .then(() => {
             this.listen()
             this.connectSmtp()
-            console.log('DB connected.')
+            process.env.NODE_ENV == 'development' ? console.log('DB connected.') : ''
         })
         .catch((error) => {
-            console.log(`Error connecting to database /n ${error}`)
-            // throw new Error(error)
+            process.env.NODE_ENV == 'development' ? console.log(`Error connecting to database /n ${error}`) : ''
         })
     }
 
     private listen(): void {
         this.express.listen(this.port, () => {
-            console.log(`Server running at ${this.port}`)
-            // console.clear()
+            process.env.NODE_ENV == 'development' ?  console.log(`Server running at ${this.port}`) : ''
         })
     }
 

@@ -14,7 +14,7 @@ import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable"
 import welcomeEmail from "@/templates/welcome.template";
 import transferInRecieptEmail from "@/templates/transferin-receipt.template";
-import { brokerChannel } from "../../server"
+import { brokerChannel, logsnag } from "../../server"
 import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class UserController implements IController {
@@ -97,6 +97,13 @@ class UserController implements IController {
             //Remove _id before responding to client
             delete user.user._id
 
+            await logsnag.publish({
+                channel: "user-actions",
+                event: "User Signup",
+                icon: "🎉",
+                notify: true
+            })
+
             res.status(201).json({
                 success: true,
                 message: "Signup successful",
@@ -152,7 +159,7 @@ class UserController implements IController {
                 }
             })
         } catch (error: any) {
-            
+
             return next(new HttpExeception(400, error.message))
         }
     }
@@ -347,7 +354,7 @@ class UserController implements IController {
     private setupUsername = async(req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const updatedUser = await this.UserService.setUsername(req.body.username, req.user)
-            // if(updatedUser) {}
+
             publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                 event: 'USERNAME_UPDATED',
                 data: updatedUser
@@ -522,6 +529,7 @@ class UserController implements IController {
             return next(new HttpExeception(400, error.message))
         }
     }
+
     public getNotifications = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {
             const notifications = await this.UserService.getNotifications(req.user)

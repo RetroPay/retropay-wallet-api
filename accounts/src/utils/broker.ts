@@ -5,7 +5,6 @@ export const createChannel = async (): Promise<amqplib.Channel> => {
         const connection = await amqplib.connect(`${process.env.MESSAGE_BROKER_URL}`)
         const channel = await connection.createChannel()
         await channel.assertExchange(`${process.env.EXCHANGE_NAME}`, 'direct')
-        console.clear()
         return channel
     } catch (error: any) {
         throw new Error(error)

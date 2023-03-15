@@ -1,5 +1,6 @@
 import nodemailer, { Transport } from "nodemailer"
 import IMailInterface from "@/utils/interfaces/mail.interface";
+import { logsnag } from "../server";
 
 export default class MailService {
     private static instance: MailService;
@@ -55,14 +56,18 @@ export default class MailService {
                     return info;
                 })
         } catch (err: any) {
-            console.error(err)
+            await logsnag.publish({
+                channel: "server",
+                event: "SendMail Failed",
+                description: `Mail service error: ${err}`
+            })
         }
     }
     //VERIFY CONNECTION
     async verifyConnection() {
         return this.transporter.verify();
     }
-    //CREATE TRANSPOTER
+    //CREATE TRANSPORTER
     getTransporter() {
         return this.transporter;
     }

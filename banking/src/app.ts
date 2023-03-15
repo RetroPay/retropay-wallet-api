@@ -6,7 +6,6 @@ import 'module-alias/register'
 import ErrorMiddleware from '@/middlewares/error.middleware'
 import IController from '@/utils/interfaces/controller.interface'
 import MailService from './services/sendEmails'
-import cors from 'cors'
 import helmet from 'helmet'
 import process from 'process'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
@@ -20,7 +19,6 @@ class App {
         this.express = express()
         this.port = port
 
-        // this.initialiseDatabaseConnection()
         this.initialiseMiddlewares()
         this.initialiseControllers(controllers)
         this.initialiseErrorHandling()
@@ -34,12 +32,6 @@ class App {
         this.express.use(express.urlencoded({ extended: false }))
         this.express.use(compression())
         this.express.use(ExpressMongoSanitize())
-        // this.express.use(rateLimit({
-        //     windowMs: 10*60*1000,
-        //     max: 500,
-        //     standardHeaders: false,
-        //     legacyHeaders: false,
-        // }))
     }
 
     private initialiseControllers(controllers: IController[]): void {
@@ -53,24 +45,23 @@ class App {
     }
 
     private async initialiseDatabaseConnection(): Promise<void> {
-        const { MONGODB_URI, MONGODB_URI_CLOUD, NODE_ENV } = process.env
+        const { MONGODB_URI_CLOUD } = process.env
 
         await mongoose.connect(`${MONGODB_URI_CLOUD}`)
         .then(() => {
             this.listen()
             this.connectSmtp()
-            console.log('DB connected.')
+            process.env.NODE_ENV == 'development' ?  console.log('DB connected.') : ''
         })
         .catch((error) => {
-            console.log(`Error connecting to database /n ${error}`)
+            process.env.NODE_ENV == 'development' ? console.log(`Error connecting to database /n ${error}`) : ''
             throw new Error(error)
         })
     }
 
     private listen(): void {
         this.express.listen(this.port, () => {
-            console.log(`Server running at ${this.port}`)
-            // console.clear()
+            process.env.NODE_ENV == 'development' ?  console.log(`Server running at ${this.port}`) : ''
         })
     }
 

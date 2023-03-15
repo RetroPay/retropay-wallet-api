@@ -19,8 +19,6 @@ function validateEnv(): void {
         CLOUDINARY_CLOUD_NAME: str(),
         CLOUDINARY_API_KEY: str(),
         CLOUDINARY_API_SECRET: str(),
-        FLW_PUBLIC_KEY: str(),
-        FLW_SECRET_KEY: str(),
         EXCHANGE_NAME: str(),
         MESSAGE_BROKER_URL: str(),
         BANKING_BINDING_KEY: str(),
@@ -29,7 +27,8 @@ function validateEnv(): void {
         KUDA_PRIVATE_KEY: str(),
         KUDA_TEST_URI: str(),
         KUDA_TEST_TOKEN_URI: str(),
-        KUDA_PROD_URI: str()
+        KUDA_PROD_URI: str(),
+        LOG_SNAG_TOKEN: str()
     })
 }
 
