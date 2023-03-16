@@ -418,14 +418,15 @@ class WalletService {
       }
 
     } catch (error) {
+      console.log(error)
 
-      await logsnag.publish({
-        channel: "failed-requests",
-        event: "Transfer failed",
-        description: `An attempt to transfer funds between wallet users has failed. err: ${error}`,
-        icon: "😥",
-        notify: true
-      })
+      // await logsnag.publish({
+      //   channel: "failed-requests",
+      //   event: "Transfer failed",
+      //   description: `An attempt to transfer funds between wallet users has failed. err: ${error}`,
+      //   icon: "😥",
+      //   notify: true
+      // })
 
       throw new Error(translateError(error)[0] || 'Unable to process transaction.')
     }
@@ -665,7 +666,7 @@ class WalletService {
 
 
       /*Check if user exists and has created a nuban to receive funds in else throw error*/
-      if (!foundRecipient || !foundRecipient.transferPermission) throw new Error('Invalid recipient.')
+      if (!foundRecipient || !foundRecipient.transferPermission) throw new Error('Oops. We could not find the account you\'re looking for')
 
       const response = await axios({
         method: 'POST',
@@ -687,8 +688,6 @@ class WalletService {
 
       const data = response.data
 
-
-
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) throw new Error(data.message)
 
@@ -705,7 +704,7 @@ class WalletService {
       }
 
     } catch (error: any) {
-      throw new Error("Unable to resolve bank account.")
+      throw new Error(translateError(error)[0] || "Network Error - Unable to resolve bank account at the moment.")
     }
   }
 
