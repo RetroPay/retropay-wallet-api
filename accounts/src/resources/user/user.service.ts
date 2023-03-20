@@ -69,14 +69,14 @@ class UserService {
             const { firstname, lastname, email, password } = reqData
 
             // validate password security
-            if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include atleast one uppercase, lowercase, special character and number.');
+            if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include at least one uppercase, lowercase, special character and number.');
 
             const newUser: IUser = await userModel.create({
                 firstname,
                 lastname,
                 email,
                 password,
-                username: email.split('@')[0],
+                username: email,
             })
 
             if (!newUser) throw new Error('Unable to create user account.')
