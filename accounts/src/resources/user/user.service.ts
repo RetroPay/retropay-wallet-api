@@ -54,7 +54,7 @@ class UserService {
 
     public async getUser(id: string): Promise<IUser | Error> {
         try {
-            const user = await userModel.findById(id, { '_id': 0, 'firstname': 1 }).select('firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
+            const user = await userModel.findById(id, { '_id': 0, 'firstname': 1 }).select('firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified isUsernameSet isPinSet')
 
             if (!user) throw new Error("Unable to retrieve details")
 
@@ -146,7 +146,7 @@ class UserService {
     public async setTransactionPin(userId: string, pin: string, confirmPin: string): Promise<IUser | null> {
         try {
             if (pin !== confirmPin) throw new Error("Pin does not match.")
-            const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(pin, 10) }, { new: true })
+            const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(pin, 10), isPinSet: true }, { new: true })
             if (!updatedUser) throw new Error("Unable to set transaction pin.")
 
             return updatedUser
@@ -489,7 +489,7 @@ class UserService {
         try {
             if (await userModel.findOne({ username })) throw new Error('Username already exists')
 
-            const updatedUser = await userModel.findByIdAndUpdate(id, { username }, { new: true }).select("username");
+            const updatedUser = await userModel.findByIdAndUpdate(id, { username, isUsernameSet: true }, { new: true }).select("username");
             if (!updatedUser) throw new Error('Unable to update username')
 
             return updatedUser
