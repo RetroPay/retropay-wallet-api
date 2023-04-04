@@ -243,8 +243,10 @@ class WalletService {
         { $group: { _id: null, totalDebits: { $sum: '$amount' } } }
       ])
       
+      
+      
       console.log(credits, "credit", debits, "debit")
-      return credits[0]?.totalCredits - debits[0]?.totalDebits || 0;
+      return credits[0]?.totalCredits ? credits[0]?.totalCredits : 0 - debits[0]?.totalDebits ? debits[0]?.totalDebits : 0;
     } catch (error) {
       throw new Error('Balance unavailable.')
     }
