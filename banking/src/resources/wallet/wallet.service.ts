@@ -271,15 +271,13 @@ class WalletService {
       ]);
 
       const debits = await walletModel.aggregate([
-        {
-          $match: {
-            fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
-          },
-        },
-        { $group: { _id: null, totalDebits: { $sum: "$amount" } } },
-      ]);
-
-      return credits[0]?.totalCredits - debits[0]?.totalDebits || 0;
+        { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId) } },
+        { $group: { _id: null, totalDebits: { $sum: '$amount' } } }
+      ])
+      
+      console.log(credits, "credit", debits, "debit")
+      console.log((credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0), "balance")
+      return (credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0);
     } catch (error) {
       throw new Error("Balance unavailable.");
     }
