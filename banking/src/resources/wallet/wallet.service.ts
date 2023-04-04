@@ -246,8 +246,8 @@ class WalletService {
       
       
       console.log(credits, "credit", debits, "debit")
-      console.log(credits[0]?.totalCredits ? credits[0]?.totalCredits : 0; - debits[0]?.totalDebits ? debits[0]?.totalDebits : 0;, "balance")
-      return credits[0]?.totalCredits ? credits[0]?.totalCredits : 0; - debits[0]?.totalDebits ? debits[0]?.totalDebits : 0;
+      console.log((credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0), "balance")
+      return (credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0);
     } catch (error) {
       throw new Error('Balance unavailable.')
     }
