@@ -242,7 +242,8 @@ class WalletService {
         { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId) } },
         { $group: { _id: null, totalDebits: { $sum: '$amount' } } }
       ])
-
+      
+      console.log(credits, "credit", debits, "debit")
       return credits[0]?.totalCredits - debits[0]?.totalDebits || 0;
     } catch (error) {
       throw new Error('Balance unavailable.')
