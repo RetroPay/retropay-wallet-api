@@ -202,21 +202,21 @@ class WebhookController implements IController {
                                         })
                                     );
 
-                                    //Send email notification
-                                    // const emailTemplate = transferOutRecieptEmail(
-                                    //     transaction.senderTag,
-                                    //     transaction.amount,
-                                    //     transaction.recipientTag,
-                                    //     transaction.transactionId,
-                                    //     transaction.createdAt
-                                    // );
-                                    // const mailService = MailService.getInstance();
-                                    // mailService.sendMail({
-                                    //     to: transaction.senderEmail,
-                                    //     subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
-                                    //     text: emailTemplate.text,
-                                    //     html: emailTemplate.html,
-                                    // });
+                                    // Send email notification
+                                    const emailTemplate = transferOutRecieptEmail(
+                                        transaction.senderTag,
+                                        transaction.amount,
+                                        transaction.recipientTag,
+                                        transaction.transactionId,
+                                        transaction.createdAt
+                                    );
+                                    const mailService = MailService.getInstance();
+                                    mailService.sendMail({
+                                        to: transaction.senderEmail,
+                                        subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
+                                        text: emailTemplate.text,
+                                        html: emailTemplate.html,
+                                    });
 
                                     const termiiPayload = {
                                         api_key: process.env.TERMII_API_KEY,
@@ -224,10 +224,9 @@ class WebhookController implements IController {
                                         from: process.env.TERMII_SENDER_ID,
                                         channel: "generic",
                                         type: "plain",
-                                        sms: `
-                                            Retro Wallet - Debit Alert\n
+                                        sms: `Retro Wallet - Debit Alert\n
                                             Amount: NGN${transaction.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
-                                            Recipient: ${transaction.recipientTag}
+                                            Recipient: @${transaction.recipientTag}
                                             Date: ${new Date(transaction.createdAt).toLocaleDateString}\n
                                         `
                                     }
