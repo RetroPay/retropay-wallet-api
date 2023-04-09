@@ -13,7 +13,7 @@ async function authenticatedMiddleware(
     const bearer = req.headers.authorization
 
     if (!bearer || !bearer.startsWith('Bearer ')) {
-        return next(new HttpException(401, 'Unauthorised'))
+        return next(new HttpException(401, 'Unauthorized'))
     }
 
     const accessToken = bearer.split('Bearer ')[1].trim()
@@ -23,13 +23,13 @@ async function authenticatedMiddleware(
         )
 
         if (payload instanceof jwt.JsonWebTokenError) {
-            return next(new HttpException(401, 'Unauthorised'))
+            return next(new HttpException(401, 'Unauthorized'))
         }
 
         const user = await UserModel.findById(payload.id).select('username email').exec()
 
         if (!user) {
-            return next(new HttpException(401, 'Unauthorised'))
+            return next(new HttpException(401, 'Unauthorized'))
         }
 
 
@@ -42,7 +42,7 @@ async function authenticatedMiddleware(
 
         return next()
     } catch (error: any) {
-        return next(new HttpException(401, error.message || error || 'Unauthorised'))
+        return next(new HttpException(401, error.message || error || 'Unauthorized'))
     }
 }
 

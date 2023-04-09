@@ -73,7 +73,7 @@ class UserService {
             const newUser: IUser = await userModel.create({
                 firstname,
                 lastname,
-                email,
+                email: email.toLocaleLowerCase(),
                 password,
                 username: email,
             })

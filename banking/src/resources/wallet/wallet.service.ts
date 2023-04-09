@@ -455,13 +455,8 @@ class WalletService {
         fundRecipientAccountTag,
         transactionType: "Transfer",
         createdAt: newTransaction?.createdAt,
-        tempAccountRecipientId: foundRecipient.referenceId,
-        tempSenderTag: foundUser.username,
-        tempSenderEmail: foundUser.email,
-        tempRecipientEmail: foundRecipient.email,
       };
     } catch (error) {
-      console.log(error);
 
       await logsnag.publish({
         channel: "failed-requests",
@@ -922,6 +917,7 @@ class WalletService {
           transactionType: "Funding",
           createdAt: newTransaction.createdAt,
           id: foundRecipient.referenceId,
+          recipientPhoneNumber: foundRecipient.phoneNumber
         };
       }
 
@@ -932,6 +928,9 @@ class WalletService {
         transactionType: "Transfer",
         createdAt: updatedTransaction?.createdAt,
         id: foundRecipient.referenceId,
+        recipientTag: foundRecipient.username,
+        recipientEmail: foundRecipient.email,
+        recipientPhoneNumber: foundRecipient.phoneNumber
       };
     } catch (error) {
       await logsnag.publish({
@@ -949,13 +948,44 @@ class WalletService {
     amount: string,
     transactionReference: string,
     sessionId: string
-  ): Promise<void> {
+  ): Promise<any> {
     try {
-      const transaction = await walletModel.findOneAndUpdate(
+      const transaction: IWallet | null = await walletModel.findOneAndUpdate(
         { referenceId: transactionReference },
         { $set: { WebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
+
+      if (!transaction) throw new Error("Failed to update transaction");
+
+      const foundSender = await userModel.findOne({ id: transaction?.fundOriginatorAccount });
+      
+      // if transaction is a withdrawal, include recipient bank info
+      if(transaction.transactionType.toLowerCase() == 'withdrawal') {
+        return {
+          id: foundSender?.referenceId,
+          amount: transaction.amount,
+          beneficiaryName: transaction.beneficiaryName, 
+          beneficiaryBank: transaction.beneficiaryBank,
+          beneficiaryAccount: transaction.beneficiaryAccount,
+          createdAt: transaction.createdAt,
+          senderTag: foundSender?.username,
+          senderPhoneNumber: foundSender?.phoneNumber
+        }
+      }
+
+      return {
+        id: foundSender?.referenceId,
+        amount: transaction.amount,
+        recipientTag: transaction.recepientTag,
+        transactionType: transaction.transactionType,
+        createdAt: transaction.createdAt,
+        senderTag: foundSender?.username,
+        transactionId: transaction.referenceId,
+        senderEmail: foundSender?.email,
+        senderPhoneNumber: foundSender?.phoneNumber
+      }
+      // return transaction;
     } catch (error) {
       await logsnag.publish({
         channel: "failed-requests",
