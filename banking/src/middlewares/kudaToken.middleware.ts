@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { redisClient } from '../server'
+import { redisClient, logsnag } from '../server'
 import axios from 'axios'
 import HttpException from '@/utils/exceptions/http.exception'
 
@@ -29,8 +29,13 @@ async function kudaTokenHandler(
         req.k_token = k_token
         next()
     } catch (error) {
-
-        return next(new HttpException(500, 'An error occured. Try again later'))
+        await logsnag.publish({
+            channel: "server",
+            event: "Banking Service - Kuda Token fetch failed",
+            description: `Service Downtime error: ${error}`,
+            icon: "💥"
+        })
+        return next(new HttpException(500, 'An error occurred. Try again later'))
     }
 }
 

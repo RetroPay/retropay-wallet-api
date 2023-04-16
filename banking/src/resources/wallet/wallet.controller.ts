@@ -111,7 +111,7 @@ class WalletController implements IController {
 
             res.status(200).json({
                 success: true,
-                message: "Transactions retrieved succeesfully.",
+                message: "Transactions retrieved successfully.",
                 data: { transaction }
             })
         } catch (error: any) {
@@ -141,52 +141,52 @@ class WalletController implements IController {
             const { pin, amount, recipientTag, comment, beneficiaryName } = req.body
             const transaction = await this.walletService.transferFunds(pin, amount, recipientTag, comment, req.user, req.username, req.referenceId, req.k_token, beneficiaryName)
       
-            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
-                event: 'QUEUE_NOTIFICATION',
-                data: {
-                    id: req.referenceId,
-                    trType: 'transfer-out',
-                    amount: transaction.amount,
-                    recipientTag: transaction.fundRecipientAccountTag,
-                    timestamp: transaction.createdAt
-                }
-            }));
+            // publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+            //     event: 'QUEUE_NOTIFICATION',
+            //     data: {
+            //         id: req.referenceId,
+            //         trType: 'transfer-out',
+            //         amount: transaction.amount,
+            //         recipientTag: transaction.fundRecipientAccountTag,
+            //         timestamp: transaction.createdAt
+            //     }
+            // }));
 
             //temporary! log new transaction in recipient notification
-            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
-                event: 'QUEUE_NOTIFICATION',
-                data: {
-                    id: transaction.tempAccountRecipientId,
-                    trType: 'transfer-in',
-                    amount: transaction.amount,
-                    senderTag: transaction.tempSenderTag,
-                    timestamp: transaction.createdAt
-                }
-            }));
+            // publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+            //     event: 'QUEUE_NOTIFICATION',
+            //     data: {
+            //         id: transaction.tempAccountRecipientId,
+            //         trType: 'transfer-in',
+            //         amount: transaction.amount,
+            //         senderTag: transaction.tempSenderTag,
+            //         timestamp: transaction.createdAt
+            //     }
+            // }));
 
             // temporary! Send email to recipient as notification
-            const emailTemplate = transferInRecieptEmail(transaction.fundRecipientAccountTag, transaction.amount, transaction.tempSenderTag, transaction.transactionId, transaction.createdAt)
-            const mailService = MailService.getInstance();
-            mailService.sendMail({
-                to: transaction.tempRecipientEmail,
-                subject: `Howdy @${transaction.fundRecipientAccountTag}, you just got credited! 🎉`,
-                text: emailTemplate.text,
-                html: emailTemplate.html,
-            });
+            // const emailTemplate = transferInRecieptEmail(transaction.fundRecipientAccountTag, transaction.amount, transaction.tempSenderTag, transaction.transactionId, transaction.createdAt)
+            // const mailService = MailService.getInstance();
+            // mailService.sendMail({
+            //     to: transaction.tempRecipientEmail,
+            //     subject: `Howdy @${transaction.fundRecipientAccountTag}, you just got credited! 🎉`,
+            //     text: emailTemplate.text,
+            //     html: emailTemplate.html,
+            // });
 
             // temporary! Send email to sender as notification
-            const emailService = MailService.getInstance();
-            emailService.sendMail({
-                to: transaction.tempSenderEmail,
-                subject: `Howdy @${transaction.tempSenderTag}, your transfer is on it way! 🚀`,
-                text: transferOutRecieptEmail(transaction.tempSenderTag, transaction.amount, transaction.fundRecipientAccountTag, transaction.transactionId, transaction.createdAt).text,
-                html: transferOutRecieptEmail(transaction.tempSenderTag, transaction.amount, transaction.fundRecipientAccountTag, transaction.transactionId, transaction.createdAt).html,
-            });
+            // const emailService = MailService.getInstance();
+            // emailService.sendMail({
+            //     to: transaction.tempSenderEmail,
+            //     subject: `Howdy @${transaction.tempSenderTag}, your transfer is on it way! 🚀`,
+            //     text: transferOutRecieptEmail(transaction.tempSenderTag, transaction.amount, transaction.fundRecipientAccountTag, transaction.transactionId, transaction.createdAt).text,
+            //     html: transferOutRecieptEmail(transaction.tempSenderTag, transaction.amount, transaction.fundRecipientAccountTag, transaction.transactionId, transaction.createdAt).html,
+            // });
 
-            delete transaction.tempSenderTag
-            delete transaction.tempAccountRecipientId
-            delete transaction.tempRecipientEmail
-            delete transaction.tempSenderEmail
+            // delete transaction.tempSenderTag
+            // delete transaction.tempAccountRecipientId
+            // delete transaction.tempRecipientEmail
+            // delete transaction.tempSenderEmail
 
             res.status(201).json({
                 success: true,
@@ -207,16 +207,16 @@ class WalletController implements IController {
 
             const transaction = await this.walletService.withdrawFunds(pin, req.referenceId, req.user, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryBank, beneficiaryName, nameEnquiryId, req.k_token)
             
-            publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
-                event: 'QUEUE_NOTIFICATION',
-                data: {
-                    id: req.referenceId,
-                    trType: 'withdrawal',
-                    amount: transaction.amount,
-                    recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
-                    timestamp: transaction.createdAt
-                }
-            }));
+            // publishMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, JSON.stringify({
+            //     event: 'QUEUE_NOTIFICATION',
+            //     data: {
+            //         id: req.referenceId,
+            //         trType: 'withdrawal',
+            //         amount: transaction.amount,
+            //         recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
+            //         timestamp: transaction.createdAt
+            //     }
+            // }));
             
             res.status(201).json({
                 success: true,

@@ -27,7 +27,10 @@ function validateEnv(): void {
         KUDA_TEST_URI: str(),
         KUDA_TEST_TOKEN_URI: str(),
         KUDA_PROD_URI: str(),
-        LOG_SNAG_TOKEN: str()
+        LOG_SNAG_TOKEN: str(),
+        TERMII_API_KEY: str(),
+        TERMII_SECRET_KEY: str(),
+        TERMII_SENDER_ID: str(),
     })
 }
 

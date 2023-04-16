@@ -54,7 +54,7 @@ class UserService {
 
     public async getUser(id: string): Promise<IUser | Error> {
         try {
-            const user = await userModel.findById(id, { '_id': 0, 'firstname': 1 }).select('firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified')
+            const user = await userModel.findById(id, { '_id': 0, 'firstname': 1 }).select('firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified isUsernameSet isPinSet')
 
             if (!user) throw new Error("Unable to retrieve details")
 
@@ -68,15 +68,14 @@ class UserService {
         try {
             const { firstname, lastname, email, password } = reqData
 
-            // validate password security
-            if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include atleast one uppercase, lowercase, special character and number.');
+            if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include at least one uppercase, lowercase, special character and number.');
 
             const newUser: IUser = await userModel.create({
                 firstname,
                 lastname,
-                email,
+                email: email.toLocaleLowerCase(),
                 password,
-                username: email.split('@')[0],
+                username: email,
             })
 
             if (!newUser) throw new Error('Unable to create user account.')
@@ -122,14 +121,11 @@ class UserService {
 
     public async changePassword(reqData: { oldPassword: string, newPassword: string }, user: string): Promise<IUser | Error> {
         try {
-            // validate password security
             if (!await this.validatePasswordPolicy(reqData.newPassword)) throw new Error('Password is not secure. Include atleast one uppercase, lowercase, special character and number.');
 
             const foundUser: any = await userModel.findOne({ _id: user })
 
             if (!foundUser) throw new Error("Unable to update password")
-
-
 
             if (!await foundUser.isValidPassword(reqData.oldPassword)) throw new Error("Incorrect password.")
 
@@ -146,7 +142,7 @@ class UserService {
     public async setTransactionPin(userId: string, pin: string, confirmPin: string): Promise<IUser | null> {
         try {
             if (pin !== confirmPin) throw new Error("Pin does not match.")
-            const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(pin, 10) }, { new: true })
+            const updatedUser = await userModel.findByIdAndUpdate(userId, { pin: await bcrypt.hash(pin, 10), isPinSet: true }, { new: true })
             if (!updatedUser) throw new Error("Unable to set transaction pin.")
 
             return updatedUser
@@ -282,7 +278,6 @@ class UserService {
 
     public async resetPassword(reqData: { email: string, newPassword: string, token: string }): Promise<IUser | null> {
         try {
-            // validate password security
             if (!await this.validatePasswordPolicy(reqData.newPassword)) throw new Error('Password is not secure. Include atleast one uppercase, lowercase, special character and number.');
 
             const foundUser: IUser | any = await userModel.findOne({ email: reqData.email }).select("passwordReset")
@@ -354,9 +349,13 @@ class UserService {
 
     public async generatePhoneToken(userId: string, phoneNumber: string): Promise<object | null> {
         try {
+            const checkForPhone = await userModel.find({ phoneNumber }).select("phoneNumber")
+            if(checkForPhone) throw new Error("Account with this phone already exists.")
+            
             const foundUser = await userModel.findById(userId).select("firstname lastname email isPhoneVerified phoneVerification")
-            if (!foundUser) throw new Error("Unable to send verification sms.")
-            if (foundUser.isPhoneVerified == true) throw new Error("Phone number already verified")
+            if (!foundUser) throw new Error("Unable to verify phone number.")
+
+            if (foundUser.isPhoneVerified == true) throw new Error("Your Phone number has already been verified.")
 
             // Generate token of length 5
             const token = generateOtp(5)
@@ -368,7 +367,7 @@ class UserService {
                 channel: "generic",
                 type: "plain",
                 sms: `
-                    Hi ${foundUser.firstname}, Your Retropay Wallet pass ${token}.  Powered by Retrostack Inc.
+                    Hi ${foundUser.firstname}, Your Retropay Wallet pass ${token}.  Built by Retrostack
                 `
             }
 
@@ -421,7 +420,7 @@ class UserService {
 
     public async createNubanAccount(userId: string, k_token: string): Promise<IUser | null> {
         try {
-            const foundUser = await userModel.findById(userId).select("email firstname lastname phoneNumber middlename nubanAccountDetails isIdentityVerified")
+            const foundUser = await userModel.findById(userId).select("email firstname lastname phoneNumber nubanAccountDetails isIdentityVerified")
             if (!foundUser) throw new Error("Unable to create nuban.")
 
             if (!foundUser.isIdentityVerified) throw new Error("Kindly verify your identity to proceed.")
@@ -430,7 +429,7 @@ class UserService {
             const { email, firstname, lastname, middlename, phoneNumber, id } = foundUser
 
             /* Phone numbers are stored with their respective country codes e.g +234, 
-            the following line of code removes the country code which is the first 4 characters */
+            strip away the country code which is the first 4 characters */
             const formatPhoneNumber = '0' + phoneNumber?.substring(4)
     
 
@@ -474,7 +473,6 @@ class UserService {
         try {
             const foundUser = await userModel.findOne({ username }).select("username")
 
-            //If there is no existing user found with that username, that means it's available
             if (!foundUser) {
                 return true
             } else {
@@ -489,7 +487,7 @@ class UserService {
         try {
             if (await userModel.findOne({ username })) throw new Error('Username already exists')
 
-            const updatedUser = await userModel.findByIdAndUpdate(id, { username }, { new: true }).select("username");
+            const updatedUser = await userModel.findByIdAndUpdate(id, { username, isUsernameSet: true }, { new: true }).select("username");
             if (!updatedUser) throw new Error('Unable to update username')
 
             return updatedUser
@@ -620,6 +618,8 @@ class UserService {
                     break;
                 case 'verified': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: status, $set: { isIdentityVerified: true, withdrawPermission: true } })
                     break;
+                default:
+                    break
             }
         } catch (error: any) {
             //LogSnag call here

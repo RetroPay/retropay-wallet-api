@@ -44,7 +44,15 @@ const UserSchema = new Schema({
     nubanAccountDetails: Object,
     favoritedRecipients: { type: Array },
     isAccountActive: { type: Boolean, default: true }, 
-    notifications: []
+    notifications: [],
+    isUsernameSet: {
+        type: Boolean,
+        default: false
+    },
+    isPinSet: {
+        type: Boolean,
+        default: false
+    }
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {
