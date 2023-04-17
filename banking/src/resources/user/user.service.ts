@@ -1,13 +1,6 @@
 import IUser from "./user.interface"
 import userModel from "./user.model"
 import translateError from "@/helpers/mongod.helper"
-// import bcrypt from "bcrypt"
-// import { createToken } from "@/utils/token"
-// import generateOtp from "@/services/otp"
-// import moment from "moment"
-// import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
-// import MailService from "@/services/sendEmails";
-// import MessageBroker from "@/utils/broker"
 
 class UserService {
 

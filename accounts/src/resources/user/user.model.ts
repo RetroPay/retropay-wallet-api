@@ -25,7 +25,7 @@ const UserSchema = new Schema({
     email: { type: String, required: true, trim: true, unique: true },
     dateOfBirth: { type: String },
     profilePhoto: photoSchema,
-    phoneNumber: { type: String },
+    phoneNumber: { type: String, unique: true, sparse: true, required: false },
     bankAccounts: {
         type: Object
     },
