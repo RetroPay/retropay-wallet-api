@@ -63,8 +63,8 @@ class WebhookController implements IController {
                 sessionId,
             } = req.body;
 
-            switch (transactionType.toLowerCase()) {
-                case "credit":
+            switch (transactionType) {
+                case 'Credit':
                     {
                         const transaction: any = await this.walletService.recieveFunds(
                             payingBank,
@@ -185,7 +185,7 @@ class WebhookController implements IController {
                         }
                     }
                     break;
-                case "debit":
+                case "Debit":
                     /**
                      * When account is debited by kuda either for a transfer(sending money to another wallet user)
                      * or withdrawal (sending money to any NGN bank accounts). Acknowledge transaction debit and update stored

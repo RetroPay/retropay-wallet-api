@@ -24,7 +24,7 @@ async function authenticatedMiddleware(
         )
 
         if (payload instanceof jwt.JsonWebTokenError) {
-            return next(new HttpException(401, 'Unauthorized'))
+            return next(new HttpException(401, 'Your session has expired. Login again'))
         }
 
         let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId').exec()

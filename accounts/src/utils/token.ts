@@ -4,7 +4,7 @@ import Token from '@/utils/interfaces/token.interface';
 
 export const createToken = (user: IUser): string => {
     return jwt.sign({ id: user._id }, process.env.JWT_SECRET as jwt.Secret, {
-        expiresIn: "15m",
+        expiresIn: "20m",
     });
 };
 
