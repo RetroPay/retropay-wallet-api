@@ -13,7 +13,7 @@ async function kudaTokenHandler(
         if(!k_token) {
             const response = await axios({
                 method: 'POST',
-                url: process.env.NODE_ENV == "production" ? 'https://kuda-openapi.kuda.com/v2/Account/GetToken' : 'http://kuda-openapi-uat.kudabank.com/v2/Account/GetToken',,
+                url: process.env.NODE_ENV == "production" ? 'https://kuda-openapi.kuda.com/v2/Account/GetToken' : 'http://kuda-openapi-uat.kudabank.com/v2/Account/GetToken',
                 data: {
                     email: process.env.KUDA_MAIL,
                     apiKey: process.env.KUDA_PRIVATE_KEY
