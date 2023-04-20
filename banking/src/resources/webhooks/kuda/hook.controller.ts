@@ -121,9 +121,9 @@ class WebhookController implements IController {
                                         type: "plain",
                                         sms: 
                                         `Retro Wallet - Credit Alert\n
-                                        Amount: NGN${transaction.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
+                                        Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
                                         Sender: ${transaction.senderTag}
-                                        Date: ${new Date(transaction.createdAt).toLocaleDateString}\n
+                                        Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
                                         `
                                     }
     
@@ -160,9 +160,9 @@ class WebhookController implements IController {
                                         type: "plain",
                                         sms: 
                                         `Retro Wallet - Credit Alert\n
-                                            Amount: NGN${transaction.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
+                                            Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
                                             Sender: ${transaction.senderName}(${transaction.senderBank})
-                                            Date: ${new Date(transaction.createdAt).toLocaleDateString}\n
+                                            Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
                                         `
                                     }
     
@@ -245,9 +245,9 @@ class WebhookController implements IController {
                                         channel: "generic",
                                         type: "plain",
                                         sms: `Retro Wallet - Debit Alert\n
-                                            Amount: NGN${transaction.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
+                                            Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
                                             Recipient: @${transaction.recipientTag}
-                                            Date: ${new Date(transaction.createdAt).toLocaleDateString}\n
+                                            Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
                                         `
                                     }
 
@@ -282,9 +282,9 @@ class WebhookController implements IController {
                                     type: "plain",
                                     sms: 
                                     `Retro Wallet - Debit Alert\n
-                                        Amount: NGN${transaction.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
+                                        Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
                                         Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}
-                                        Date: ${new Date(transaction.createdAt).toLocaleDateString}\n
+                                        Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
                                     `
                                 }
 
