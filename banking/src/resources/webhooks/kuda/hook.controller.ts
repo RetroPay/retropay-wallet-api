@@ -120,10 +120,7 @@ class WebhookController implements IController {
                                         channel: "generic",
                                         type: "plain",
                                         sms: 
-                                        `Retro Wallet - Credit Alert\n
-                                        Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
-                                        Sender: ${transaction.senderTag}
-                                        Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
+                                        `Retro Wallet - Credit Alert\nAmount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderTag}\nDate: ${new Date(transaction.createdAt).toLocaleDateString()}\n
                                         `
                                     }
     
@@ -159,11 +156,7 @@ class WebhookController implements IController {
                                         channel: "generic",
                                         type: "plain",
                                         sms: 
-                                        `Retro Wallet - Credit Alert\n
-                                            Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
-                                            Sender: ${transaction.senderName}(${transaction.senderBank})
-                                            Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
-                                        `
+                                        `Retro Wallet - Credit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderName}(${transaction.senderBank})\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n`
                                     }
     
                                     const response = await axios({
@@ -281,10 +274,7 @@ class WebhookController implements IController {
                                     channel: "generic",
                                     type: "plain",
                                     sms: 
-                                    `Retro Wallet - Debit Alert\n
-                                        Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
-                                        Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}
-                                        Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
+                                    `Retro Wallet - Debit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
                                     `
                                 }
 
