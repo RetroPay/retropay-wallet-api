@@ -349,8 +349,8 @@ class UserService {
 
     public async generatePhoneToken(userId: string, phoneNumber: string): Promise<object | null> {
         try {
-            const checkForPhone = await userModel.find({ phoneNumber }).select("phoneNumber")
-            if(checkForPhone) throw new Error("Account with this phone already exists.")
+            // const checkForPhone = await userModel.find({ phoneNumber }).select("phoneNumber")
+            // if(checkForPhone) throw new Error("Account with this phone already exists.")
             
             const foundUser = await userModel.findById(userId).select("firstname lastname email isPhoneVerified phoneVerification")
             if (!foundUser) throw new Error("Unable to verify phone number.")
