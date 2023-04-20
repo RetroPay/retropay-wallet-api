@@ -39,6 +39,7 @@ class UserController implements IController {
         this.router.post('/auth/user/forgot-password', validationMiddleware(validate.forgotPassword), this.forgotPassword)
         this.router.patch('/auth/user/reset-password', validationMiddleware(validate.resetPassword), this.resetPassword)
         this.router.patch('/auth/user/change-password', authenticatedMiddleware, validationMiddleware(validate.changePassword) ,this.changePassword)
+        this.router.get('/user/sync-info', authenticatedMiddleware, this.getUser)
 
         //Profile routes
         this.router.post('/user/profile/send-email-token', authenticatedMiddleware, this.sendVerifyEmailToken)
@@ -120,6 +121,22 @@ class UserController implements IController {
     private getUserDetails = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const user = await this.UserService.getUser(req.user)
+
+            res.status(200).json({
+                success: true,
+                message: "Details retrieved",
+                data: {
+                    user
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private getUser = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
+        try {
+            const user = await this.UserService.getUserById(req.user)
 
             res.status(200).json({
                 success: true,
