@@ -841,7 +841,7 @@ class WalletService {
       if (!response) throw new Error("Unable to retrieve list of banks.");
 
       const kudaBankObject = response.data.data.banks.find((obj: any) => {
-        return obj.bankName.includes("Kudimoney(Kudabank)" || "Kuda.");
+        return obj.bankName.includes("Kuda." || "Kudimoney(Kudabank)");
       });
 
       // Store current Kuda bank code
