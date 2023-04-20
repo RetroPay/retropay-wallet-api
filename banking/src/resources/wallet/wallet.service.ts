@@ -261,27 +261,27 @@ class WalletService {
     }
   }
 
-  public async calculateWalletBalance(userId: string): Promise<number> {
-    try {
-      const credits = await walletModel.aggregate([
-        {
-          $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId) },
-        },
-        { $group: { _id: null, totalCredits: { $sum: "$amount" } } },
-      ]);
+  // public async calculateWalletBalance(userId: string): Promise<number> {
+  //   try {
+  //     const credits = await walletModel.aggregate([
+  //       {
+  //         $match: { fundRecipientAccount: new mongoose.Types.ObjectId(userId) },
+  //       },
+  //       { $group: { _id: null, totalCredits: { $sum: "$amount" } } },
+  //     ]);
 
-      const debits = await walletModel.aggregate([
-        { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId) } },
-        { $group: { _id: null, totalDebits: { $sum: '$amount' } } }
-      ])
+  //     const debits = await walletModel.aggregate([
+  //       { $match: { fundOriginatorAccount: new mongoose.Types.ObjectId(userId) } },
+  //       { $group: { _id: null, totalDebits: { $sum: '$amount' } } }
+  //     ])
       
-      console.log(credits, "credit", debits, "debit")
-      console.log((credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0), "balance")
-      return (credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0);
-    } catch (error) {
-      throw new Error("Balance unavailable.");
-    }
-  }
+  //     console.log(credits, "credit", debits, "debit")
+  //     console.log((credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0), "balance")
+  //     return (credits[0]?.totalCredits ? credits[0]?.totalCredits : 0) - (debits[0]?.totalDebits ? debits[0]?.totalDebits : 0);
+  //   } catch (error) {
+  //     throw new Error("Balance unavailable.");
+  //   }
+  // }
 
   public async getAccountBalance(
     referenceId: string,
@@ -377,8 +377,8 @@ class WalletService {
         throw new Error("Unable to process transaction.");
 
       //calculate users wallet balance - Temporary, remove when going live! Kuda already checks for balance
-      if ((await this.calculateWalletBalance(userId)) <= Number(amount) + 100)
-        throw new Error("Transfer failed - Insufficient funds");
+      // if ((await this.calculateWalletBalance(userId)) <= Number(amount) + 100)
+      //   throw new Error("Transfer failed - Insufficient funds");
 
       if (!(await this.validatePin(formPin, userId)))
         throw new Error("Transfer failed - Incorrect transaction pin");
