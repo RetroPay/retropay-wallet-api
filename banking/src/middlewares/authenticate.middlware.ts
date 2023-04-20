@@ -34,8 +34,7 @@ async function authenticatedMiddleware(
             try {
                 const response = await axios({
                     method: 'GET',
-                    // url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4001/account/user/sync-info',
-                    url: 'http://localhost:4001/account/user/sync-info',
+                    url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4001/account/user/sync-info',
                     headers: {
                         Authorization: `Bearer ${accessToken}`
                     }
