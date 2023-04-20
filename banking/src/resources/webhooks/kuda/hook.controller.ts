@@ -63,8 +63,8 @@ class WebhookController implements IController {
                 sessionId,
             } = req.body;
 
-            switch (transactionType.toLowerCase()) {
-                case "credit":
+            switch (transactionType) {
+                case 'Credit':
                     {
                         const transaction: any = await this.walletService.recieveFunds(
                             payingBank,
@@ -172,6 +172,8 @@ class WebhookController implements IController {
                                         data: termiiPayload,
                                     })
 
+                                    console.log(response, "termii response")
+
                                     await logsnag.publish({
                                         channel: "user-actions",
                                         event: "Wallet Funded",
@@ -185,7 +187,7 @@ class WebhookController implements IController {
                         }
                     }
                     break;
-                case "debit":
+                case "Debit":
                     /**
                      * When account is debited by kuda either for a transfer(sending money to another wallet user)
                      * or withdrawal (sending money to any NGN bank accounts). Acknowledge transaction debit and update stored
@@ -302,6 +304,7 @@ class WebhookController implements IController {
                     break;
             }
         } catch (error) {
+            console.log(error, "webhook whole error")
             await logsnag.publish({
                 channel: "failed-requests",
                 event: "Failed to process wallet webhook",
