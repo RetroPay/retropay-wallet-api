@@ -40,7 +40,7 @@ async function authenticatedMiddleware(
                     }
                 })
 
-                console.log(response, "response from search/lookup")
+                console.log(response.data, "response from search/lookup")
 
                 const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
                     transferPermission,
@@ -48,7 +48,7 @@ async function authenticatedMiddleware(
                     nubanAccountDetails,
                     favoritedRecipients,
                     isAccountActive,
-                    profilePhoto } = response.data.user
+                    profilePhoto } = response.data.data.user
 
                 // update user variable, with saved data record 
                 user = await UserModel.create({
