@@ -172,6 +172,8 @@ class WebhookController implements IController {
                                         data: termiiPayload,
                                     })
 
+                                    console.log(response, "termii response")
+
                                     await logsnag.publish({
                                         channel: "user-actions",
                                         event: "Wallet Funded",
@@ -302,6 +304,7 @@ class WebhookController implements IController {
                     break;
             }
         } catch (error) {
+            console.log(error, "webhook whole error")
             await logsnag.publish({
                 channel: "failed-requests",
                 event: "Failed to process wallet webhook",

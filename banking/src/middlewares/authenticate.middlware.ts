@@ -27,7 +27,7 @@ async function authenticatedMiddleware(
             return next(new HttpException(401, 'Your session has expired. Login again'))
         }
 
-        let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId').exec()
+        let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
         console.log(user, "user before search/lookup")
 
         if (!user) {
