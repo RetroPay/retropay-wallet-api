@@ -64,6 +64,18 @@ class UserService {
         }
     }
 
+    public async getUserById(id: string): Promise<IUser | Error> {
+        try {
+            const user = await userModel.findById(id).select('-notifications -password -passwordReset -phoneNumber -phoneVerification -emailVerification -isUsernameSet -isPinSet')
+
+            if (!user) throw new Error("Unable to retrieve details")
+
+            return user
+        } catch (error) {
+            throw new Error('Unable to retrieve user details.')
+        }
+    }
+
     public async register(reqData: IUser): Promise<any | Error> {
         try {
             const { firstname, lastname, email, password } = reqData
