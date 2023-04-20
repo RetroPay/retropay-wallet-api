@@ -306,7 +306,7 @@ class WebhookController implements IController {
                 channel: "failed-requests",
                 event: "Failed to process wallet webhook",
                 description:
-                    "An attempt to withdraw funds to a bank account has failed.",
+                    `Webhook process failed. error: ${error}`,
                 icon: "😭",
                 notify: true,
             });

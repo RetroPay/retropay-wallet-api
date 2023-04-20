@@ -252,7 +252,7 @@ class WalletService {
         transaction[0].fundOriginatorAccount != userId
       )
         throw new Error("Unauthorized");
-
+        console.log(transaction[0])
       return transaction[0];
     } catch (error: any) {
       throw new Error(
