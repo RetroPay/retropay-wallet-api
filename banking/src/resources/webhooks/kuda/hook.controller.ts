@@ -67,150 +67,200 @@ class WebhookController implements IController {
             } = req.body;
 
             // Don't process webhooks for transaction fees.
-            if(narrations.toLowerCase().includes('transaction fee')) return
-
-            switch (transactionType) {
-                case 'Credit':
-                    {
-                        const transaction: any = await this.walletService.recieveFunds(
-                            payingBank,
-                            amount,
-                            transactionReference,
-                            narrations,
-                            accountName,
-                            accountNumber,
-                            transactionType,
-                            senderName,
-                            recipientName,
-                            sessionId
-                        );
-
-                        switch (transaction.transactionType) {
-                            case "Transfer" || "transfer":
-                                {
-                                    await publishMessage(
-                                        await brokerChannel,
-                                        `${process.env.ACCOUNT_BINDING_KEY}`,
-                                        JSON.stringify({
-                                            event: "QUEUE_NOTIFICATION",
-                                            data: {
-                                                id: transaction.id, //user reference ID
-                                                trType: "transfer-in",
-                                                amount: transaction.amount as Number,
-                                                senderTag: transaction.senderTag,
-                                                timestamp: transaction.createdAt,
-                                            },
-                                        })
-                                    );
-
-
-                                    const emailTemplate = transferInRecieptEmail(
-                                        transaction.recipientTag,
-                                        transaction.amount,
-                                        transaction.senderTag,
-                                        transaction.transactionId,
-                                        transaction.createdAt
-                                    );
-                                    const mailService = MailService.getInstance()
-                                    mailService.sendMail({
-                                        to: transaction.recipientEmail,
-                                        subject: `Cha-ching 🤑 @${transaction.recipientTag}, you just got credited!`,
-                                        text: emailTemplate.text,
-                                        html: emailTemplate.html,
-                                    })
-
-                                    const termiiPayload = {
-                                        api_key: process.env.TERMII_API_KEY,
-                                        to: transaction.recipientPhoneNumber,
-                                        from: process.env.TERMII_SENDER_ID,
-                                        channel: "generic",
-                                        type: "plain",
-                                        sms: "you've been credited"
-                                        // sms: 
-                                        // `Retro Wallet - Credit Alert\nAmount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderTag}\nDate: ${new Date(transaction.createdAt).toLocaleDateString()}\n
-                                        // `
-                                    }
-    
-                                    const response = await axios({
-                                        method: 'POST',
-                                        url: 'https://api.ng.termii.com/api/sms/send',
-                                        data: termiiPayload,
-                                    })
-                                }
-                                break;
-                            case "Funding" || "funding":
-                                {
-                                    const payload = {
-                                        id: transaction.id,
-                                        trType: "funding",
-                                        amount: transaction.amount as Number,
-                                        senderBankInfo: `${transaction.senderName}(${transaction.senderBank})`,
-                                        timestamp: transaction.createdAt,
-                                    };
-                                    await publishMessage(
-                                        await brokerChannel,
-                                        `${process.env.ACCOUNT_BINDING_KEY}`,
-                                        JSON.stringify({
-                                            event: "QUEUE_NOTIFICATION",
-                                            data: payload,
-                                        })
-                                    );
-
-                                    const termiiPayload = {
-                                        api_key: process.env.TERMII_API_KEY,
-                                        to: transaction.recipientPhoneNumber,
-                                        from: process.env.TERMII_SENDER_ID,
-                                        channel: "generic",
-                                        type: "plain",
-                                        sms: "You wallet was funded!"
-                                        // sms: 
-                                        // `Retro Wallet - Credit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderName}(${transaction.senderBank})\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n`
-                                    }
-    
-                                    const response = await axios({
-                                        method: 'POST',
-                                        url: 'https://api.ng.termii.com/api/sms/send',
-                                        data: termiiPayload,
-                                    })
-
-                                    // console.log(response, "termii response")
-
-                                    await logsnag.publish({
-                                        channel: "user-actions",
-                                        event: "Wallet Funded",
-                                        description: "User's wallet has been successfully funded",
-                                        icon: "🤑",
-                                        notify: true,
-                                    });
-                                }
-                                break;
-                            default:
-                        }
-                    }
-                    break;
-                case "Debit":
-                    /**
-                     * When account is debited by kuda either for a transfer(sending money to another wallet user)
-                     * or withdrawal (sending money to any NGN bank accounts). Acknowledge transaction debit and update stored
-                     * transaction status to successful.
-                     */
-                    {
-                        const transaction: any =
-                            await this.walletService.acknowledgeFundsTransfer(
+            if(!narrations.toLowerCase().includes('transaction fee')) {
+                switch (transactionType) {
+                    case 'Credit':
+                        {
+                            const transaction: any = await this.walletService.recieveFunds(
+                                payingBank,
                                 amount,
                                 transactionReference,
-                                sessionId,
-                                instrumentNumber
+                                narrations,
+                                accountName,
+                                accountNumber,
+                                transactionType,
+                                senderName,
+                                recipientName,
+                                sessionId
                             );
+    
+                            switch (transaction.transactionType) {
+                                case "Transfer" || "transfer":
+                                    {
+                                        await publishMessage(
+                                            await brokerChannel,
+                                            `${process.env.ACCOUNT_BINDING_KEY}`,
+                                            JSON.stringify({
+                                                event: "QUEUE_NOTIFICATION",
+                                                data: {
+                                                    id: transaction.id, //user reference ID
+                                                    trType: "transfer-in",
+                                                    amount: transaction.amount as Number,
+                                                    senderTag: transaction.senderTag,
+                                                    timestamp: transaction.createdAt,
+                                                },
+                                            })
+                                        );
+    
+    
+                                        const emailTemplate = transferInRecieptEmail(
+                                            transaction.recipientTag,
+                                            transaction.amount,
+                                            transaction.senderTag,
+                                            transaction.transactionId,
+                                            transaction.createdAt
+                                        );
+                                        const mailService = MailService.getInstance()
+                                        const info = await mailService.sendMail({
+                                            to: transaction.recipientEmail,
+                                            subject: `Cha-ching 🤑 @${transaction.recipientTag}, you just got credited!`,
+                                            text: emailTemplate.text,
+                                            html: emailTemplate.html,
+                                        })
+                                        console.log(info)
+    
+                                        const termiiPayload = {
+                                            api_key: process.env.TERMII_API_KEY,
+                                            to: transaction.recipientPhoneNumber,
+                                            from: process.env.TERMII_SENDER_ID,
+                                            channel: "generic",
+                                            type: "plain",
+                                            // sms: "you've been credited"
+                                            sms: 
+                                            `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                        }
+        
+                                        const response = await axios({
+                                            method: 'POST',
+                                            url: 'https://api.ng.termii.com/api/sms/send',
+                                            data: termiiPayload,
+                                        })
+                                    }
+                                    break;
+                                case "Funding" || "funding":
+                                    {
+                                        const payload = {
+                                            id: transaction.id,
+                                            trType: "funding",
+                                            amount: transaction.amount as Number,
+                                            senderBankInfo: `${transaction.senderName}(${transaction.senderBank})`,
+                                            timestamp: transaction.createdAt,
+                                        };
+                                        await publishMessage(
+                                            await brokerChannel,
+                                            `${process.env.ACCOUNT_BINDING_KEY}`,
+                                            JSON.stringify({
+                                                event: "QUEUE_NOTIFICATION",
+                                                data: payload,
+                                            })
+                                        );
+    
+                                        const termiiPayload = {
+                                            api_key: process.env.TERMII_API_KEY,
+                                            to: transaction.recipientPhoneNumber,
+                                            from: process.env.TERMII_SENDER_ID,
+                                            channel: "generic",
+                                            type: "plain",
+                                            // sms: "You wallet was funded!"
+                                            sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderName}(${transaction.senderBank}). Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                        }
+        
+                                        const response = await axios({
+                                            method: 'POST',
+                                            url: 'https://api.ng.termii.com/api/sms/send',
+                                            data: termiiPayload,
+                                        })
+    
+                                        console.log(response, "termii response")
+    
+                                        await logsnag.publish({
+                                            channel: "user-actions",
+                                            event: "Wallet Funded",
+                                            description: "User's wallet has been successfully funded",
+                                            icon: "🤑",
+                                            notify: true,
+                                        });
+                                    }
+                                    break;
+                                default:
+                            }
+                        }
+                        break;
+                    case "Debit":
+                        /**
+                         * When account is debited by kuda either for a transfer(sending money to another wallet user)
+                         * or withdrawal (sending money to any NGN bank accounts). Acknowledge transaction debit and update stored
+                         * transaction status to successful.
+                         */
+                        {
+                            const transaction: any =
+                                await this.walletService.acknowledgeFundsTransfer(
+                                    amount,
+                                    transactionReference,
+                                    sessionId,
+                                    instrumentNumber
+                                );
+    
+                            console.log(transaction, "acknowledge webhook debit service response")
+    
+                            const { transactionType } = transaction;
+    
+                            switch (transactionType) {
+                                case "Transfer" || 'transfer':
+                                    {
+                                        // Update transaction notification
+                                        await publishMessage(
+                                            await brokerChannel,
+                                            `${process.env.ACCOUNT_BINDING_KEY}`,
+                                            JSON.stringify({
+                                                event: "QUEUE_NOTIFICATION",
+                                                data: {
+                                                    id: transaction.id,
+                                                    trType: "transfer-out",
+                                                    amount: transaction.amount,
+                                                    recipientTag: transaction.recipientTag,
+                                                    timestamp: transaction.createdAt,
+                                                },
+                                            })
+                                        );
+    
+                                        // Send email notification
+                                        const emailTemplate = transferOutRecieptEmail(
+                                            transaction.senderTag,
+                                            transaction.amount,
+                                            transaction.recipientTag,
+                                            transaction.transactionId,
+                                            transaction.createdAt
+                                        );
+                                        const mailService = MailService.getInstance();
+                                        const info = await mailService.sendMail({
+                                            to: transaction.senderEmail,
+                                            subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
+                                            text: emailTemplate.text,
+                                            html: emailTemplate.html,
+                                        });
+    
+                                        console.log(info)
 
-                        console.log(transaction, "acknowledge webhook debit service response")
-
-                        const { transactionType } = transaction;
-
-                        switch (transactionType) {
-                            case "Transfer" || 'transfer':
-                                {
-                                    // Update transaction notification
+                                        const termiiPayload = {
+                                            api_key: process.env.TERMII_API_KEY,
+                                            to: transaction.senderPhoneNumber,
+                                            from: process.env.TERMII_SENDER_ID,
+                                            channel: "generic",
+                                            type: "plain",
+                                            sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: @${transaction.recipientTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                        }
+    
+                                        const response = await axios({
+                                            method: 'POST',
+                                            url: 'https://api.ng.termii.com/api/sms/send',
+                                            data: termiiPayload,
+                                        })
+    
+                                        console.log(response, "termii response")
+                                    }
+                                    break;
+                                case "withdrawal" || 'Withdrawal': {
                                     await publishMessage(
                                         await brokerChannel,
                                         `${process.env.ACCOUNT_BINDING_KEY}`,
@@ -218,108 +268,63 @@ class WebhookController implements IController {
                                             event: "QUEUE_NOTIFICATION",
                                             data: {
                                                 id: transaction.id,
-                                                trType: "transfer-out",
+                                                trType: "withdrawal",
                                                 amount: transaction.amount,
-                                                recipientTag: transaction.recipientTag,
+                                                recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
                                                 timestamp: transaction.createdAt,
                                             },
                                         })
                                     );
-
+    
                                     // Send email notification
                                     const emailTemplate = transferOutRecieptEmail(
                                         transaction.senderTag,
                                         transaction.amount,
-                                        transaction.recipientTag,
+                                        transaction.beneficiaryName,
                                         transaction.transactionId,
                                         transaction.createdAt
                                     );
                                     const mailService = MailService.getInstance();
-                                    mailService.sendMail({
+                                    const info = await mailService.sendMail({
                                         to: transaction.senderEmail,
                                         subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
                                         text: emailTemplate.text,
                                         html: emailTemplate.html,
                                     });
-
-                                    // const termiiPayload = {
-                                    //     api_key: process.env.TERMII_API_KEY,
-                                    //     to: transaction.senderPhoneNumber,
-                                    //     from: process.env.TERMII_SENDER_ID,
-                                    //     channel: "generic",
-                                    //     type: "plain",
-                                    //     sms: `Retro Wallet - Debit Alert\nAmount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\nRecipient: @${transaction.recipientTag}\nDate: ${new Date(transaction.createdAt).toLocaleDateString()}\n
-                                    //     `
-                                    // }
-
-                                    // const response = await axios({
-                                    //     method: 'POST',
-                                    //     url: 'https://api.ng.termii.com/api/sms/send',
-                                    //     data: termiiPayload,
-                                    // })
-
-                                    // console.log(response, "termii response")
-                                }
-                                break;
-                            case "withdrawal" || 'Withdrawal': {
-                                await publishMessage(
-                                    await brokerChannel,
-                                    `${process.env.ACCOUNT_BINDING_KEY}`,
-                                    JSON.stringify({
-                                        event: "QUEUE_NOTIFICATION",
-                                        data: {
-                                            id: transaction.id,
-                                            trType: "withdrawal",
-                                            amount: transaction.amount,
-                                            recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
-                                            timestamp: transaction.createdAt,
-                                        },
+    
+                                    console.log(info)
+    
+                                    const termiiPayload = {
+                                        api_key: process.env.TERMII_API_KEY,
+                                        to: transaction.senderPhoneNumber,
+                                        from: process.env.TERMII_SENDER_ID,
+                                        channel: "generic",
+                                        type: "plain",
+                                        // sms: 'hello there, you sent'
+                                        sms: 
+                                        `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}
+                                        `
+                                    }
+    
+                                    const response = await axios({
+                                        method: 'POST',
+                                        url: 'https://api.ng.termii.com/api/sms/send',
+                                        data: termiiPayload,
                                     })
-                                );
 
-                                // Send email notification
-                                const emailTemplate = transferOutRecieptEmail(
-                                    transaction.senderTag,
-                                    transaction.amount,
-                                    transaction.beneficiaryName,
-                                    transaction.transactionId,
-                                    transaction.createdAt
-                                );
-                                const mailService = MailService.getInstance();
-                                mailService.sendMail({
-                                    to: transaction.senderEmail,
-                                    subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
-                                    text: emailTemplate.text,
-                                    html: emailTemplate.html,
-                                });
-
-                                const termiiPayload = {
-                                    api_key: process.env.TERMII_API_KEY,
-                                    to: transaction.senderPhoneNumber,
-                                    from: process.env.TERMII_SENDER_ID,
-                                    channel: "generic",
-                                    type: "plain",
-                                    sms: 'hello there, you sent'
-                                    // sms: 
-                                    // `Retro Wallet - Debit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
-                                    // `
+                                    console.log(response, "termii response")
                                 }
-
-                                const response = await axios({
-                                    method: 'POST',
-                                    url: 'https://api.ng.termii.com/api/sms/send',
-                                    data: termiiPayload,
-                                })
+                                    break;
+                                default:
+                                    break;
                             }
-                                break;
-                            default:
-                                break;
                         }
-                    }
-                    break;
-                default:
-                    break;
+                        break;
+                    default:
+                        break;
+                }
             }
+
         } catch (error) {
             console.log(error, "webhook whole error")
             await logsnag.publish({
@@ -330,6 +335,7 @@ class WebhookController implements IController {
                 icon: "😭",
                 notify: true,
             });
+
         }
     };
 }
