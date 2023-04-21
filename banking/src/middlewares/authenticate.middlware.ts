@@ -63,8 +63,10 @@ async function authenticatedMiddleware(
                     withdrawPermission,
                     nubanAccountDetails,
                     favoritedRecipients,
+                    verificationStatus,
                     isAccountActive,
-                    profilePhoto: profilePhoto.url
+                    profilePhoto: profilePhoto.url,
+                    phoneNumber
                 })
 
                 console.log(user, "updated user after search")
