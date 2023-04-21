@@ -984,6 +984,7 @@ class WalletService {
           transactionId: transaction.referenceId,
           createdAt: transaction.createdAt,
           senderTag: foundSender?.username,
+          senderEmail: foundSender?.email,
           senderPhoneNumber: foundSender?.phoneNumber
         }
       }
