@@ -31,6 +31,8 @@ class WebhookController implements IController {
         try {
             await webhookModel.create(req.body);
 
+            console.log(req.body, "kuda webhook")
+
             /**
              * {"_id":{"$oid":"6440b21a7af2f4a21cfe64ec"},
              * "payingBank":"United Bank for Africa",
@@ -270,22 +272,23 @@ class WebhookController implements IController {
                                     })
                                 );
 
-                                // const termiiPayload = {
-                                //     api_key: process.env.TERMII_API_KEY,
-                                //     to: transaction.senderPhoneNumber,
-                                //     from: process.env.TERMII_SENDER_ID,
-                                //     channel: "generic",
-                                //     type: "plain",
-                                //     sms: 
-                                //     `Retro Wallet - Debit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
-                                //     `
-                                // }
+                                const termiiPayload = {
+                                    api_key: process.env.TERMII_API_KEY,
+                                    to: transaction.senderPhoneNumber,
+                                    from: process.env.TERMII_SENDER_ID,
+                                    channel: "generic",
+                                    type: "plain",
+                                    sms: 'hello there, you sent'
+                                    // sms: 
+                                    // `Retro Wallet - Debit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
+                                    // `
+                                }
 
-                                // const response = await axios({
-                                //     method: 'POST',
-                                //     url: 'https://api.ng.termii.com/api/sms/send',
-                                //     data: termiiPayload,
-                                // })
+                                const response = await axios({
+                                    method: 'POST',
+                                    url: 'https://api.ng.termii.com/api/sms/send',
+                                    data: termiiPayload,
+                                })
                             }
                                 break;
                             default:
