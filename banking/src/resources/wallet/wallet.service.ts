@@ -954,14 +954,17 @@ class WalletService {
   public async acknowledgeFundsTransfer(
     amount: string,
     transactionReference: string,
-    sessionId: string
+    sessionId: string,
+    instrumentNumber: string
   ): Promise<any> {
     try {
       const transaction: IWallet | null = await walletModel.findOneAndUpdate(
-        { $or: [{referenceId: transactionReference}, {instrumentNumber: transactionReference}] },
+        { $or: [{referenceId: transactionReference}, {referenceId: transactionReference}] },
         { $set: { WebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
+
+      console.log(transaction, "ackwnowledge webhook found transaction")
 
       if (!transaction) throw new Error("Failed to update transaction");
 
@@ -994,6 +997,7 @@ class WalletService {
       }
       // return transaction;
     } catch (error) {
+      console.log(error, "acknowledge funds service catch error")
       await logsnag.publish({
         channel: "failed-requests",
         event: "Process webhook failed",
