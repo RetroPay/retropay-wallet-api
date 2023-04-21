@@ -31,6 +31,8 @@ class WebhookController implements IController {
         try {
             await webhookModel.create(req.body);
 
+            console.log(req.body, "kuda webhook")
+
             /**
              * {"_id":{"$oid":"6440b21a7af2f4a21cfe64ec"},
              * "payingBank":"United Bank for Africa",
