@@ -272,6 +272,22 @@ class WebhookController implements IController {
                                     })
                                 );
 
+                                // Send email notification
+                                const emailTemplate = transferOutRecieptEmail(
+                                    transaction.senderTag,
+                                    transaction.amount,
+                                    transaction.beneficiaryName,
+                                    transaction.transactionId,
+                                    transaction.createdAt
+                                );
+                                const mailService = MailService.getInstance();
+                                mailService.sendMail({
+                                    to: transaction.senderEmail,
+                                    subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
+                                    text: emailTemplate.text,
+                                    html: emailTemplate.html,
+                                });
+
                                 const termiiPayload = {
                                     api_key: process.env.TERMII_API_KEY,
                                     to: transaction.senderPhoneNumber,

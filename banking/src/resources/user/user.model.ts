@@ -25,7 +25,8 @@ const UserSchema = new Schema({
     nubanAccountDetails: nubanAccountSchema,
     favoritedRecipients: { type: Array },
     isAccountActive: { type: Boolean, default: true },
-    profilePhoto: String
+    profilePhoto: String,
+    phoneNumber: String
 }, { timestamps: true})
 
 
