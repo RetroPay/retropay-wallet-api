@@ -600,7 +600,7 @@ class WalletService {
         switch (responseCode) {
           case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
             break;
-          case '-2' : throw new Error('Transfer failed.')
+          case '-2' : throw new Error('Transfer failed. Insufficient funds')
             break;
           case '-3' : throw new Error('Transfer failed - Unable to process transaction')
             break;
@@ -959,7 +959,7 @@ class WalletService {
   ): Promise<any> {
     try {
       const transaction: IWallet | null = await walletModel.findOneAndUpdate(
-        { $or: [{referenceId: transactionReference}, {referenceId: transactionReference}] },
+        { $or: [{referenceId: transactionReference}, {referenceId: instrumentNumber}] },
         { $set: { WebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
