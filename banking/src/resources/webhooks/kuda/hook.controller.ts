@@ -196,8 +196,8 @@ class WebhookController implements IController {
 
                         const { transactionType } = transaction;
 
-                        switch (transactionType.toLowerCase()) {
-                            case "transfer":
+                        switch (transactionType) {
+                            case "Transfer":
                                 {
                                     // Update transaction notification
                                     await publishMessage(

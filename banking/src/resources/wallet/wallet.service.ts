@@ -591,6 +591,8 @@ class WalletService {
 
       const data = response.data
 
+      console.log(data, "withdraw funds kuda response")
+
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if(!data.status) {
         const { responseCode } = data
@@ -626,6 +628,8 @@ class WalletService {
         currency: "NGN",
       });
 
+      console.log(newTransaction, " withdrawal saved transaction response")
+
       // if transfer is successful, charge transaction fee
       await this.chargeTransactionFees("withdraw", referenceId, userId, k_token)
 
@@ -640,6 +644,7 @@ class WalletService {
         createdAt: newTransaction?.createdAt,
       };
     } catch (error) {
+      console.log(error, "error from with fund whole catch")
       await logsnag.publish({
         channel: "failed-requests",
         event: "Withdrawal failed",
@@ -879,6 +884,8 @@ class WalletService {
         "nubanAccountDetails.nuban": accountNumber,
       });
 
+      console.log(foundRecipient, "receive funds, fourd recipint")
+
       if (!foundRecipient) throw new Error("No account with nuban found");
 
       /* 
@@ -951,7 +958,7 @@ class WalletService {
   ): Promise<any> {
     try {
       const transaction: IWallet | null = await walletModel.findOneAndUpdate(
-        { referenceId: transactionReference },
+        { $or: [{referenceId: transactionReference}, {instrumentNumber: transactionReference}] },
         { $set: { WebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
@@ -961,7 +968,7 @@ class WalletService {
       const foundSender = await userModel.findOne({ id: transaction?.fundOriginatorAccount });
       
       // if transaction is a withdrawal, include recipient bank info
-      if(transaction.transactionType.toLowerCase() == 'withdrawal') {
+      if(transaction.transactionType == 'withdrawal' || 'Withdrawal') {
         return {
           id: foundSender?.referenceId,
           amount: transaction.amount,
