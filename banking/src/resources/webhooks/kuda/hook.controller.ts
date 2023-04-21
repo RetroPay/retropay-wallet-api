@@ -126,8 +126,7 @@ class WebhookController implements IController {
                                             channel: "generic",
                                             type: "plain",
                                             // sms: "you've been credited"
-                                            sms: 
-                                            `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                            sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                         }
         
                                         const response = await axios({
@@ -135,6 +134,8 @@ class WebhookController implements IController {
                                             url: 'https://api.ng.termii.com/api/sms/send',
                                             data: termiiPayload,
                                         })
+
+                                        console.log(response, "termii response")
                                     }
                                     break;
                                 case "Funding" || "funding":
@@ -301,9 +302,7 @@ class WebhookController implements IController {
                                         channel: "generic",
                                         type: "plain",
                                         // sms: 'hello there, you sent'
-                                        sms: 
-                                        `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}
-                                        `
+                                        sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                     }
     
                                     const response = await axios({
