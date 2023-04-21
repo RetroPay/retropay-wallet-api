@@ -382,7 +382,7 @@ class UserService {
                 channel: "generic",
                 type: "plain",
                 sms: `
-                    Hi ${foundUser.firstname}, Your Retropay Wallet pass ${token}.  Built by Retrostack
+                    Hi ${foundUser.firstname}, Your Retro Wallet pass ${token}.  Built by Retrostack
                 `
             }
 
