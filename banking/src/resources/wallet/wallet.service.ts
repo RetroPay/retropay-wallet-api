@@ -600,13 +600,13 @@ class WalletService {
         switch (responseCode) {
           case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
             break;
-          case '-2' : throw new Error('Transfer failed. Insufficient funds')
+          case '-2' || '51' : throw new Error('Transfer failed. Insufficient funds')
             break;
           case '-3' : throw new Error('Transfer failed - Unable to process transaction')
             break;
           case '91' : throw new Error('Transfer failed - Request timeout.')
             break;
-          default: throw new Error('Unable to process transaction')
+          default: throw new Error('Transfer error - We were unable to process your transaction, please try again.')
         }
       }
 
@@ -947,6 +947,8 @@ class WalletService {
         icon: "🛑",
         notify: true,
       });
+
+      throw new Error("Unable to process receive funds webhook.");
     }
   }
 
@@ -964,7 +966,7 @@ class WalletService {
         { new: true }
       );
 
-      console.log(transaction, "ackwnowledge webhook found transaction")
+      console.log(transaction, "acknowledge webhook found transaction")
 
       if (!transaction) throw new Error("Failed to update transaction");
 
@@ -1010,6 +1012,8 @@ class WalletService {
         icon: "🛑",
         notify: true,
       });
+
+      throw new Error("Unable to process acknowledge webhook.");
     }
   }
 }
