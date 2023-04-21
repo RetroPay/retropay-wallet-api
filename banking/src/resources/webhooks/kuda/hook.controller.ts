@@ -116,22 +116,23 @@ class WebhookController implements IController {
                                         html: emailTemplate.html,
                                     })
 
-                                    // const termiiPayload = {
-                                    //     api_key: process.env.TERMII_API_KEY,
-                                    //     to: transaction.recipientPhoneNumber,
-                                    //     from: process.env.TERMII_SENDER_ID,
-                                    //     channel: "generic",
-                                    //     type: "plain",
-                                    //     sms: 
-                                    //     `Retro Wallet - Credit Alert\nAmount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderTag}\nDate: ${new Date(transaction.createdAt).toLocaleDateString()}\n
-                                    //     `
-                                    // }
+                                    const termiiPayload = {
+                                        api_key: process.env.TERMII_API_KEY,
+                                        to: transaction.recipientPhoneNumber,
+                                        from: process.env.TERMII_SENDER_ID,
+                                        channel: "generic",
+                                        type: "plain",
+                                        sms: "you've been credited"
+                                        // sms: 
+                                        // `Retro Wallet - Credit Alert\nAmount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderTag}\nDate: ${new Date(transaction.createdAt).toLocaleDateString()}\n
+                                        // `
+                                    }
     
-                                    // const response = await axios({
-                                    //     method: 'POST',
-                                    //     url: 'https://api.ng.termii.com/api/sms/send',
-                                    //     data: termiiPayload,
-                                    // })
+                                    const response = await axios({
+                                        method: 'POST',
+                                        url: 'https://api.ng.termii.com/api/sms/send',
+                                        data: termiiPayload,
+                                    })
                                 }
                                 break;
                             case "Funding" || "funding":
@@ -152,21 +153,22 @@ class WebhookController implements IController {
                                         })
                                     );
 
-                                    // const termiiPayload = {
-                                    //     api_key: process.env.TERMII_API_KEY,
-                                    //     to: transaction.recipientPhoneNumber,
-                                    //     from: process.env.TERMII_SENDER_ID,
-                                    //     channel: "generic",
-                                    //     type: "plain",
-                                    //     sms: 
-                                    //     `Retro Wallet - Credit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderName}(${transaction.senderBank})\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n`
-                                    // }
+                                    const termiiPayload = {
+                                        api_key: process.env.TERMII_API_KEY,
+                                        to: transaction.recipientPhoneNumber,
+                                        from: process.env.TERMII_SENDER_ID,
+                                        channel: "generic",
+                                        type: "plain",
+                                        sms: "You wallet was funded!"
+                                        // sms: 
+                                        // `Retro Wallet - Credit Alert\n Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n Sender: ${transaction.senderName}(${transaction.senderBank})\n Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n`
+                                    }
     
-                                    // const response = await axios({
-                                    //     method: 'POST',
-                                    //     url: 'https://api.ng.termii.com/api/sms/send',
-                                    //     data: termiiPayload,
-                                    // })
+                                    const response = await axios({
+                                        method: 'POST',
+                                        url: 'https://api.ng.termii.com/api/sms/send',
+                                        data: termiiPayload,
+                                    })
 
                                     // console.log(response, "termii response")
 
