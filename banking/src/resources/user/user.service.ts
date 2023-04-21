@@ -1,6 +1,7 @@
 import IUser from "./user.interface"
 import userModel from "./user.model"
 import translateError from "@/helpers/mongod.helper"
+import { Console } from "console"
 
 class UserService {
 
@@ -8,6 +9,8 @@ class UserService {
         try {
           payload = JSON.parse(payload)
             const { data, event } = payload
+
+            console.log(payload, "message broker")
 
             if(!data || !event) throw new Error('==== Invalid Payload ====')
 

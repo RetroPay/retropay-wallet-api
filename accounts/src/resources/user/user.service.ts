@@ -15,6 +15,9 @@ class UserService {
             payload = JSON.parse(payload)
             const { data, event } = payload
 
+            
+            console.log(payload, "message broker")
+
             if (!data || !event) throw new Error('==== Invalid Payload ====')
 
             switch (event) {
@@ -66,7 +69,7 @@ class UserService {
 
     public async getUserById(id: string): Promise<IUser | Error> {
         try {
-            const user = await userModel.findById(id).select('-notifications -password -passwordReset -phoneNumber -phoneVerification -emailVerification -isUsernameSet -isPinSet')
+            const user = await userModel.findById(id).select('-notifications -password -passwordReset -phoneVerification -emailVerification -isUsernameSet -isPinSet')
 
             if (!user) throw new Error("Unable to retrieve details")
 
