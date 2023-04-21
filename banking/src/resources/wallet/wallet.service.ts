@@ -968,7 +968,10 @@ class WalletService {
 
       if (!transaction) throw new Error("Failed to update transaction");
 
-      const foundSender = await userModel.findOne({ id: new mongoose.Types.ObjectId(transaction?.fundOriginatorAccount) });
+      // const foundSender = await userModel.findOne({ _id: new mongoose.Types.ObjectId(transaction?.fundOriginatorAccount) });
+      const foundSender = await userModel.findById(transaction?.fundOriginatorAccount);
+
+      console.log(foundSender, "fund originator")
       
       // if transaction is a withdrawal, include recipient bank info
       if(transaction.transactionType == 'withdrawal' || 'Withdrawal') {
