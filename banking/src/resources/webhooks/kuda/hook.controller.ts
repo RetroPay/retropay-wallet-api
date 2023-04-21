@@ -61,6 +61,7 @@ class WebhookController implements IController {
                 senderName,
                 recipientName,
                 sessionId,
+                instrumentNumber
             } = req.body;
 
             switch (transactionType) {
@@ -191,13 +192,16 @@ class WebhookController implements IController {
                             this.walletService.acknowledgeFundsTransfer(
                                 amount,
                                 transactionReference,
-                                sessionId
+                                sessionId,
+                                instrumentNumber
                             );
+
+                        console.log(transaction, "acknowledge webhook debit service response")
 
                         const { transactionType } = transaction;
 
-                        switch (transactionType.toLowerCase()) {
-                            case "transfer":
+                        switch (transactionType) {
+                            case "Transfer" || 'transfer':
                                 {
                                     // Update transaction notification
                                     await publishMessage(
@@ -237,10 +241,7 @@ class WebhookController implements IController {
                                         from: process.env.TERMII_SENDER_ID,
                                         channel: "generic",
                                         type: "plain",
-                                        sms: `Retro Wallet - Debit Alert\n
-                                            Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\n
-                                            Recipient: @${transaction.recipientTag}
-                                            Date: ${new Date(transaction.createdAt).toLocaleDateString()}\n
+                                        sms: `Retro Wallet - Debit Alert\nAmount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}\nRecipient: @${transaction.recipientTag}\nDate: ${new Date(transaction.createdAt).toLocaleDateString()}\n
                                         `
                                     }
 
@@ -249,6 +250,8 @@ class WebhookController implements IController {
                                         url: 'https://api.ng.termii.com/api/sms/send',
                                         data: termiiPayload,
                                     })
+
+                                    console.log(response, "termii response")
                                 }
                                 break;
                             case "withdrawal": {
