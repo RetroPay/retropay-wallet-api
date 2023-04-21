@@ -66,6 +66,9 @@ class WebhookController implements IController {
                 instrumentNumber
             } = req.body;
 
+            // Don't process webhooks for transaction fees.
+            if(narrations.toLowerCase().includes('transaction fee')) return
+
             switch (transactionType) {
                 case 'Credit':
                     {
