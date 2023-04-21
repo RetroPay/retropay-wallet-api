@@ -48,7 +48,7 @@ async function authenticatedMiddleware(
                     nubanAccountDetails,
                     favoritedRecipients,
                     isAccountActive,
-                    profilePhoto } = response.data.data.user
+                    profilePhoto, phoneNumber } = response.data.data.user
 
                 // update user variable, with saved data record 
                 user = await UserModel.create({

@@ -981,6 +981,7 @@ class WalletService {
           beneficiaryName: transaction.beneficiaryName, 
           beneficiaryBank: transaction.beneficiaryBank,
           beneficiaryAccount: transaction.beneficiaryAccount,
+          transactionId: transaction.referenceId,
           createdAt: transaction.createdAt,
           senderTag: foundSender?.username,
           senderPhoneNumber: foundSender?.phoneNumber
