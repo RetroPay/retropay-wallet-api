@@ -393,7 +393,7 @@ class WalletService {
               trackingReference: referenceId, //Unique identifier of user with Kuda
               beneficiaryAccount: foundRecipient?.nubanAccountDetails?.nuban,
               amount: amount * 100, //amount in Kobo
-              narration: comment,
+              narration: "retro-trf: " +comment,
               beneficiaryBankCode: await redisClient.get("kudaBankCode"),
               beneficiaryName,
               senderName: foundUser.lastname + ' ' + foundUser.firstname,
@@ -884,7 +884,7 @@ class WalletService {
         "nubanAccountDetails.nuban": accountNumber,
       });
 
-      console.log(foundRecipient, "receive funds, fourd recipint")
+      console.log(foundRecipient, "receive funds, found recipient")
 
       if (!foundRecipient) throw new Error("No account with nuban found");
 
@@ -900,8 +900,9 @@ class WalletService {
         { new: true }
       );
 
-      // If paying bank isn't kuda bank, log funding transaction
-      if (!payingBank.toLowerCase().includes("kuda")) {
+
+      // If transaction isn't incoming from retro, log funding transaction
+      if (!narrations.toLowerCase().includes("retro-trf:")) {
         const newTransaction = await walletModel.create({
           fundRecipientAccount: foundRecipient._id,
           amount: Number(amount) / 100, //convert amount from kobo to naira
@@ -913,6 +914,7 @@ class WalletService {
           beneficiaryAccount: accountNumber,
           currency: "NGN",
           senderName,
+          senderBank: payingBank
         });
 
         return {
@@ -962,7 +964,7 @@ class WalletService {
     try {
       const transaction: IWallet | null = await walletModel.findOneAndUpdate(
         { $or: [{referenceId: transactionReference}, {referenceId: instrumentNumber}] },
-        { $set: { WebhookAcknowledgement: true }, status: "success" },
+        { $set: { senderWebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
 

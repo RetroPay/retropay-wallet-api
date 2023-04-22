@@ -33,24 +33,6 @@ class WebhookController implements IController {
 
             console.log(req.body, "kuda webhook")
 
-            /**
-             * {"_id":{"$oid":"6440b21a7af2f4a21cfe64ec"},
-             * "payingBank":"United Bank for Africa",
-             * "amount":"500",
-             * "transactionReference":"230420138398",
-             * "transactionDate":{"$date":{"$numberLong":"1681961497277"}},
-             * "narrations":"KIP:UBA/ADEYEMI OLUWAMOSOP/MOB/ RetroPay  Adey/UTO",
-             * "accountName":"ADEYEMI OLUWAMOSOPE AFOLABI",
-             * "accountNumber":"2054644498",
-             * "transactionType":"Credit",
-             * "senderName":"ADEYEMI OLUWAMOSOPE AFOLABI",
-             * "recipientName":"ADEYEMI OLUWAMOSOPE AFOLABI",
-             * "instrumentNumber":"000004230420043044589401425679",
-             * "createdAt":{"$date":{"$numberLong":"1681961498332"}},
-             * "updatedAt":{"$date":{"$numberLong":"1681961498332"}},
-             * "__v":{"$numberInt":"0"}}
-             */
-
             res.sendStatus(200);
             const { transactionType } = req.body;
             const {
@@ -117,7 +99,6 @@ class WebhookController implements IController {
                                             text: emailTemplate.text,
                                             html: emailTemplate.html,
                                         })
-                                        console.log(info)
     
                                         const termiiPayload = {
                                             api_key: process.env.TERMII_API_KEY,
@@ -134,8 +115,6 @@ class WebhookController implements IController {
                                             url: 'https://api.ng.termii.com/api/sms/send',
                                             data: termiiPayload,
                                         })
-
-                                        console.log(response, "termii response")
                                     }
                                     break;
                                 case "Funding" || "funding":
@@ -171,8 +150,6 @@ class WebhookController implements IController {
                                             url: 'https://api.ng.termii.com/api/sms/send',
                                             data: termiiPayload,
                                         })
-    
-                                        console.log(response, "termii response")
     
                                         await logsnag.publish({
                                             channel: "user-actions",
@@ -240,8 +217,6 @@ class WebhookController implements IController {
                                             text: emailTemplate.text,
                                             html: emailTemplate.html,
                                         });
-    
-                                        console.log(info)
 
                                         const termiiPayload = {
                                             api_key: process.env.TERMII_API_KEY,
@@ -258,7 +233,6 @@ class WebhookController implements IController {
                                             data: termiiPayload,
                                         })
     
-                                        console.log(response, "termii response")
                                     }
                                     break;
                                 case "withdrawal" || 'Withdrawal': {
