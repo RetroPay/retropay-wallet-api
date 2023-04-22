@@ -600,7 +600,8 @@ class WalletService {
         switch (responseCode) {
           case '-1' : throw new Error('Transfer failed - Transaction cancelled.')
             break;
-          case '-2' || '51' : throw new Error('Transfer failed. Insufficient funds')
+          case '-2' :
+          case '51' : throw new Error('Transfer failed. Insufficient funds')
             break;
           case '-3' : throw new Error('Transfer failed - Unable to process transaction')
             break;
@@ -615,7 +616,6 @@ class WalletService {
         amount,
         transactionType: "withdrawal",
         status: "pending",
-        // referenceId: "test-withdrawal" + v4(),
         referenceId: process.env.NODE_ENV == 'development' ? "test-withdrawal" + v4() : data.transactionReference,
         processingFees: 10,
         comment,
@@ -636,7 +636,6 @@ class WalletService {
       return {
         amount,
         transactionId: data.transactionReference,
-        // transactionId: newTransaction.referenceId,
         beneficiaryName,
         beneficiaryBank,
         beneficiaryAccount,

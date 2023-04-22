@@ -69,7 +69,7 @@ class WebhookController implements IController {
                             switch (transaction.transactionType) {
                                 case "Transfer" || "transfer":
                                     {
-                                        await publishMessage(
+                                        publishMessage(
                                             await brokerChannel,
                                             `${process.env.ACCOUNT_BINDING_KEY}`,
                                             JSON.stringify({
@@ -93,7 +93,7 @@ class WebhookController implements IController {
                                             transaction.createdAt
                                         );
                                         const mailService = MailService.getInstance()
-                                        const info = await mailService.sendMail({
+                                        mailService.sendMail({
                                             to: transaction.recipientEmail,
                                             subject: `Cha-ching 🤑 @${transaction.recipientTag}, you just got credited!`,
                                             text: emailTemplate.text,
@@ -126,7 +126,7 @@ class WebhookController implements IController {
                                             senderBankInfo: `${transaction.senderName}(${transaction.senderBank})`,
                                             timestamp: transaction.createdAt,
                                         };
-                                        await publishMessage(
+                                        publishMessage(
                                             await brokerChannel,
                                             `${process.env.ACCOUNT_BINDING_KEY}`,
                                             JSON.stringify({
@@ -184,10 +184,10 @@ class WebhookController implements IController {
                             const { transactionType } = transaction;
     
                             switch (transactionType) {
-                                case "Transfer" || 'transfer':
+                                case "Transfer":
                                     {
                                         // Update transaction notification
-                                        await publishMessage(
+                                        publishMessage(
                                             await brokerChannel,
                                             `${process.env.ACCOUNT_BINDING_KEY}`,
                                             JSON.stringify({
@@ -205,13 +205,13 @@ class WebhookController implements IController {
                                         // Send email notification
                                         const emailTemplate = transferOutRecieptEmail(
                                             transaction.senderTag,
-                                            transaction.amount,
+                                            transaction.amount * 100, //pass amount in kobo 
                                             transaction.recipientTag,
                                             transaction.transactionId,
                                             transaction.createdAt
                                         );
                                         const mailService = MailService.getInstance();
-                                        const info = await mailService.sendMail({
+                                        mailService.sendMail({
                                             to: transaction.senderEmail,
                                             subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
                                             text: emailTemplate.text,
@@ -224,7 +224,7 @@ class WebhookController implements IController {
                                             from: process.env.TERMII_SENDER_ID,
                                             channel: "generic",
                                             type: "plain",
-                                            sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: @${transaction.recipientTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                            sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.recipientTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                         }
     
                                         const response = await axios({
@@ -235,8 +235,8 @@ class WebhookController implements IController {
     
                                     }
                                     break;
-                                case "withdrawal" || 'Withdrawal': {
-                                    await publishMessage(
+                                case 'Withdrawal': {
+                                    publishMessage(
                                         await brokerChannel,
                                         `${process.env.ACCOUNT_BINDING_KEY}`,
                                         JSON.stringify({
@@ -254,20 +254,18 @@ class WebhookController implements IController {
                                     // Send email notification
                                     const emailTemplate = transferOutRecieptEmail(
                                         transaction.senderTag,
-                                        transaction.amount,
+                                        transaction.amount * 100, //pass amount in kobo
                                         transaction.beneficiaryName,
                                         transaction.transactionId,
                                         transaction.createdAt
                                     );
                                     const mailService = MailService.getInstance();
-                                    const info = await mailService.sendMail({
+                                    mailService.sendMail({
                                         to: transaction.senderEmail,
                                         subject: `Howdy @${transaction.senderTag}, your transfer is on its way! 🚀`,
                                         text: emailTemplate.text,
                                         html: emailTemplate.html,
                                     });
-    
-                                    console.log(info)
     
                                     const termiiPayload = {
                                         api_key: process.env.TERMII_API_KEY,
@@ -275,8 +273,7 @@ class WebhookController implements IController {
                                         from: process.env.TERMII_SENDER_ID,
                                         channel: "generic",
                                         type: "plain",
-                                        // sms: 'hello there, you sent'
-                                        sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                        sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                     }
     
                                     const response = await axios({
@@ -284,8 +281,6 @@ class WebhookController implements IController {
                                         url: 'https://api.ng.termii.com/api/sms/send',
                                         data: termiiPayload,
                                     })
-
-                                    console.log(response, "termii response")
                                 }
                                     break;
                                 default:
