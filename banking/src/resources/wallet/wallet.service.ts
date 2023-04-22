@@ -447,7 +447,7 @@ class WalletService {
       });
 
       // if transfer is successful, charge transaction fee
-      await this.chargeTransactionFees("transfer", referenceId, userId, k_token)
+      this.chargeTransactionFees("transfer", referenceId, userId, k_token)
 
       return {
         amount,
@@ -631,7 +631,7 @@ class WalletService {
       console.log(newTransaction, " withdrawal saved transaction response")
 
       // if transfer is successful, charge transaction fee
-      await this.chargeTransactionFees("withdraw", referenceId, userId, k_token)
+      this.chargeTransactionFees("withdraw", referenceId, userId, k_token)
 
       return {
         amount,
