@@ -743,9 +743,9 @@ class WalletService {
           Authorization: `Bearer ${k_token}`,
         },
       });
-
       const data = response.data;
-
+      
+      console.log(response)
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) throw new Error(data.message);
 
