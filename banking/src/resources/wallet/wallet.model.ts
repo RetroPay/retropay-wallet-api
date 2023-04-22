@@ -34,6 +34,7 @@ const WalletSchema = new Schema(
     beneficiaryBankCode: { type: String },
     beneficiaryBank: String,
     senderName: {type: String},
+    senderBank: { type: String },   
     beneficiaryName: { type: String },
     nameEnquiryId: { type: String },
     beneficiaryAccount: { type: String },
@@ -48,5 +49,4 @@ const WalletSchema = new Schema(
   }
 );
 
-// Chane collection name to transaction before prod
 export default model<IWallet>('wallet', WalletSchema)
