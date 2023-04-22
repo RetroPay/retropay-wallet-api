@@ -393,7 +393,7 @@ class WalletService {
               trackingReference: referenceId, //Unique identifier of user with Kuda
               beneficiaryAccount: foundRecipient?.nubanAccountDetails?.nuban,
               amount: amount * 100, //amount in Kobo
-              narration: "retro-trf: " +comment,
+              narration: "retro-trf: " + comment,
               beneficiaryBankCode: await redisClient.get("kudaBankCode"),
               beneficiaryName,
               senderName: foundUser.lastname + ' ' + foundUser.firstname,
@@ -577,7 +577,7 @@ class WalletService {
             trackingReference: referenceId, //Unique identifier of user with Kuda
             beneficiaryAccount,
             amount: amount * 100, //amount in Kobo
-            narration: comment,
+            narration: "retro-trf: " + comment,
             beneficiaryBankCode,
             beneficiaryName,
             senderName: foundUser.lastname + ' ' + foundUser.firstname,
@@ -901,8 +901,8 @@ class WalletService {
       );
 
 
-      // If transaction isn't incoming from retro, log funding transaction
-      if (!narrations.toLowerCase().includes("retro-trf:")) {
+      // If incoming credit transaction isn't from retro, log funding transaction
+      if (!narrations.toLowerCase().includes("retro-trf")) {
         const newTransaction = await walletModel.create({
           fundRecipientAccount: foundRecipient._id,
           amount: Number(amount) / 100, //convert amount from kobo to naira
@@ -978,7 +978,7 @@ class WalletService {
       console.log(foundSender, "fund originator")
       
       // if transaction is a withdrawal, include recipient bank info
-      if(transaction.transactionType == 'withdrawal' || 'Withdrawal') {
+      if(transaction?.transactionType.toLowerCase() == 'withdrawal') {
         return {
           id: foundSender?.referenceId,
           amount: transaction.amount,
@@ -989,7 +989,8 @@ class WalletService {
           createdAt: transaction.createdAt,
           senderTag: foundSender?.username,
           senderEmail: foundSender?.email,
-          senderPhoneNumber: foundSender?.phoneNumber
+          senderPhoneNumber: foundSender?.phoneNumber,
+          transactionType: 'Withdrawal'
         }
       }
 
@@ -997,7 +998,7 @@ class WalletService {
         id: foundSender?.referenceId,
         amount: transaction.amount,
         recipientTag: transaction.recepientTag,
-        transactionType: transaction.transactionType,
+        transactionType: 'Transfer',
         createdAt: transaction.createdAt,
         senderTag: foundSender?.username,
         transactionId: transaction.referenceId,
