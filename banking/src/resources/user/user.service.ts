@@ -37,7 +37,7 @@ class UserService {
                     break;
             }  
         } catch (error: any) {
-            
+            console.log(error, "message broker processing catch error")
         }
         
     }

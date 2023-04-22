@@ -31,7 +31,7 @@ class UserService {
 
     }
 
-    public async queueNotification(reqData: { id: string, trType: string, amount: number, recipientTag: string, senderTag: string, timestamp: Date, senderBankInfo: string, recipientBankInfo: string }): Promise<void> {
+    public async queueNotification(reqData: { id: string, trType: string, amount: number, recipientTag?: string, senderTag?: string, timestamp: Date, senderBankInfo?: string, recipientBankInfo?: string }): Promise<void> {
         try {
             const { id, trType, amount, recipientTag, senderBankInfo, senderTag, recipientBankInfo, timestamp } = reqData;
 
@@ -52,6 +52,7 @@ class UserService {
             }, { new: true })
 
         } catch (error: any) {
+            console.log(error, "message broker processing catch error")
         }
     }
 
