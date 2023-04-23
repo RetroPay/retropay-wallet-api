@@ -28,7 +28,6 @@ async function authenticatedMiddleware(
         }
 
         let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
-        console.log(user, "user before search/lookup")
 
         if (!user) {
             try {
@@ -39,8 +38,6 @@ async function authenticatedMiddleware(
                         Authorization: `Bearer ${accessToken}`
                     }
                 })
-
-                console.log(response.data, "response from search/lookup")
 
                 const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
                     transferPermission,
@@ -69,10 +66,7 @@ async function authenticatedMiddleware(
                     phoneNumber
                 })
 
-                console.log(user, "updated user after search")
-
             } catch (error) {
-                console.log(error, "user not found after lookup")
                 return next(new HttpException(401, "Unauthorized"))
             }
         }

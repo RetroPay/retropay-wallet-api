@@ -31,8 +31,6 @@ class WebhookController implements IController {
         try {
             await webhookModel.create(req.body);
 
-            console.log(req.body, "kuda webhook")
-
             res.sendStatus(200);
             const { transactionType } = req.body;
             const {
@@ -106,7 +104,6 @@ class WebhookController implements IController {
                                             from: process.env.TERMII_SENDER_ID,
                                             channel: "generic",
                                             type: "plain",
-                                            // sms: "you've been credited"
                                             sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                         }
         
@@ -141,7 +138,6 @@ class WebhookController implements IController {
                                             from: process.env.TERMII_SENDER_ID,
                                             channel: "generic",
                                             type: "plain",
-                                            // sms: "You wallet was funded!"
                                             sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderName}(${transaction.senderBank}). Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                         }
         
@@ -178,9 +174,7 @@ class WebhookController implements IController {
                                     sessionId,
                                     instrumentNumber
                                 );
-    
-                            console.log(transaction, "acknowledge webhook debit service response")
-    
+        
                             const { transactionType } = transaction;
     
                             switch (transactionType) {
@@ -205,7 +199,7 @@ class WebhookController implements IController {
                                         // Send email notification
                                         const emailTemplate = transferOutRecieptEmail(
                                             transaction.senderTag,
-                                            transaction.amount * 100, //pass amount in kobo 
+                                            transaction.amount, 
                                             transaction.recipientTag,
                                             transaction.transactionId,
                                             transaction.createdAt
@@ -224,7 +218,7 @@ class WebhookController implements IController {
                                             from: process.env.TERMII_SENDER_ID,
                                             channel: "generic",
                                             type: "plain",
-                                            sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.recipientTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                            sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.recipientTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                         }
     
                                         const response = await axios({
@@ -254,7 +248,7 @@ class WebhookController implements IController {
                                     // Send email notification
                                     const emailTemplate = transferOutRecieptEmail(
                                         transaction.senderTag,
-                                        transaction.amount * 100, //pass amount in kobo
+                                        transaction.amount,
                                         transaction.beneficiaryName,
                                         transaction.transactionId,
                                         transaction.createdAt
@@ -273,7 +267,7 @@ class WebhookController implements IController {
                                         from: process.env.TERMII_SENDER_ID,
                                         channel: "generic",
                                         type: "plain",
-                                        sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                        sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
                                     }
     
                                     const response = await axios({
@@ -294,7 +288,6 @@ class WebhookController implements IController {
             }
 
         } catch (error) {
-            console.log(error, "webhook whole error")
             await logsnag.publish({
                 channel: "failed-requests",
                 event: "Failed to process wallet webhook",

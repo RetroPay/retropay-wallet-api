@@ -21,7 +21,7 @@ class UserService {
                     break;
                 case 'USER_CREATE_PIN': await this.setTransactionPin(data)
                     break;
-                case 'DEACTIVATE_USER_ACOUNT': await this.deactivateUserAccount(data)
+                case 'DEACTIVATE_USER_ACCOUNT': await this.deactivateUserAccount(data)
                     break;
                 case 'ADD_FAVORITE_RECIPIENT': await this.addToFavoritedRecipients(data)
                     break;
