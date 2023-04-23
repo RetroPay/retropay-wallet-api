@@ -35,7 +35,7 @@ class metaMapWebhookController implements IController {
                 case 'verification_updated':
                 case 'verification_completed': 
                     this.userService.updateUserVerification(metadata.accountTag, identityStatus)
-                    publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                    await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
                         event: 'UPDATE_USER_IDENTITY_STATUS',
                         data: {
                             username: metadata.accountTag,

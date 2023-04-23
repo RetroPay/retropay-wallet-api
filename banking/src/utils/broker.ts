@@ -25,10 +25,10 @@ export const subscribeMessage = async (channel: amqplib.Channel, binding_key: st
     try {
         const appQueue: any = await channel.assertQueue(`${process.env.BANKING_QUEUE_NAME}`);
 
-        channel.bindQueue(appQueue.queue, `${process.env.EXCHANGE_NAME}`, binding_key);
+        await channel.bindQueue(appQueue.queue, `${process.env.EXCHANGE_NAME}`, binding_key);
 
-        channel.consume(appQueue.queue, (data: any) => {
-            service.handleSubscribedEvents(data.content.toString())
+        await channel.consume(appQueue.queue, async (data: any) => {
+            await service.handleSubscribedEvents(data.content.toString())
             channel.ack(data)
         })
     } catch (error: any) {
