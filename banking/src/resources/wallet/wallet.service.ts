@@ -252,7 +252,6 @@ class WalletService {
         transaction[0].fundOriginatorAccount != userId
       )
         throw new Error("Unauthorized");
-        console.log(transaction[0])
       return transaction[0];
     } catch (error: any) {
       throw new Error(
@@ -591,8 +590,6 @@ class WalletService {
 
       const data = response.data
 
-      console.log(data, "withdraw funds kuda response")
-
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if(!data.status) {
         const { responseCode } = data
@@ -628,8 +625,6 @@ class WalletService {
         currency: "NGN",
       });
 
-      console.log(newTransaction, " withdrawal saved transaction response")
-
       // if transfer is successful, charge transaction fee
       this.chargeTransactionFees("withdraw", referenceId, userId, k_token)
 
@@ -643,7 +638,6 @@ class WalletService {
         createdAt: newTransaction?.createdAt,
       };
     } catch (error) {
-      console.log(error, "error from with fund whole catch")
       await logsnag.publish({
         channel: "failed-requests",
         event: "Withdrawal failed",
@@ -744,8 +738,7 @@ class WalletService {
         },
       });
       const data = response.data;
-      
-      console.log(response)
+
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) throw new Error(data.message);
 
@@ -883,8 +876,6 @@ class WalletService {
         "nubanAccountDetails.nuban": accountNumber,
       });
 
-      console.log(foundRecipient, "receive funds, found recipient")
-
       if (!foundRecipient) throw new Error("No account with nuban found");
 
       /* 
@@ -953,7 +944,7 @@ class WalletService {
     }
   }
 
-  //Acknowledge that funds have left senders account, and kuda is processing transfer
+  //Acknowledge that funds have left senders account, and kuda has processed transfer
   public async acknowledgeFundsTransfer(
     amount: string,
     transactionReference: string,
@@ -967,14 +958,10 @@ class WalletService {
         { new: true }
       );
 
-      console.log(transaction, "acknowledge webhook found transaction")
-
       if (!transaction) throw new Error("Failed to update transaction");
 
       // const foundSender = await userModel.findOne({ _id: new mongoose.Types.ObjectId(transaction?.fundOriginatorAccount) });
       const foundSender = await userModel.findById(transaction?.fundOriginatorAccount);
-
-      console.log(foundSender, "fund originator")
       
       // if transaction is a withdrawal, include recipient bank info
       if(transaction?.transactionType.toLowerCase() == 'withdrawal') {
@@ -1005,7 +992,6 @@ class WalletService {
         senderPhoneNumber: foundSender?.phoneNumber
       }
     } catch (error) {
-      console.log(error, "acknowledge funds service catch error")
       await logsnag.publish({
         channel: "failed-requests",
         event: "Process webhook failed",
