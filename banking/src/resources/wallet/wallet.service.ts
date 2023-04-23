@@ -980,7 +980,7 @@ class WalletService {
       if(transaction?.transactionType.toLowerCase() == 'withdrawal') {
         return {
           id: foundSender?.referenceId,
-          amount: transaction.amount,
+          amount, //amount in kobo
           beneficiaryName: transaction.beneficiaryName, 
           beneficiaryBank: transaction.beneficiaryBank,
           beneficiaryAccount: transaction.beneficiaryAccount,
@@ -995,7 +995,7 @@ class WalletService {
 
       return {
         id: foundSender?.referenceId,
-        amount: transaction.amount,
+        amount, //amount in kobo
         recipientTag: transaction.recepientTag,
         transactionType: 'Transfer',
         createdAt: transaction.createdAt,
@@ -1004,7 +1004,6 @@ class WalletService {
         senderEmail: foundSender?.email,
         senderPhoneNumber: foundSender?.phoneNumber
       }
-      // return transaction;
     } catch (error) {
       console.log(error, "acknowledge funds service catch error")
       await logsnag.publish({
