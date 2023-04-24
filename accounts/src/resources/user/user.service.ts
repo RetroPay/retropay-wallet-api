@@ -501,6 +501,10 @@ class UserService {
 
     public async setUsername(username: string, id: string): Promise<IUser | null> {
         try {
+            //check if username only contains alphabet, number, '_' and '.'
+            const regex = /^[a-zA-Z0-9_.]+$/;
+            if(!regex.test(username)) throw new Error('Invalid username, please try again')
+            
             if (await userModel.findOne({ username })) throw new Error('Username already exists')
 
             const updatedUser = await userModel.findByIdAndUpdate(id, { username, isUsernameSet: true }, { new: true }).select("username");
