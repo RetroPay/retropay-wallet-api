@@ -43,8 +43,8 @@ class metaMapWebhookController implements IController {
                         }
                     }));
                     break;
-                // case 'verification_started': this.userService.startUserVerification(metadata.accountTag)
-                //     break;
+                case 'verification_started': this.userService.startUserVerification(metadata.accountTag)
+                    break;
                 default: 
                     break;
             }
