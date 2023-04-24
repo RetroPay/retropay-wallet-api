@@ -27,59 +27,124 @@ async function authenticatedMiddleware(
             return next(new HttpException(401, 'Your session has expired. Login again'))
         }
 
-        let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
+    
+        /**
+         * This is a very expensive work around for the unreliability issues faced
+         * with the message broker.
+         * 
+         * My thought process
+         * 
+         * decode token
+         * call account service to get latest info
+         * check banking db based on referenceId
+         * if it exists just update record if it doesn't create record immediately
+        */
 
-        if (!user) {
-            try {
-                const response = await axios({
-                    method: 'GET',
-                    url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4001/account/user/sync-info',
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                })
+        try {
+            const response = await axios({
+                method: 'GET',
+                url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4001/account/user/sync-info',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            })
+            const userData = response.data.data.user
 
-                const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
-                    transferPermission,
-                    withdrawPermission,
-                    nubanAccountDetails,
-                    favoritedRecipients,
-                    isAccountActive,
-                    profilePhoto, phoneNumber } = response.data.data.user
+            console.log(userData, "searched user info from accDB")
 
-                // update user variable, with saved data record 
-                user = await UserModel.create({
-                    firstname, 
-                    lastname, 
-                    email,
-                    referenceId: _id,
-                    pin,
-                    username,
-                    isIdentityVerified,
-                    transferPermission,
-                    withdrawPermission,
-                    nubanAccountDetails,
-                    favoritedRecipients,
-                    verificationStatus,
-                    isAccountActive,
-                    profilePhoto: profilePhoto.url,
-                    phoneNumber
-                })
 
-            } catch (error) {
-                return next(new HttpException(401, "Unauthorized"))
+            let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
+            console.log(user, "current user from banking db")
+
+            if(!user) {
+                const newUser = await UserModel.create(userData)
+
+                console.log(newUser, "new created on banking db, didn't exit before")
+
+                if (newUser.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
+
+                req.user = newUser.id
+                req.referenceId = newUser.referenceId
+                req.username = newUser.username
+                req.email = newUser.email
+
+                return next()
+            } else {
+                const updatedUser = await UserModel.findOneAndUpdate({referenceId: payload.id}, userData, { new: true })
+
+                console.log(updatedUser, "user already exists, updates banking db record")
+
+                if(!updatedUser) return next(new HttpException(401, "Unauthorized"))
+
+                if (updatedUser.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
+
+                req.user = updatedUser.id
+                req.referenceId = updatedUser.referenceId
+                req.username = updatedUser.username
+                req.email = updatedUser.email
+
+                return next()
             }
+
+        } catch (error) {
+            return next(new HttpException(401, "Unauthorized"))
         }
 
+        
+    
+
+
+        // if (!user) {
+        //     try {
+        //         const response = await axios({
+        //             method: 'GET',
+        //             url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4001/account/user/sync-info',
+        //             headers: {
+        //                 Authorization: `Bearer ${accessToken}`
+        //             }
+        //         })
+
+        //         const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
+        //             transferPermission,
+        //             withdrawPermission,
+        //             nubanAccountDetails,
+        //             favoritedRecipients,
+        //             isAccountActive,
+        //             profilePhoto, phoneNumber } = response.data.data.user
+
+        //         // update user variable, with saved data record 
+        //         user = await UserModel.create({
+        //             firstname, 
+        //             lastname, 
+        //             email,
+        //             referenceId: _id,
+        //             pin,
+        //             username,
+        //             isIdentityVerified,
+        //             transferPermission,
+        //             withdrawPermission,
+        //             nubanAccountDetails,
+        //             favoritedRecipients,
+        //             verificationStatus,
+        //             isAccountActive,
+        //             profilePhoto: profilePhoto.url,
+        //             phoneNumber
+        //         })
+
+        //     } catch (error) {
+        //         return next(new HttpException(401, "Unauthorized"))
+        //     }
+        // }
+
         //if account is suspended or deactivated
-        if (user.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
+        // if (user.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
 
-        req.user = user.id
-        req.referenceId = user.referenceId
-        req.username = user.username
-        req.email = user.email
+        // req.user = user.id
+        // req.referenceId = user.referenceId
+        // req.username = user.username
+        // req.email = user.email
 
-        return next()
+        // return next()
     } catch (error: any) {
         return next(new HttpException(401, error.message || error || 'Unauthorized'))
     }
