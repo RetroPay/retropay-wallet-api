@@ -32,7 +32,7 @@ async function authenticatedMiddleware(
          * This is a very expensive work around for the unreliability issues faced
          * with the message broker.
          * 
-         * My thought process
+         * Implementation process
          * 
          * decode token
          * call account service to get latest info
@@ -53,10 +53,10 @@ async function authenticatedMiddleware(
             console.log(userData, "searched user info from accDB")
 
 
-            let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
+            const user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
             console.log(user, "current user from banking db")
 
-            if (!user) {
+            if (user == null) {
                 const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
                     transferPermission,
                     withdrawPermission,
@@ -84,7 +84,7 @@ async function authenticatedMiddleware(
                     phoneNumber
                 })
 
-                console.log(newUser, "new created on banking db, didn't exit before")
+                console.log(newUser, "new user created on banking db, didn't exit before")
 
                 if (newUser.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
 
@@ -138,62 +138,6 @@ async function authenticatedMiddleware(
         } catch (error) {
             return next(new HttpException(401, "Unauthorized"))
         }
-
-
-
-
-
-        // if (!user) {
-        //     try {
-        //         const response = await axios({
-        //             method: 'GET',
-        //             url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4001/account/user/sync-info',
-        //             headers: {
-        //                 Authorization: `Bearer ${accessToken}`
-        //             }
-        //         })
-
-        //         const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
-        //             transferPermission,
-        //             withdrawPermission,
-        //             nubanAccountDetails,
-        //             favoritedRecipients,
-        //             isAccountActive,
-        //             profilePhoto, phoneNumber } = response.data.data.user
-
-        //         // update user variable, with saved data record 
-        //         user = await UserModel.create({
-        //             firstname, 
-        //             lastname, 
-        //             email,
-        //             referenceId: _id,
-        //             pin,
-        //             username,
-        //             isIdentityVerified,
-        //             transferPermission,
-        //             withdrawPermission,
-        //             nubanAccountDetails,
-        //             favoritedRecipients,
-        //             verificationStatus,
-        //             isAccountActive,
-        //             profilePhoto: profilePhoto.url,
-        //             phoneNumber
-        //         })
-
-        //     } catch (error) {
-        //         return next(new HttpException(401, "Unauthorized"))
-        //     }
-        // }
-
-        //if account is suspended or deactivated
-        // if (user.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
-
-        // req.user = user.id
-        // req.referenceId = user.referenceId
-        // req.username = user.username
-        // req.email = user.email
-
-        // return next()
     } catch (error: any) {
         return next(new HttpException(401, error.message || error || 'Unauthorized'))
     }

@@ -763,7 +763,7 @@ class WalletService {
       /*Check if user exists and has created a nuban to receive funds in*/
       if (!foundRecipient || !foundRecipient.transferPermission)
         throw new Error(
-          "Oops. We could not find the account you're looking for"
+          "Oops. This user is currently not able to receive funds"
         );
 
       const response = await axios({
