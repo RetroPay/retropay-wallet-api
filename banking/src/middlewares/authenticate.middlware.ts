@@ -27,7 +27,7 @@ async function authenticatedMiddleware(
             return next(new HttpException(401, 'Your session has expired. Login again'))
         }
 
-    
+
         /**
          * This is a very expensive work around for the unreliability issues faced
          * with the message broker.
@@ -56,8 +56,33 @@ async function authenticatedMiddleware(
             let user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
             console.log(user, "current user from banking db")
 
-            if(!user) {
-                const newUser = await UserModel.create(userData)
+            if (!user) {
+                const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
+                    transferPermission,
+                    withdrawPermission,
+                    nubanAccountDetails,
+                    favoritedRecipients,
+                    isAccountActive,
+                    profilePhoto, phoneNumber } = userData
+
+                // update user variable, with saved data record 
+                const newUser = await UserModel.create({
+                    firstname,
+                    lastname,
+                    email,
+                    referenceId: _id,
+                    pin,
+                    username,
+                    isIdentityVerified,
+                    transferPermission,
+                    withdrawPermission,
+                    nubanAccountDetails,
+                    favoritedRecipients,
+                    verificationStatus,
+                    isAccountActive,
+                    profilePhoto: profilePhoto.url,
+                    phoneNumber
+                })
 
                 console.log(newUser, "new created on banking db, didn't exit before")
 
@@ -70,11 +95,27 @@ async function authenticatedMiddleware(
 
                 return next()
             } else {
-                const updatedUser = await UserModel.findOneAndUpdate({referenceId: payload.id}, userData, { new: true })
+                const { firstname, lastname, email, pin, username, isIdentityVerified, verificationStatus,
+                    transferPermission,
+                    withdrawPermission,
+                    nubanAccountDetails,
+                    favoritedRecipients,
+                    isAccountActive,
+                    profilePhoto, phoneNumber } = userData
+                    
+                const updatedUser = await UserModel.findOneAndUpdate({ referenceId: payload.id }, {
+                    firstname, lastname, email, pin, username, isIdentityVerified, verificationStatus,
+                    transferPermission,
+                    withdrawPermission,
+                    nubanAccountDetails,
+                    favoritedRecipients,
+                    isAccountActive,
+                    profilePhoto, phoneNumber
+                }, { new: true })
 
                 console.log(updatedUser, "user already exists, updates banking db record")
 
-                if(!updatedUser) return next(new HttpException(401, "Unauthorized"))
+                if (!updatedUser) return next(new HttpException(401, "Unauthorized"))
 
                 if (updatedUser.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
 
@@ -90,8 +131,8 @@ async function authenticatedMiddleware(
             return next(new HttpException(401, "Unauthorized"))
         }
 
-        
-    
+
+
 
 
         // if (!user) {
