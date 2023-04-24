@@ -636,7 +636,7 @@ class UserService {
                 case 'rejected':
                 case 'reviewNeeded': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: status == "reviewNeeded" ? "in review" : status })
                     break;
-                case 'verified': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: status, $set: { isIdentityVerified: true, withdrawPermission: true } })
+                case 'verified': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: "verified", $set: { isIdentityVerified: true, withdrawPermission: true } })
                     break;
                 default:
                     break
