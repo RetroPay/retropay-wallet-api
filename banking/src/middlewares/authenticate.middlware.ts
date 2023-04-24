@@ -95,22 +95,30 @@ async function authenticatedMiddleware(
 
                 return next()
             } else {
-                const { firstname, lastname, email, pin, username, isIdentityVerified, verificationStatus,
+                const { 
+                    firstname, lastname, 
+                    email, pin, username, 
+                    isIdentityVerified, 
+                    verificationStatus,
                     transferPermission,
                     withdrawPermission,
                     nubanAccountDetails,
                     favoritedRecipients,
                     isAccountActive,
                     profilePhoto, phoneNumber } = userData
-                    
+
                 const updatedUser = await UserModel.findOneAndUpdate({ referenceId: payload.id }, {
-                    firstname, lastname, email, pin, username, isIdentityVerified, verificationStatus,
+                    firstname, lastname, 
+                    email, pin, username, 
+                    isIdentityVerified, 
+                    verificationStatus,
                     transferPermission,
                     withdrawPermission,
                     nubanAccountDetails,
                     favoritedRecipients,
                     isAccountActive,
-                    profilePhoto, phoneNumber
+                    profilePhoto: profilePhoto.url, 
+                    phoneNumber
                 }, { new: true })
 
                 console.log(updatedUser, "user already exists, updates banking db record")
