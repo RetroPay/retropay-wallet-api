@@ -53,17 +53,20 @@ async function authenticatedMiddleware(
             console.log(userData, "searched user info from accDB")
 
 
-            const user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
+            const user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails')
             console.log(user, "current user from banking db")
 
-            if (user == null || user == undefined || !user) {
+            if (!user) {
+
+                console.log("it entered oooo")
                 const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
                     transferPermission,
                     withdrawPermission,
                     nubanAccountDetails,
                     favoritedRecipients,
                     isAccountActive,
-                    profilePhoto, phoneNumber } = userData
+                    profilePhoto, 
+                    phoneNumber } = await userData
 
                 // update user variable, with saved data record 
                 const newUser = await UserModel.create({
@@ -94,46 +97,47 @@ async function authenticatedMiddleware(
                 req.email = newUser.email
 
                 return next()
-            } else {
-                const { 
-                    firstname, lastname, 
-                    email, pin, username, 
-                    isIdentityVerified, 
-                    verificationStatus,
-                    transferPermission,
-                    withdrawPermission,
-                    nubanAccountDetails,
-                    favoritedRecipients,
-                    isAccountActive,
-                    profilePhoto, phoneNumber } = userData
-
-                const updatedUser = await UserModel.findOneAndUpdate({ referenceId: payload.id }, {
-                    firstname, lastname, 
-                    email, pin, username, 
-                    isIdentityVerified, 
-                    verificationStatus,
-                    transferPermission,
-                    withdrawPermission,
-                    nubanAccountDetails,
-                    favoritedRecipients,
-                    isAccountActive,
-                    profilePhoto: profilePhoto.url, 
-                    phoneNumber
-                }, { new: true })
-
-                console.log(updatedUser, "user already exists, updates banking db record")
-
-                if (!updatedUser) return next(new HttpException(401, "Unauthorized"))
-
-                if (updatedUser.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
-
-                req.user = updatedUser.id
-                req.referenceId = updatedUser.referenceId
-                req.username = updatedUser.username
-                req.email = updatedUser.email
-
-                return next()
             }
+
+            // else 
+            const {
+                firstname, lastname,
+                email, pin, username,
+                isIdentityVerified,
+                verificationStatus,
+                transferPermission,
+                withdrawPermission,
+                nubanAccountDetails,
+                favoritedRecipients,
+                isAccountActive,
+                profilePhoto, phoneNumber } = userData
+
+            const updatedUser = await UserModel.findOneAndUpdate({ referenceId: payload.id }, {
+                firstname, lastname,
+                email, pin, username,
+                isIdentityVerified,
+                verificationStatus,
+                transferPermission,
+                withdrawPermission,
+                nubanAccountDetails,
+                favoritedRecipients,
+                isAccountActive,
+                profilePhoto: profilePhoto.url,
+                phoneNumber
+            }, { new: true })
+
+            console.log(updatedUser, "user already exists, updates banking db record")
+
+            if (!updatedUser) return next(new HttpException(401, "Unauthorized"))
+
+            if (updatedUser.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
+
+            req.user = updatedUser.id
+            req.referenceId = updatedUser.referenceId
+            req.username = updatedUser.username
+            req.email = updatedUser.email
+
+            return next()
 
         } catch (error) {
             return next(new HttpException(401, "Unauthorized"))

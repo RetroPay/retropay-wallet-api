@@ -42,7 +42,7 @@ async function authenticatedMiddleware(
 
         return next()
     } catch (error: any) {
-        return next(new HttpException(401, error.message || error || 'Unauthorized'))
+        return next(new HttpException(401, error.message || error || 'Your session has expired. Login again'))
     }
 }
 
