@@ -43,7 +43,7 @@ async function authenticatedMiddleware(
         try {
             const response = await axios({
                 method: 'GET',
-                url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4001/account/user/sync-info',
+                url: process.env.NODE_ENV == "production" ? 'https://api.retropay.app/account/user/sync-info' : 'http://localhost:4000/account/user/sync-info',
                 headers: {
                     Authorization: `Bearer ${accessToken}`
                 }
@@ -56,7 +56,7 @@ async function authenticatedMiddleware(
             const user = await UserModel.findOne({ referenceId: payload.id }).select('username email referenceId nubanAccountDetails').exec()
             console.log(user, "current user from banking db")
 
-            if (user == null) {
+            if (user == null || user == undefined || !user) {
                 const { firstname, lastname, email, _id, pin, username, isIdentityVerified, verificationStatus,
                     transferPermission,
                     withdrawPermission,
@@ -139,6 +139,7 @@ async function authenticatedMiddleware(
             return next(new HttpException(401, "Unauthorized"))
         }
     } catch (error: any) {
+        console.log(error)
         return next(new HttpException(401, error.message || error || 'Unauthorized'))
     }
 }
