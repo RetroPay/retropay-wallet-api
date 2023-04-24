@@ -82,18 +82,18 @@ class UserController implements IController {
             //     text: emailTemplate.text,
             //     html: emailTemplate.html,
             // });
-
-            //Notify banking service
-            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'NEW_USER_CREATED',
-            //     data: {
-            //         firstname, 
-            //         lastname, 
-            //         email, 
-            //         username,
-            //         _id
-            //     }
-            // }));
+            
+            // Notify banking service
+            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'NEW_USER_CREATED',
+                data: {
+                    firstname, 
+                    lastname, 
+                    email, 
+                    username,
+                    _id
+                }
+            }));
 
             //Remove _id before responding to client
             delete user.user._id
