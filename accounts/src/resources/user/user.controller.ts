@@ -74,26 +74,26 @@ class UserController implements IController {
             
             const { firstname, lastname, email, username, _id } = user.user
 
-            const emailTemplate = welcomeEmail(req.body.firstname)
-            const mailService = MailService.getInstance();
-            mailService.sendMail({
-                to: req.body.email,
-                subject: `Howdy ${firstname}, welcome aboard!`,
-                text: emailTemplate.text,
-                html: emailTemplate.html,
-            });
+            // const emailTemplate = welcomeEmail(req.body.firstname)
+            // const mailService = MailService.getInstance();
+            // mailService.sendMail({
+            //     to: req.body.email,
+            //     subject: `Howdy ${firstname}, welcome aboard!`,
+            //     text: emailTemplate.text,
+            //     html: emailTemplate.html,
+            // });
 
             //Notify banking service
-            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'NEW_USER_CREATED',
-                data: {
-                    firstname, 
-                    lastname, 
-                    email, 
-                    username,
-                    _id
-                }
-            }));
+            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'NEW_USER_CREATED',
+            //     data: {
+            //         firstname, 
+            //         lastname, 
+            //         email, 
+            //         username,
+            //         _id
+            //     }
+            // }));
 
             //Remove _id before responding to client
             delete user.user._id
@@ -378,6 +378,10 @@ class UserController implements IController {
                 data: updatedUser
             }));
 
+            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                event: 'USERNAME_UPDATED',
+                data: updatedUser
+            }));
 
             res.status(200).json({
                 success: true,
