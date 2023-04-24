@@ -84,7 +84,7 @@ class UserService {
         try {
             const { firstname, lastname, email, password } = reqData
 
-            if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include at least one uppercase, lowercase, special character and number.');
+            // if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include at least one uppercase, lowercase, special character and number.');
 
             const newUser: IUser = await userModel.create({
                 firstname,
@@ -503,7 +503,7 @@ class UserService {
         try {
             //check if username only contains alphabet, number, '_' and '.'
             const regex = /^[a-zA-Z0-9_.]+$/;
-            if(!regex.test(username)) throw new Error('Invalid username, please try again')
+            if(!regex.test(username)) throw new Error('Invalid username, username only contains alphabet, number, underscore and dot')
             
             if (await userModel.findOne({ username })) throw new Error('Username already exists')
 
