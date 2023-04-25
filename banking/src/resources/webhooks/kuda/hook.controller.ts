@@ -2,13 +2,14 @@ import { Router, Response, Request, NextFunction } from "express";
 import IController from "@/utils/interfaces/controller.interface";
 import webhookModel from "./hook.model";
 import WalletService from "@/resources/wallet/wallet.service";
-import { brokerChannel, logsnag } from "../../../server";
-import { publishMessage } from "@/utils/broker";
+import { logsnag } from "../../../server";
+// import { publishMessage } from "@/utils/broker";
 import IWallet from "@/resources/wallet/wallet.interface";
 import MailService from "@/services/sendEmails";
 import transferInRecieptEmail from "@/templates/transferin-receipt.template";
 import transferOutRecieptEmail from "@/templates/transferout.template";
 import axios from "axios";
+import userModel from "@/resources/user/user.model";
 
 class WebhookController implements IController {
     public path = "/webhook";
@@ -67,20 +68,32 @@ class WebhookController implements IController {
                             switch (transaction.transactionType) {
                                 case "Transfer" || "transfer":
                                     {
-                                        publishMessage(
-                                            await brokerChannel,
-                                            `${process.env.ACCOUNT_BINDING_KEY}`,
-                                            JSON.stringify({
-                                                event: "QUEUE_NOTIFICATION",
-                                                data: {
+                                        // publishMessage(
+                                        //     await brokerChannel,
+                                        //     `${process.env.ACCOUNT_BINDING_KEY}`,
+                                        //     JSON.stringify({
+                                        //         event: "QUEUE_NOTIFICATION",
+                                        //         data: {
+                                        //             id: transaction.id, //user reference ID
+                                        //             trType: "transfer-in",
+                                        //             amount: transaction.amount as Number,
+                                        //             senderTag: transaction.senderTag,
+                                        //             timestamp: transaction.createdAt,
+                                        //         },
+                                        //     })
+                                        // );
+
+                                        await userModel.findOneAndUpdate({referenceId: transaction.id}, {
+                                            $push: {
+                                                notifications: {
                                                     id: transaction.id, //user reference ID
                                                     trType: "transfer-in",
                                                     amount: transaction.amount as Number,
                                                     senderTag: transaction.senderTag,
                                                     timestamp: transaction.createdAt,
                                                 },
-                                            })
-                                        );
+                                            }
+                                        }, { new: true })
     
     
                                         const emailTemplate = transferInRecieptEmail(
@@ -123,14 +136,20 @@ class WebhookController implements IController {
                                             senderBankInfo: `${transaction.senderName}(${transaction.senderBank})`,
                                             timestamp: transaction.createdAt,
                                         };
-                                        publishMessage(
-                                            await brokerChannel,
-                                            `${process.env.ACCOUNT_BINDING_KEY}`,
-                                            JSON.stringify({
-                                                event: "QUEUE_NOTIFICATION",
-                                                data: payload,
-                                            })
-                                        );
+                                        // publishMessage(
+                                        //     await brokerChannel,
+                                        //     `${process.env.ACCOUNT_BINDING_KEY}`,
+                                        //     JSON.stringify({
+                                        //         event: "QUEUE_NOTIFICATION",
+                                        //         data: payload,
+                                        //     })
+                                        // );
+
+                                        await userModel.findOneAndUpdate({referenceId: transaction.id}, {
+                                            $push: {
+                                                notifications: payload,
+                                            }
+                                        }, { new: true })
     
                                         const termiiPayload = {
                                             api_key: process.env.TERMII_API_KEY,
@@ -181,20 +200,32 @@ class WebhookController implements IController {
                                 case "Transfer":
                                     {
                                         // Update transaction notification
-                                        publishMessage(
-                                            await brokerChannel,
-                                            `${process.env.ACCOUNT_BINDING_KEY}`,
-                                            JSON.stringify({
-                                                event: "QUEUE_NOTIFICATION",
-                                                data: {
+                                        // publishMessage(
+                                        //     await brokerChannel,
+                                        //     `${process.env.ACCOUNT_BINDING_KEY}`,
+                                        //     JSON.stringify({
+                                        //         event: "QUEUE_NOTIFICATION",
+                                        //         data: {
+                                        //             id: transaction.id,
+                                        //             trType: "transfer-out",
+                                        //             amount: transaction.amount,
+                                        //             recipientTag: transaction.recipientTag,
+                                        //             timestamp: transaction.createdAt,
+                                        //         },
+                                        //     })
+                                        // );
+
+                                        await userModel.findOneAndUpdate({referenceId: transaction.id}, {
+                                            $push: {
+                                                notifications: {
                                                     id: transaction.id,
                                                     trType: "transfer-out",
                                                     amount: transaction.amount,
                                                     recipientTag: transaction.recipientTag,
                                                     timestamp: transaction.createdAt,
                                                 },
-                                            })
-                                        );
+                                            }
+                                        }, { new: true })
     
                                         // Send email notification
                                         const emailTemplate = transferOutRecieptEmail(
@@ -230,20 +261,32 @@ class WebhookController implements IController {
                                     }
                                     break;
                                 case 'Withdrawal': {
-                                    publishMessage(
-                                        await brokerChannel,
-                                        `${process.env.ACCOUNT_BINDING_KEY}`,
-                                        JSON.stringify({
-                                            event: "QUEUE_NOTIFICATION",
-                                            data: {
+                                    // publishMessage(
+                                    //     await brokerChannel,
+                                    //     `${process.env.ACCOUNT_BINDING_KEY}`,
+                                    //     JSON.stringify({
+                                    //         event: "QUEUE_NOTIFICATION",
+                                    //         data: {
+                                    //             id: transaction.id,
+                                    //             trType: "withdrawal",
+                                    //             amount: transaction.amount,
+                                    //             recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
+                                    //             timestamp: transaction.createdAt,
+                                    //         },
+                                    //     })
+                                    // );
+
+                                    await userModel.findOneAndUpdate({referenceId: transaction.id}, {
+                                        $push: {
+                                            notifications: {
                                                 id: transaction.id,
                                                 trType: "withdrawal",
                                                 amount: transaction.amount,
                                                 recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
                                                 timestamp: transaction.createdAt,
                                             },
-                                        })
-                                    );
+                                        }
+                                    }, { new: true })
     
                                     // Send email notification
                                     const emailTemplate = transferOutRecieptEmail(

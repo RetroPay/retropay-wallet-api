@@ -28,6 +28,7 @@ export default interface IUser {
     favoritedRecipients?: string[]
     isAccountActive:boolean
     verificationStatus? : string
+    referenceId: string
 
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>

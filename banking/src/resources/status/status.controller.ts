@@ -14,10 +14,7 @@ class DemoController implements IController {
     }
 
     private serverStatus = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
-       return res.status(200).json({
-            status: 'active',
-            service: "Banking"
-       }) 
+       return res.status(200)
     }
 }
 

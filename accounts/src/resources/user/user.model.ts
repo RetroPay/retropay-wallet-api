@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose"
+import mongoose from "mongoose"
 import IUser from "./user.interface"
 import bcrypt from "bcrypt"
 
@@ -11,6 +12,10 @@ const photoSchema = new Schema({
     url: { type: String, default: 'https://cdn-icons-png.flaticon.com/512/17/17004.png' },
     publicId: String,
 }, { timestamps: true})
+
+const nubanAccountSchema = new Schema({
+    nuban: { type: String }
+})
 
 const notificationsSchema = new Schema({
     message: { type: String }
@@ -30,6 +35,7 @@ const UserSchema = new Schema({
         type: Object
     },
     pin: String,
+    referenceId: { type: Schema.Types.ObjectId, required: true, unique: true, default: mongoose.Types.ObjectId },
     username: { type: String, unique: true },
     isPhoneVerified: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
@@ -41,7 +47,7 @@ const UserSchema = new Schema({
     transferPermission: { type: Boolean, default: false },
     withdrawPermission: { type: Boolean, default: false },
     customerCode: { type: String, },
-    nubanAccountDetails: Object,
+    nubanAccountDetails: nubanAccountSchema,
     favoritedRecipients: { type: Array },
     isAccountActive: { type: Boolean, default: true }, 
     notifications: [],

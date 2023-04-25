@@ -14,8 +14,8 @@ import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable"
 import welcomeEmail from "@/templates/welcome.template";
 import transferInRecieptEmail from "@/templates/transferin-receipt.template";
-import { brokerChannel, logsnag } from "../../server"
-import { subscribeMessage, publishMessage} from "@/utils/broker"
+import { logsnag } from "../../server"
+// import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class UserController implements IController {
     public path = ''
@@ -28,7 +28,7 @@ class UserController implements IController {
     }
 
     private async subscribeBroker(): Promise<void> {
-        await subscribeMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, this.UserService)
+        // await subscribeMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, this.UserService)
     }
 
     private initialiseRoutes(): void {
@@ -72,7 +72,7 @@ class UserController implements IController {
         try {
             const user = await this.UserService.register(req.body)
             
-            const { firstname, lastname, email, username, _id } = user.user
+            // const { firstname, lastname, email, username, _id } = user.user
 
             // const emailTemplate = welcomeEmail(req.body.firstname)
             // const mailService = MailService.getInstance();
@@ -84,16 +84,16 @@ class UserController implements IController {
             // });
             
             // Notify banking service
-            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'NEW_USER_CREATED',
-                data: {
-                    firstname, 
-                    lastname, 
-                    email, 
-                    username,
-                    _id
-                }
-            }));
+            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'NEW_USER_CREATED',
+            //     data: {
+            //         firstname, 
+            //         lastname, 
+            //         email, 
+            //         username,
+            //         _id
+            //     }
+            // }));
 
             //Remove _id before responding to client
             delete user.user._id
@@ -184,13 +184,13 @@ class UserController implements IController {
     private setPin = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const updatedUser: IUser | any = await this.UserService.setTransactionPin(req.user, req.body.pin, req.body.confirmPin)
-            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'USER_CREATE_PIN',
-                data: {
-                    id: req.user,
-                    pin: updatedUser.pin
-                }
-            }));
+            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'USER_CREATE_PIN',
+            //     data: {
+            //         id: req.user,
+            //         pin: updatedUser.pin
+            //     }
+            // }));
             res.status(201).json({
                 success: true,
                 message: "Transaction pin set successfully",
@@ -205,13 +205,13 @@ class UserController implements IController {
             const {  oldPin, newPin, confirmNewPin } = req.body
             const updatedUser = await this.UserService.changePin(req.user, oldPin, newPin, confirmNewPin)
 
-            publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'USER_CREATE_PIN',
-                data: {
-                    id: req.user,
-                    pin: updatedUser.pin
-                }
-            }));
+            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'USER_CREATE_PIN',
+            //     data: {
+            //         id: req.user,
+            //         pin: updatedUser.pin
+            //     }
+            // }));
             res.status(201).json({
                 success: true,
                 message: "Transaction pin changed successfully",
@@ -226,13 +226,13 @@ class UserController implements IController {
             const {  password, newPin, confirmNewPin } = req.body
             const updatedUser = await this.UserService.forgotPin(req.user, password, newPin, confirmNewPin)
 
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'USER_CREATE_PIN',
-                data: {
-                    id: req.user,
-                    pin: updatedUser.pin
-                }
-            }));
+            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'USER_CREATE_PIN',
+            //     data: {
+            //         id: req.user,
+            //         pin: updatedUser.pin
+            //     }
+            // }));
 
             res.status(201).json({
                 success: true,
@@ -373,15 +373,10 @@ class UserController implements IController {
         try {
             const updatedUser = await this.UserService.setUsername(req.body.username, req.user)
 
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'USERNAME_UPDATED',
-                data: updatedUser
-            }));
-
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'USERNAME_UPDATED',
-                data: updatedUser
-            }));
+            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'USERNAME_UPDATED',
+            //     data: updatedUser
+            // }));
 
             res.status(200).json({
                 success: true,
@@ -423,13 +418,13 @@ class UserController implements IController {
                 //store uploaded image info
                 const updatedUser = await this.UserService.setPhotoUrl(req.user, uploadResponse)
 
-                await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                    event: 'UPLOAD_PROFILE_PHOTO',
-                    data: {
-                        id: req.user,
-                        profilePhoto: updatedUser.url
-                    }
-                }));
+                // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                //     event: 'UPLOAD_PROFILE_PHOTO',
+                //     data: {
+                //         id: req.user,
+                //         profilePhoto: updatedUser.url
+                //     }
+                // }));
 
                 res.status(200).json({
                     success: true,
@@ -449,12 +444,12 @@ class UserController implements IController {
         try {
             await this.UserService.deactivateUserAccount(req.user)
 
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'DEACTIVATE_USER_ACCOUNT',
-                data: {
-                    id: req.user
-                }
-            }));
+            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'DEACTIVATE_USER_ACCOUNT',
+            //     data: {
+            //         id: req.user
+            //     }
+            // }));
 
             res.status(204).json({
                 success: true,
@@ -501,13 +496,13 @@ class UserController implements IController {
         try {
             const recipientId = await this.UserService.addToFavoritedRecipients(req.user, req.body.recipientTag)
 
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'ADD_FAVORITE_RECIPIENT',
-                data: {
-                    id: req.user,
-                    recipientId: recipientId
-                }
-            }));
+            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'ADD_FAVORITE_RECIPIENT',
+            //     data: {
+            //         id: req.user,
+            //         recipientId: recipientId
+            //     }
+            // }));
 
             res.status(201).json({
                 success: true,
@@ -523,13 +518,13 @@ class UserController implements IController {
             const { recipientTag } = req.body
             const recipientId = await this.UserService.removeFavoritedRecicpient(req.user, recipientTag)
 
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'DELETE_FAVORITE_RECIPIENT',
-                data: {
-                    id: req.user,
-                    recipientId: recipientId
-                }
-            }));
+            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'DELETE_FAVORITE_RECIPIENT',
+            //     data: {
+            //         id: req.user,
+            //         recipientId: recipientId
+            //     }
+            // }));
 
             res.status(200).json({
                 success: true,
@@ -572,20 +567,14 @@ class UserController implements IController {
             const createdAccount: any = await this.UserService.createNubanAccount(req.user, req.k_token)
 
             //Notify banking service
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'USER_NUBAN_CREATED',
-                data: {
-                    id: req.user,
-                    accountNumber: createdAccount.accountNumber
-                }
-            }))
-            await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                event: 'USER_NUBAN_CREATED',
-                data: {
-                    id: req.user,
-                    accountNumber: createdAccount.accountNumber
-                }
-            }));;
+            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+            //     event: 'USER_NUBAN_CREATED',
+            //     data: {
+            //         id: req.user,
+            //         accountNumber: createdAccount.accountNumber
+            //     }
+            // }))
+
             res.status(200).json({
                 success: true,
                 message: "Successfully created nuban account",

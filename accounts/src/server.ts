@@ -5,14 +5,14 @@ import App from './app'
 import DemoController from "@/resources/status/status.controller"
 import UserController from "@/resources/user/user.controller"
 import metaMapWebhookController from './resources/webhooks/metamap/hook.controller'
-import { createChannel } from "@/utils/broker"
+// import { createChannel } from "@/utils/broker"
 import { createClient } from "redis"
 import { LogSnag } from "logsnag"
 
 validateEnv()
 
 
-export const brokerChannel = createChannel()
+// export const brokerChannel = createChannel()
 
 const url = process.env.REDIS_CONNECTION_STRING
 export const redisClient = url != undefined ? createClient({
@@ -34,7 +34,7 @@ export const logsnag = new LogSnag({
 })
 
 export default {
-    brokerChannel,
+    // brokerChannel,
     redisClient,
     logsnag
 }

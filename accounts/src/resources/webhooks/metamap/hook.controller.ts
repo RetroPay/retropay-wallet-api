@@ -3,8 +3,8 @@ import IController from "@/utils/interfaces/controller.interface"
 import UserService from "@/resources/user/user.service"
 import webhookModel from "../metamap/hook.model"
 import crypto from "crypto"
-import { brokerChannel, logsnag } from "../../../server"
-import { subscribeMessage, publishMessage} from "@/utils/broker"
+import { logsnag } from "../../../server"
+// import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class metaMapWebhookController implements IController {
     public path = '/webhooks'
@@ -35,13 +35,13 @@ class metaMapWebhookController implements IController {
                 case 'verification_updated':
                 case 'verification_completed': 
                     this.userService.updateUserVerification(metadata.accountTag, identityStatus)
-                    await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                        event: 'UPDATE_USER_IDENTITY_STATUS',
-                        data: {
-                            username: metadata.accountTag,
-                            identityStatus
-                        }
-                    }));
+                    // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
+                    //     event: 'UPDATE_USER_IDENTITY_STATUS',
+                    //     data: {
+                    //         username: metadata.accountTag,
+                    //         identityStatus
+                    //     }
+                    // }));
                     break;
                 case 'verification_started': this.userService.startUserVerification(metadata.accountTag)
                     break;
