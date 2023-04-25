@@ -32,16 +32,9 @@ class metaMapWebhookController implements IController {
             const { eventName, metadata, identityStatus } = req.body
     
             switch (eventName) {
-                case 'verification_updated':
-                case 'verification_completed': 
-                    this.userService.updateUserVerification(metadata.accountTag, identityStatus)
-                    // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                    //     event: 'UPDATE_USER_IDENTITY_STATUS',
-                    //     data: {
-                    //         username: metadata.accountTag,
-                    //         identityStatus
-                    //     }
-                    // }));
+                case 'verification_updated': this.userService.updateUserVerification(metadata.accountTag, identityStatus)
+                    break;
+                case 'verification_completed': this.userService.updateUserVerification(metadata.accountTag, identityStatus)
                     break;
                 case 'verification_started': this.userService.startUserVerification(metadata.accountTag)
                     break;
