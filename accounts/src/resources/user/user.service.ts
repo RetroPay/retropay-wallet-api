@@ -462,9 +462,9 @@ class UserService {
                     data: {
                         email,
                         phoneNumber: formatPhoneNumber,
-                        lastName: lastname,
-                        firstName: firstname,
-                        middleName: middlename || '',
+                        lastName: lastname.replace(" ", "-"),
+                        firstName: firstname.replace(" ", "-"),
+                        middleName: middlename?.replace(" ", "-") || '',
                         trackingReference: referenceId
                     }
                 },
@@ -587,7 +587,7 @@ class UserService {
 
             if (!foundUser) throw new Error("Unable to retrieve favorites")
 
-            const favorites = await userModel.find({ _id: { $in: foundUser.favoritedRecipients } }, { _id: 0, firstname: 1 }).select("firstname lastname isIdentityVerified profilePhoto.url username")
+            const favorites = await userModel.find({ referenceId: { $in: foundUser.favoritedRecipients } }, { _id: 0, firstname: 1 }).select("firstname lastname isIdentityVerified profilePhoto.url username")
             return favorites
         } catch (error) {
             throw new Error(translateError(error)[0] || 'Unable to retrieve favorites.')
@@ -637,8 +637,9 @@ class UserService {
     public async updateUserVerification(accountTag: string, status: string): Promise<void> {
         try {
             switch (status) {
-                case 'rejected':
-                case 'reviewNeeded': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: status == "reviewNeeded" ? "in review" : "rejected" })
+                case 'rejected': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: "rejected" })
+                    break;
+                case 'reviewNeeded': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: "in review" })
                     break;
                 case 'verified': await userModel.findOneAndUpdate({ username: accountTag }, { verificationStatus: "verified", $set: { isIdentityVerified: true, withdrawPermission: true } })
                     break;

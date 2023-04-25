@@ -323,10 +323,6 @@ class WalletService {
       if (foundRecipient._id == userId)
         throw new Error("Unable to process transaction.");
 
-      //calculate users wallet balance - Temporary, remove when going live! Kuda already checks for balance
-      // if ((await this.calculateWalletBalance(userId)) <= Number(amount) + 100)
-      //   throw new Error("Transfer failed - Insufficient funds");
-
       if (!(await this.validatePin(formPin, userId)))
         throw new Error("Transfer failed - Incorrect transaction pin");
 
@@ -388,7 +384,7 @@ class WalletService {
         responseCode: data.responseCode,
         beneficiaryName,
         currency: "NGN",
-        processingFees: 10,
+        processingFees: 15,
         senderProfile: foundUser.profilePhoto?.url,
         recipientProfile: foundRecipient.profilePhoto?.url,
       });
@@ -562,7 +558,7 @@ class WalletService {
         transactionType: "withdrawal",
         status: "pending",
         referenceId: process.env.NODE_ENV == 'development' ? "test-withdrawal" + v4() : data.transactionReference,
-        processingFees: 10,
+        processingFees: 30,
         comment,
         beneficiaryBankCode,
         beneficiaryBank,
@@ -761,7 +757,7 @@ class WalletService {
     } catch (error: any) {
       throw new Error(
         translateError(error)[0] ||
-          "Network Error - Unable to resolve bank account at the moment."
+          "Network Error - We're unable to the recipient account at the moment."
       );
     }
   }

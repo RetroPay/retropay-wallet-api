@@ -30,12 +30,12 @@ async function authenticatedMiddleware(
         console.log(user, "the user auth")
 
         if (!user) {
-            return next(new HttpException(401, 'Unauthorized'))
+            return next(new HttpException(401, 'Your account could not be found, Kindly contact support'))
         }
 
 
         //if account is suspended or deactivated
-        if(user.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, contact support.'))
+        if(user.isAccountActive == false) return next(new HttpException(401, 'Your account is suspended, kindly contact support.'))
 
         req.user = user.id
         req.username = user.username
@@ -44,7 +44,7 @@ async function authenticatedMiddleware(
 
         return next()
     } catch (error: any) {
-        return next(new HttpException(401, error.message || error || 'Your session has expired. Login again'))
+        return next(new HttpException(401, error.message || error || 'Your session has expired. Login to continue'))
     }
 }
 
