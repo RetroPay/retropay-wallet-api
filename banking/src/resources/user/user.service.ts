@@ -4,43 +4,6 @@ import translateError from "@/helpers/mongod.helper"
 import { Console } from "console"
 
 class UserService {
-
-    // public async handleSubscribedEvents(payload: any): Promise<void> {
-    //     try {
-    //       payload = JSON.parse(payload)
-    //         const { data, event } = payload
-
-    //         console.log(payload, "message broker")
-
-    //         if(!data || !event) throw new Error('==== Invalid Payload ====')
-
-    //         switch (event) {
-    //             case 'NEW_USER_CREATED': await this.register(data)
-    //                 break;
-    //             case 'USERNAME_UPDATED': await this.setUsername(data)
-    //                 break;
-    //             case 'USER_CREATE_PIN': await this.setTransactionPin(data)
-    //                 break;
-    //             case 'DEACTIVATE_USER_ACCOUNT': await this.deactivateUserAccount(data)
-    //                 break;
-    //             case 'ADD_FAVORITE_RECIPIENT': await this.addToFavoritedRecipients(data)
-    //                 break;
-    //             case 'USER_NUBAN_CREATED': await this.updateNubanDetails(data)
-    //                 break;
-    //             case 'DELETE_FAVORITE_RECIPIENT': await this.deleteFavoritedRecipient(data)
-    //                 break;
-    //             case 'UPLOAD_PROFILE_PHOTO': await this.setProfilePhoto(data)
-    //                 break;
-    //             case 'UPDATE_USER_IDENTITY_STATUS': await this.updateUserVerification(data)
-    //                 break;
-    //             default:
-    //                 break;
-    //         }  
-    //     } catch (error: any) {
-    //         console.log(error, "message broker processing catch error")
-    //     }
-        
-    // }
     
     public async register(reqData: IUser): Promise<void> {
         try {
@@ -90,9 +53,9 @@ class UserService {
     public async addToFavoritedRecipients(reqData: { id: string, recipientId: string }): Promise<void> {
         try {
             const updatedUser = await userModel.findOneAndUpdate({referenceId: reqData.id}, {$push: {favoritedRecipients: reqData.recipientId}})
-            if(!updatedUser) throw new Error("Unable to add to favourites.")
+            if(!updatedUser) throw new Error("Unable to add to favorites.")
         } catch (error: any) {
-            throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+            throw new Error(translateError(error)[0] || 'Unable to add to favorites.')
         }
     }
 
@@ -103,7 +66,7 @@ class UserService {
           
             if(!foundUser) throw new Error("Unable to delete user account.")
         } catch (error: any) {
-            throw new Error(translateError(error)[0] || 'Unable to add to favourites.')
+            throw new Error(translateError(error)[0] || 'Unable to add to favorites.')
         }
     }
     public async updateNubanDetails(reqData: {id: string, accountNumber: string}): Promise<void> {
