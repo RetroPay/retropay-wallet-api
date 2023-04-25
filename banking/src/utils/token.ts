@@ -16,7 +16,7 @@ export const verifyToken = async (
             token,
             process.env.JWT_SECRET as jwt.Secret,
             (err, payload) => {
-                if (err) return reject(process.env.NODE_ENV == 'development' ? 'Session Expired - Unauthorized' : 'Unauthorized');
+                if (err) return reject('Your session has expired. Please login to continue.');
                 resolve(payload as Token);
             }
         );
