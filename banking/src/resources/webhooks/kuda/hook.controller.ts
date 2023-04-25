@@ -68,21 +68,6 @@ class WebhookController implements IController {
                             switch (transaction.transactionType) {
                                 case "Transfer" || "transfer":
                                     {
-                                        // publishMessage(
-                                        //     await brokerChannel,
-                                        //     `${process.env.ACCOUNT_BINDING_KEY}`,
-                                        //     JSON.stringify({
-                                        //         event: "QUEUE_NOTIFICATION",
-                                        //         data: {
-                                        //             id: transaction.id, //user reference ID
-                                        //             trType: "transfer-in",
-                                        //             amount: transaction.amount as Number,
-                                        //             senderTag: transaction.senderTag,
-                                        //             timestamp: transaction.createdAt,
-                                        //         },
-                                        //     })
-                                        // );
-
                                         await userModel.findOneAndUpdate({referenceId: transaction.id}, {
                                             $push: {
                                                 notifications: {
@@ -117,7 +102,7 @@ class WebhookController implements IController {
                                             from: process.env.TERMII_SENDER_ID,
                                             channel: "generic",
                                             type: "plain",
-                                            sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                            sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()} ${new Date(transaction.createdAt).toLocaleTimeString()}`
                                         }
         
                                         const response = await axios({
@@ -136,14 +121,6 @@ class WebhookController implements IController {
                                             senderBankInfo: `${transaction.senderName}(${transaction.senderBank})`,
                                             timestamp: transaction.createdAt,
                                         };
-                                        // publishMessage(
-                                        //     await brokerChannel,
-                                        //     `${process.env.ACCOUNT_BINDING_KEY}`,
-                                        //     JSON.stringify({
-                                        //         event: "QUEUE_NOTIFICATION",
-                                        //         data: payload,
-                                        //     })
-                                        // );
 
                                         await userModel.findOneAndUpdate({referenceId: transaction.id}, {
                                             $push: {
@@ -157,7 +134,7 @@ class WebhookController implements IController {
                                             from: process.env.TERMII_SENDER_ID,
                                             channel: "generic",
                                             type: "plain",
-                                            sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderName}(${transaction.senderBank}). Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                            sms: `Retro Wallet - Credit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderName}(${transaction.senderBank}). Date: ${new Date(transaction.createdAt).toLocaleDateString()} ${new Date(transaction.createdAt).toLocaleTimeString()}`
                                         }
         
                                         const response = await axios({
@@ -199,22 +176,6 @@ class WebhookController implements IController {
                             switch (transactionType) {
                                 case "Transfer":
                                     {
-                                        // Update transaction notification
-                                        // publishMessage(
-                                        //     await brokerChannel,
-                                        //     `${process.env.ACCOUNT_BINDING_KEY}`,
-                                        //     JSON.stringify({
-                                        //         event: "QUEUE_NOTIFICATION",
-                                        //         data: {
-                                        //             id: transaction.id,
-                                        //             trType: "transfer-out",
-                                        //             amount: transaction.amount,
-                                        //             recipientTag: transaction.recipientTag,
-                                        //             timestamp: transaction.createdAt,
-                                        //         },
-                                        //     })
-                                        // );
-
                                         await userModel.findOneAndUpdate({referenceId: transaction.id}, {
                                             $push: {
                                                 notifications: {
@@ -249,7 +210,7 @@ class WebhookController implements IController {
                                             from: process.env.TERMII_SENDER_ID,
                                             channel: "generic",
                                             type: "plain",
-                                            sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.recipientTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                            sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.recipientTag}. Date: ${new Date(transaction.createdAt).toLocaleDateString()} ${new Date(transaction.createdAt).toLocaleTimeString()} `
                                         }
     
                                         const response = await axios({
@@ -261,21 +222,6 @@ class WebhookController implements IController {
                                     }
                                     break;
                                 case 'Withdrawal': {
-                                    // publishMessage(
-                                    //     await brokerChannel,
-                                    //     `${process.env.ACCOUNT_BINDING_KEY}`,
-                                    //     JSON.stringify({
-                                    //         event: "QUEUE_NOTIFICATION",
-                                    //         data: {
-                                    //             id: transaction.id,
-                                    //             trType: "withdrawal",
-                                    //             amount: transaction.amount,
-                                    //             recipientBankInfo: `${transaction.beneficiaryName}(${transaction.beneficiaryBank}-${transaction.beneficiaryAccount})`,
-                                    //             timestamp: transaction.createdAt,
-                                    //         },
-                                    //     })
-                                    // );
-
                                     await userModel.findOneAndUpdate({referenceId: transaction.id}, {
                                         $push: {
                                             notifications: {
@@ -310,7 +256,7 @@ class WebhookController implements IController {
                                         from: process.env.TERMII_SENDER_ID,
                                         channel: "generic",
                                         type: "plain",
-                                        sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()}`
+                                        sms: `Retro Wallet - Debit Alert. Amount: NGN${(transaction.amount/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}. Date: ${new Date(transaction.createdAt).toLocaleDateString()} ${new Date(transaction.createdAt).toLocaleTimeString()} `
                                     }
     
                                     const response = await axios({
