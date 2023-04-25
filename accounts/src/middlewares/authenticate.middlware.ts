@@ -13,7 +13,7 @@ async function authenticatedMiddleware(
     const bearer = req.headers.authorization
 
     if (!bearer || !bearer.startsWith('Bearer ')) {
-        return next(new HttpException(401, 'Unauthorized'))
+        return next(new HttpException(401, 'Unauthorized - Auth token required'))
     }
 
     const accessToken = bearer.split('Bearer ')[1].trim()
@@ -23,10 +23,11 @@ async function authenticatedMiddleware(
         )
 
         if (payload instanceof jwt.JsonWebTokenError) {
-            return next(new HttpException(401, 'Your session has expired. Login again'))
+            return next(new HttpException(401, 'Your session has expired. Please login to continue.'))
         }
 
-        const user = await UserModel.findById(payload.id).select('username email').exec()
+        const user = await UserModel.findById(payload.id).select('username email referenceId').exec()
+        console.log(user, "the user auth")
 
         if (!user) {
             return next(new HttpException(401, 'Unauthorized'))
@@ -39,6 +40,7 @@ async function authenticatedMiddleware(
         req.user = user.id
         req.username = user.username
         req.email = user.email
+        req.referenceId = user.referenceId
 
         return next()
     } catch (error: any) {

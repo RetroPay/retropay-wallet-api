@@ -6,7 +6,7 @@ export default interface IWallet {
     status: string
     processingFees?: number
     amount: number,
-    referenceId: string
+    referenceId: string // transaction ID
     comment?: string
     recepientTag?: string
     senderTag?: string

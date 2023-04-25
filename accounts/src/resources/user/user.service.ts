@@ -8,6 +8,7 @@ import moment from "moment"
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface"
 import axios from 'axios'
 import { v4 } from "uuid"
+import mongoose from "mongoose"
 
 class UserService {
     public async handleSubscribedEvents(payload: any): Promise<void> {
@@ -15,7 +16,6 @@ class UserService {
             payload = JSON.parse(payload)
             const { data, event } = payload
 
-            
             console.log(payload, "message broker")
 
             if (!data || !event) throw new Error('==== Invalid Payload ====')
@@ -27,8 +27,8 @@ class UserService {
                     break;
             }
         } catch (error) {
-        }
 
+        }
     }
 
     public async queueNotification(reqData: { id: string, trType: string, amount: number, recipientTag?: string, senderTag?: string, timestamp: Date, senderBankInfo?: string, recipientBankInfo?: string }): Promise<void> {
@@ -84,17 +84,20 @@ class UserService {
         try {
             const { firstname, lastname, email, password } = reqData
 
-            // if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include at least one uppercase, lowercase, special character and number.');
+            if (!await this.validatePasswordPolicy(password)) throw new Error('Password is not secure. Include at least one uppercase, lowercase, special character and number.');
 
             const newUser: IUser = await userModel.create({
                 firstname,
                 lastname,
-                email: email.toLocaleLowerCase(),
+                email: email.toLowerCase(),
                 password,
                 username: email,
             })
 
             if (!newUser) throw new Error('Unable to create user account.')
+
+
+            console.log(newUser)
 
             const {
                 username, isPhoneVerified, isEmailVerified,
@@ -242,14 +245,15 @@ class UserService {
              * password should contain atleast one valid special character, uppercase letter, lowercase letter and digit.
              */
             const REQUIRED_CHARACTER_CLASSES = 4;
-            const VALID_SPECIAL_CHARACTERS = '@#$%^&+=!';
+            // const VALID_SPECIAL_CHARACTERS = '@#$%^&+=!';
 
 
             const characterClasses: Record<string, RegExp> = {
                 uppercase: /[A-Z]/,
                 lowercase: /[a-z]/,
                 digit: /\d/,
-                special: new RegExp(`[${VALID_SPECIAL_CHARACTERS}]`),
+                // special: new RegExp(`[${VALID_SPECIAL_CHARACTERS}]`),
+                special: /[^\w\s]/,
             };
 
             let count = 0;
@@ -436,13 +440,13 @@ class UserService {
 
     public async createNubanAccount(userId: string, k_token: string): Promise<IUser | null> {
         try {
-            const foundUser = await userModel.findById(userId).select("email firstname lastname phoneNumber nubanAccountDetails isIdentityVerified")
+            const foundUser = await userModel.findById(userId).select("email firstname referenceId lastname phoneNumber nubanAccountDetails isIdentityVerified")
             if (!foundUser) throw new Error("Unable to create nuban.")
 
             if (!foundUser.isIdentityVerified) throw new Error("Kindly verify your identity to proceed.")
 
             if (foundUser.nubanAccountDetails) throw new Error("Nuban has already been created")
-            const { email, firstname, lastname, middlename, phoneNumber, id } = foundUser
+            const { email, firstname, lastname, middlename, phoneNumber, referenceId } = foundUser
 
             /* Phone numbers are stored with their respective country codes e.g +234, 
             strip away the country code which is the first 4 characters */
@@ -461,7 +465,7 @@ class UserService {
                         lastName: lastname,
                         firstName: firstname,
                         middleName: middlename || '',
-                        trackingReference: id
+                        trackingReference: referenceId
                     }
                 },
                 headers: {

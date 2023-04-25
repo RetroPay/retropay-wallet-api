@@ -2,16 +2,11 @@ import IController from "@/utils/interfaces/controller.interface"
 import { Router, Request, Response, NextFunction } from "express"
 import HttpExeception from "@/utils/exceptions/http.exception"
 import IWallet from "./wallet.interface"
-import MailService from "@/services/sendEmails"
 import WalletService from "./wallet.service"
 import authenticatedMiddleware from "@/middlewares/authenticate.middlware"
 import validationMiddleware from "@/middlewares/validation.middleware"
 import validate from "./wallet.validation"
-import {brokerChannel} from "../../server"
-import { publishMessage } from "@/utils/broker"
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware"
-import transferInRecieptEmail from "@/templates/transferin-receipt.template"
-import transferOutRecieptEmail from "@/templates/transferout.template"
 
 class WalletController implements IController {
     public path = '/wallet'

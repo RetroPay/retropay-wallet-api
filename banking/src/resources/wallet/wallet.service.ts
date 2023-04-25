@@ -191,58 +191,6 @@ class WalletService {
             referenceId: reference,
           },
         },
-        {
-          $lookup: {
-            from: "users",
-            let: { fundRecipientAccount: "$fundRecipientAccount" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $eq: ["$_id", "$$fundRecipientAccount"],
-                  },
-                },
-              },
-              {
-                $project: {
-                  _id: 0,
-                  firstname: 1,
-                  lastname: 1,
-                  middlename: 1,
-                  profilePhoto: 1,
-                  username: 1,
-                },
-              },
-            ],
-            as: "FundRecipientDetails",
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            let: { fundOriginatorAccount: "$fundOriginatorAccount" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $eq: ["$_id", "$$fundOriginatorAccount"],
-                  },
-                },
-              },
-              {
-                $project: {
-                  _id: 0,
-                  firstname: 1,
-                  lastname: 1,
-                  middlename: 1,
-                  profilePhoto: 1,
-                  username: 1,
-                },
-              },
-            ],
-            as: "FundOriginatorDetails",
-          },
-        },
       ]);
 
       if (!transaction) throw new Error("Transaction not found.");
@@ -283,7 +231,7 @@ class WalletService {
   // }
 
   public async getAccountBalance(
-    referenceId: string,
+    referenceId: string, // tracking reference
     k_token: string,
     userId: string
   ): Promise<any> {
@@ -441,8 +389,8 @@ class WalletService {
         beneficiaryName,
         currency: "NGN",
         processingFees: 10,
-        senderProfile: foundUser.profilePhoto,
-        recipientProfile: foundRecipient.profilePhoto,
+        senderProfile: foundUser.profilePhoto?.url,
+        recipientProfile: foundRecipient.profilePhoto?.url,
       });
 
       // if transfer is successful, charge transaction fee
@@ -807,7 +755,7 @@ class WalletService {
         firstname,
         middlename,
         isIdentityVerified,
-        profilePhoto,
+        profilePhoto:  profilePhoto?.url,
         beneficiaryName,
       };
     } catch (error: any) {
@@ -967,7 +915,7 @@ class WalletService {
       if(transaction?.transactionType.toLowerCase() == 'withdrawal') {
         return {
           id: foundSender?.referenceId,
-          amount, //amount in kobo
+          amount: transaction.amount * 100, //amount in kobo
           beneficiaryName: transaction.beneficiaryName, 
           beneficiaryBank: transaction.beneficiaryBank,
           beneficiaryAccount: transaction.beneficiaryAccount,
@@ -982,7 +930,7 @@ class WalletService {
 
       return {
         id: foundSender?.referenceId,
-        amount, //amount in kobo
+        amount: transaction.amount * 100, //amount in kobo
         recipientTag: transaction.recepientTag,
         transactionType: 'Transfer',
         createdAt: transaction.createdAt,
