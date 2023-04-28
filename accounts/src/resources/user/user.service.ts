@@ -172,8 +172,9 @@ class UserService {
           { username: reqData.emailOrUsername },
         ],
       });
-
+      
       if (!foundUser) throw new Error("Incorrect username or password");
+
       if (foundUser.isAccountActive == false)
         throw new Error("Account is disabled. Contact support");
 
@@ -198,7 +199,7 @@ class UserService {
     try {
       if (!(await this.validatePasswordPolicy(reqData.newPassword)))
         throw new Error(
-          "Password is not secure. Include atleast one uppercase, lowercase, special character and number."
+          "Password is not secure. Include at least one uppercase, lowercase, special character and number."
         );
 
       const foundUser: any = await userModel.findOne({ _id: user });
@@ -351,13 +352,11 @@ class UserService {
        * password should contain atleast one valid special character, uppercase letter, lowercase letter and digit.
        */
       const REQUIRED_CHARACTER_CLASSES = 4;
-      // const VALID_SPECIAL_CHARACTERS = '@#$%^&+=!';
 
       const characterClasses: Record<string, RegExp> = {
         uppercase: /[A-Z]/,
         lowercase: /[a-z]/,
         digit: /\d/,
-        // special: new RegExp(`[${VALID_SPECIAL_CHARACTERS}]`),
         special: /[^\w\s]/,
       };
 
@@ -523,9 +522,6 @@ class UserService {
     phoneNumber: string
   ): Promise<object | null> {
     try {
-      // const checkForPhone = await userModel.find({ phoneNumber }).select("phoneNumber")
-      // if(checkForPhone) throw new Error("Account with this phone already exists.")
-
       const foundUser = await userModel
         .findById(userId)
         .select("firstname lastname email isPhoneVerified phoneVerification");
@@ -555,7 +551,7 @@ class UserService {
       });
 
       if (response.data.code !== "ok")
-        throw new Error("Failed to send verification token, please try again.");
+        throw new Error("We were unable to send a verification token, please try again.");
 
       const phoneVerification = {
         token,
@@ -569,7 +565,7 @@ class UserService {
       );
 
       if (!updatedUser)
-        throw new Error("Failed to send verification token, please try again.");
+        throw new Error("We were unable to send a verification token, please try again.");
 
       return {
         otp: phoneVerification.token,
@@ -578,7 +574,7 @@ class UserService {
       };
     } catch (error: any) {
       throw new Error(
-        translateError(error)[0] || "Unable to send verification sms."
+        translateError(error)[0] || "We were unable to send a verification token, please try again."
       );
     }
   }
