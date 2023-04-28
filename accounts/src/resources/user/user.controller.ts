@@ -24,11 +24,6 @@ class UserController implements IController {
 
     constructor() {
         this.initialiseRoutes()
-        this.subscribeBroker()
-    }
-
-    private async subscribeBroker(): Promise<void> {
-        // await subscribeMessage(await brokerChannel, `${process.env.ACCOUNT_BINDING_KEY}`, this.UserService)
     }
 
     private initialiseRoutes(): void {
@@ -82,18 +77,6 @@ class UserController implements IController {
             //     text: emailTemplate.text,
             //     html: emailTemplate.html,
             // });
-            
-            // Notify banking service
-            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'NEW_USER_CREATED',
-            //     data: {
-            //         firstname, 
-            //         lastname, 
-            //         email, 
-            //         username,
-            //         _id
-            //     }
-            // }));
 
             //Remove _id before responding to client
             delete user.user._id
@@ -176,7 +159,6 @@ class UserController implements IController {
                 }
             })
         } catch (error: any) {
-
             return next(new HttpExeception(400, error.message))
         }
     }
@@ -184,13 +166,7 @@ class UserController implements IController {
     private setPin = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const updatedUser: IUser | any = await this.UserService.setTransactionPin(req.user, req.body.pin, req.body.confirmPin)
-            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'USER_CREATE_PIN',
-            //     data: {
-            //         id: req.user,
-            //         pin: updatedUser.pin
-            //     }
-            // }));
+
             res.status(201).json({
                 success: true,
                 message: "Transaction pin set successfully",
@@ -205,13 +181,6 @@ class UserController implements IController {
             const {  oldPin, newPin, confirmNewPin } = req.body
             const updatedUser = await this.UserService.changePin(req.user, oldPin, newPin, confirmNewPin)
 
-            // publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'USER_CREATE_PIN',
-            //     data: {
-            //         id: req.user,
-            //         pin: updatedUser.pin
-            //     }
-            // }));
             res.status(201).json({
                 success: true,
                 message: "Transaction pin changed successfully",
@@ -225,14 +194,6 @@ class UserController implements IController {
         try {
             const {  password, newPin, confirmNewPin } = req.body
             const updatedUser = await this.UserService.forgotPin(req.user, password, newPin, confirmNewPin)
-
-            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'USER_CREATE_PIN',
-            //     data: {
-            //         id: req.user,
-            //         pin: updatedUser.pin
-            //     }
-            // }));
 
             res.status(201).json({
                 success: true,
@@ -270,7 +231,7 @@ class UserController implements IController {
             }
             res.status(200).json({
                 success: true,
-                message: "Resest password email sent",
+                message: "Reset password email sent",
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
@@ -283,7 +244,7 @@ class UserController implements IController {
 
             res.status(200).json({
                 success: true,
-                message: "Password reset succesful",
+                message: "Password reset successful",
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
@@ -317,7 +278,7 @@ class UserController implements IController {
             const updatedUser = await this.UserService.verifyEmail(req.user, req.body.token)
             res.status(200).json({
                 success: true,
-                message: "Email verification succesful",
+                message: "Email verification successful",
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
@@ -353,13 +314,14 @@ class UserController implements IController {
             if (req.params.username === undefined) {
                 return next(new HttpExeception(400, 'Invalid request. Include account tag'))
             }
-            const { username } = req.params
+            const { username } = req.params;
 
             const isAvailable: boolean = await this.UserService.checkTagAvailability(username)
 
             if(!isAvailable) {
                 return next(new HttpExeception(400, 'Username is unavailable'))
             }
+
             res.status(200).json({
                 success: true,
                 message: 'Username is available'
@@ -372,11 +334,6 @@ class UserController implements IController {
     private setupUsername = async(req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const updatedUser = await this.UserService.setUsername(req.body.username, req.user)
-
-            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'USERNAME_UPDATED',
-            //     data: updatedUser
-            // }));
 
             res.status(200).json({
                 success: true,
@@ -398,9 +355,9 @@ class UserController implements IController {
             form.parse(req, async (err, fields, files) => {
 
                 if (err) {
-                    
                     return next(new HttpExeception(400, 'Unable to upload photo.'))
                 }
+                
                 // get image file (object)
                 const { profilePhoto }: any = files
 
@@ -417,14 +374,6 @@ class UserController implements IController {
 
                 //store uploaded image info
                 const updatedUser = await this.UserService.setPhotoUrl(req.user, uploadResponse)
-
-                // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-                //     event: 'UPLOAD_PROFILE_PHOTO',
-                //     data: {
-                //         id: req.user,
-                //         profilePhoto: updatedUser.url
-                //     }
-                // }));
 
                 res.status(200).json({
                     success: true,
@@ -443,13 +392,6 @@ class UserController implements IController {
     private softDeleteUserAccount = async(req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             await this.UserService.deactivateUserAccount(req.user)
-
-            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'DEACTIVATE_USER_ACCOUNT',
-            //     data: {
-            //         id: req.user
-            //     }
-            // }));
 
             res.status(204).json({
                 success: true,
@@ -496,14 +438,6 @@ class UserController implements IController {
         try {
             const recipientId = await this.UserService.addToFavoritedRecipients(req.user, req.body.recipientTag)
 
-            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'ADD_FAVORITE_RECIPIENT',
-            //     data: {
-            //         id: req.user,
-            //         recipientId: recipientId
-            //     }
-            // }));
-
             res.status(201).json({
                 success: true,
                 message: "Recipient added to favorites succesfully.", 
@@ -517,14 +451,6 @@ class UserController implements IController {
         try {
             const { recipientTag } = req.body
             const recipientId = await this.UserService.removeFavoritedRecicpient(req.user, recipientTag)
-
-            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'DELETE_FAVORITE_RECIPIENT',
-            //     data: {
-            //         id: req.user,
-            //         recipientId: recipientId
-            //     }
-            // }));
 
             res.status(200).json({
                 success: true,
@@ -565,15 +491,6 @@ class UserController implements IController {
     private createNubanAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {
             const createdAccount: any = await this.UserService.createNubanAccount(req.user, req.k_token)
-
-            //Notify banking service
-            // await publishMessage(await brokerChannel, `${process.env.BANKING_BINDING_KEY}`, JSON.stringify({
-            //     event: 'USER_NUBAN_CREATED',
-            //     data: {
-            //         id: req.user,
-            //         accountNumber: createdAccount.accountNumber
-            //     }
-            // }))
 
             res.status(200).json({
                 success: true,
