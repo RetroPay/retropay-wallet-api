@@ -905,7 +905,8 @@ class UserService {
 
   public async cancelKyc(id: string): Promise<void> {
     try {
-      await userModel.findById(id, { verificationStatus: "not started" })
+      const user = await userModel.findByIdAndUpdate(id, { verificationStatus: "not started" }, {new: true})
+      console.log(user)
     } catch (error) {
       throw new Error(
         translateError(error)[0] || "Unable to update verification status."
