@@ -456,7 +456,7 @@ class UserService {
       };
 
       const updatedUser: any = await userModel.findOneAndUpdate(
-        { email },
+        { email: email.toLowerCase() },
         { emailVerification },
         { new: true }
       );
@@ -903,12 +903,22 @@ class UserService {
     }
   }
 
+  public async cancelKyc(id: string): Promise<void> {
+    try {
+      await userModel.findById(id, { verificationStatus: "not started" })
+    } catch (error) {
+      throw new Error(
+        translateError(error)[0] || "Unable to update verification status."
+      );
+    }
+  }
+
   //user services for identity verification webhook events
   public async startUserVerification(accountTag: string): Promise<void> {
     try {
       await userModel.findOneAndUpdate(
         { username: accountTag },
-        { verificationStatus: "pending" }
+        { verificationStatus: "not started" }
       );
     } catch (error) {
       //LogSnag call here

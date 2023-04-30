@@ -15,7 +15,6 @@ import formidable from "formidable"
 import welcomeEmail from "@/templates/welcome.template";
 import transferInRecieptEmail from "@/templates/transferin-receipt.template";
 import { logsnag } from "../../server"
-// import { subscribeMessage, publishMessage} from "@/utils/broker"
 
 class UserController implements IController {
     public path = ''
@@ -45,6 +44,7 @@ class UserController implements IController {
         this.router.patch('/user/profile/account-tag/setup', authenticatedMiddleware, validationMiddleware(validate.setupUsername), this.setupUsername)
         this.router.put('/user/profile/upload-photo', authenticatedMiddleware, this.uploadProfilePhoto)
         this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
+        this.router.post('/user/verification/cancelled', authenticatedMiddleware, this.kycVerificationCanceled)
 
         this.router.get('/user/notifications', authenticatedMiddleware, this.getNotifications)
 
@@ -357,7 +357,7 @@ class UserController implements IController {
                 if (err) {
                     return next(new HttpExeception(400, 'Unable to upload photo.'))
                 }
-                
+
                 // get image file (object)
                 const { profilePhoto }: any = files
 
@@ -496,6 +496,19 @@ class UserController implements IController {
                 success: true,
                 message: "Successfully created nuban account",
                 data: createdAccount
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private kycVerificationCanceled = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            await this.UserService.cancelKyc(req.user)
+
+            res.status(200).json({
+                success: true,
+                message: "Verification canceled",
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
