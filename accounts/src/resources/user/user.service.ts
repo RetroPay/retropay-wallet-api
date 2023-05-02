@@ -919,7 +919,7 @@ class UserService {
     try {
       await userModel.findOneAndUpdate(
         { username: accountTag },
-        { verificationStatus: "not started" }
+        { verificationStatus: "pending" }
       );
     } catch (error) {
       //LogSnag call here
