@@ -60,7 +60,7 @@ class BillService {
               ServiceType: "VERIFY_BILL_CUSTOMER",
               RequestRef: v4(),
               Data: {
-                trackingref: referenceId,
+                trackingReference: referenceId,
                 KudaBillItemIdentifier,
                 CustomerIdentification
               },
@@ -83,6 +83,48 @@ class BillService {
         throw new Error(
             translateError(error)[0] ||
               "We were unable to verify the bill recipient, please try again."
+          );
+    }
+  }
+
+  public async purchaseBill(k_token: string, referenceId: string, phoneNumber: string, amount: string, KudaBillItemIdentifier: string, CustomerIdentification: string) {
+    try {
+        const response = await axios({
+            method: "POST",
+            url:
+              process.env.NODE_ENV == "production"
+                ? "https://kuda-openapi.kuda.com/v2.1"
+                : "https://kuda-openapi-uat.kudabank.com/v2.1",
+            data: {
+              ServiceType: "PURCHASE_BILL",
+              RequestRef: v4(),
+              Data: {
+                TrackingReference: referenceId,
+                Amount: amount,
+                BillItemIdentifier: KudaBillItemIdentifier,
+                PhoneNumber: phoneNumber,
+                CustomerIdentifier: CustomerIdentification
+              },
+            },
+            headers: {
+              Authorization: `Bearer ${k_token}`,
+            },
+          });
+    
+          console.log(response);
+          const data = response.data;
+          
+        //  implement error message based on status codes
+          if (!data.status)
+            throw new Error(
+              "Bill payment failed"
+            );
+    
+          return data.data;
+    } catch (error) {
+        throw new Error(
+            translateError(error)[0] ||
+              "Bill payment failed"
           );
     }
   }

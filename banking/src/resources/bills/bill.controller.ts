@@ -88,6 +88,41 @@ class BillController implements IController {
         return next(new HttpExeception(400, error.message));
     }
   };
+
+  private purchaseBill = async (
+    req: Request | any,
+    res: Response | any,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const {
+        kudaBillItemIdentifier,
+        customerIdentification,
+        amount,
+        phoneNumber
+      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: string, phoneNumber: string } =
+        req.body;
+
+      const response: {} = await this.billService.purchaseBill(
+        req.k_token,
+        req.referenceId,
+        phoneNumber,
+        amount,
+        kudaBillItemIdentifier,
+        customerIdentification
+      );
+
+      console.log(response, "response");
+
+      res.status(200).json({
+        success: true,
+        message: "Payment successfully",
+        data: response,
+      });
+    } catch (error: any) {
+        return next(new HttpExeception(400, error.message));
+    }
+  };
 }
 
 export default BillController;
