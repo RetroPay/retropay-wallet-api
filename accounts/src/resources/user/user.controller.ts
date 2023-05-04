@@ -76,7 +76,6 @@ class UserController implements IController {
             //     subject: `Howdy ${firstname}, welcome aboard!`,
             //     text: emailTemplate.text,
             //     html: emailTemplate.html,
-            // });
 
             //Remove _id before responding to client
             delete user.user._id
@@ -218,7 +217,11 @@ class UserController implements IController {
 
     private forgotPassword = async (req: Request | any, res: Response, next: NextFunction):Promise<IUser | void> => {
         try {
-            const result: any = await this.UserService.forgotPassword(req.body)
+            const result: {
+                otp: string, 
+                firstname: string
+            } | null = await this.UserService.forgotPassword(req.body)
+            
             if(result.otp) {
                 const emailTemplate = passwordResetEmail(result.firstname, result.otp)
                 const mailService = MailService.getInstance();

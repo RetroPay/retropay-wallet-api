@@ -382,7 +382,7 @@ class UserService {
 
   public async forgotPassword(reqData: {
     email: string;
-  }): Promise<object | null> {
+  }): Promise<{ otp: string, firstname: string }> {
     try {
       const foundUser: any = await userModel.findOne({ email: reqData.email });
       if (foundUser) {

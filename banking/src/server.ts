@@ -6,19 +6,18 @@ import DemoController from "@/resources/status/status.controller"
 import UserController from "@/resources/user/user.controller"
 import WalletController from "@/resources/wallet/wallet.controller"
 import WebhookController from "@/resources/webhooks/kuda/hook.controller"
-// import {createChannel} from "@/utils/broker"
+import BillController from './resources/bills/bill.controller'
 import { createClient } from "redis"
 import { LogSnag } from "logsnag"
 
 validateEnv()
 
-// export const brokerChannel = createChannel()
-
 const app = new App([
     new DemoController, 
     new UserController,
     new WalletController,
-    new WebhookController
+    new WebhookController,
+    new BillController
 ], Number(process.env.PORT) || 4001)
 
 
@@ -46,7 +45,6 @@ redisClient.on('error', async (err) => {
 })
 
 export default {
-    // brokerChannel,
     redisClient,
     logsnag
 }
