@@ -5,6 +5,7 @@ import HttpExeception from "@/utils/exceptions/http.exception";
 import validationMiddleware from "@/middlewares/validation.middleware";
 import authenticatedMiddleware from "@/middlewares/authenticate.middlware";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
+import validationObject from './bill.validation'
 
 class BillController implements IController {
   public path = "/bills";
@@ -17,8 +18,9 @@ class BillController implements IController {
 
   private initializeRoutes(): void {
     this.router.get(`${this.path}/categories/:billCategory/providers`, authenticatedMiddleware, kudaTokenHandler, this.getBillProviders);
-    this.router.post(`${this.path}/customer/verify`, authenticatedMiddleware, kudaTokenHandler, this.verifyCustomer);
-    }
+    this.router.post(`${this.path}/customer/verify`, validationMiddleware(validationObject.verifyBillCustomer), authenticatedMiddleware, kudaTokenHandler, this.verifyCustomer);
+    this.router.post(`${this.path}/purchase`, validationMiddleware(validationObject.billPurchase), authenticatedMiddleware, this.purchaseBill)
+  }
 
   private getBillProviders = async (
     req: Request | any,
@@ -30,7 +32,7 @@ class BillController implements IController {
       console.log(billCategory, "bill category");
 
       if (!billCategory)
-        return next(new HttpExeception(400, "Include bill category."));
+        return next(new HttpExeception(400, "Include valid bill category."));
 
       const allowedCategories: string[] = [
         "airtime",
@@ -40,7 +42,7 @@ class BillController implements IController {
         "cableTv",
       ];
       if (!allowedCategories.includes(billCategory))
-        return next(new HttpExeception(400, "Include bill category."));
+        return next(new HttpExeception(400, "Include valid bill category."));
 
       const providers: object[] = await this.billService.getBillProviders(
         req.k_token,
@@ -100,7 +102,7 @@ class BillController implements IController {
         customerIdentification,
         amount,
         phoneNumber
-      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: string, phoneNumber: string } =
+      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: number, phoneNumber: string } =
         req.body;
 
       const response: {} = await this.billService.purchaseBill(
@@ -116,7 +118,7 @@ class BillController implements IController {
 
       res.status(200).json({
         success: true,
-        message: "Payment successfully",
+        message: "Bill purchased. Payment successfully!",
         data: response,
       });
     } catch (error: any) {

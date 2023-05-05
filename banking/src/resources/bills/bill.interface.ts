@@ -1,5 +1,5 @@
 export default interface IBill {
-    trackingReference: string,
+    referenceId: string,
     amount: string
     billItemIdentifier: string
 	phoneNumber: string

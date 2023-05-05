@@ -87,7 +87,7 @@ class BillService {
     }
   }
 
-  public async purchaseBill(k_token: string, referenceId: string, phoneNumber: string, amount: string, KudaBillItemIdentifier: string, CustomerIdentification: string) {
+  public async purchaseBill(k_token: string, referenceId: string, phoneNumber: string, amount: number, KudaBillItemIdentifier: string, CustomerIdentification: string) {
     try {
         const response = await axios({
             method: "POST",
