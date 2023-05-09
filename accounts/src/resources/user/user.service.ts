@@ -979,9 +979,9 @@ class UserService {
     }
   }
 
-  public async saveUserDeviceId ({ deviceId, accountTag } : { deviceId: string, accountTag: string }): Promise<void> {
+  public async saveUserDeviceId (id: string, deviceId: string): Promise<void> {
     try {
-      const updatedUser = await userModel.findOneAndUpdate({ username: accountTag }, { deviceId }, { new: true })
+      const updatedUser = await userModel.findByIdAndUpdate(id, { deviceId }, { new: true })
 
       if(!updatedUser) throw new Error("Unable to allow notification, please try again.")
     } catch (error) {

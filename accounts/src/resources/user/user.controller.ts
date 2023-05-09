@@ -46,7 +46,7 @@ class UserController implements IController {
         this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
         this.router.post('/user/verification/cancelled', authenticatedMiddleware, this.kycVerificationCanceled)
 
-        this.router.put('/user/profile/deviceId/set', validationMiddleware(validate.saveDeviceId), this.setDeviceId)
+        this.router.put('/user/profile/deviceId/set', authenticatedMiddleware,validationMiddleware(validate.saveDeviceId), this.setDeviceId)
 
         this.router.get('/user/notifications', authenticatedMiddleware, this.getNotifications)
 
@@ -522,7 +522,9 @@ class UserController implements IController {
 
     private setDeviceId = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {
-            await this.UserService.saveUserDeviceId(req.body)
+            const { oneSignalId } : { oneSignalId: string } = req.body
+
+            await this.UserService.saveUserDeviceId(req.user, oneSignalId)
 
             res.status(200).json({
                 success: true,
