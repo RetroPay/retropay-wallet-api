@@ -81,7 +81,7 @@ class UserService {
       const user = await userModel
         .findById(id, { _id: 0, firstname: 1 })
         .select(
-          "firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified isUsernameSet isPinSet"
+          "firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified isUsernameSet isPinSet deviceId"
         );
 
       if (!user) throw new Error("Unable to retrieve details");
@@ -978,6 +978,19 @@ class UserService {
       //LogSnag call here
     }
   }
+
+  public async saveUserDeviceId ({ deviceId, accountTag } : { deviceId: string, accountTag: string }): Promise<void> {
+    try {
+      const updatedUser = await userModel.findOneAndUpdate({ username: accountTag }, { deviceId }, { new: true })
+
+      if(!updatedUser) throw new Error("Unable to allow notification, please try again.")
+    } catch (error) {
+      throw new Error(
+        translateError(error)[0] || "Unable to allow notification, please try again."
+      );
+    }
+  }
+
 }
 
 export default UserService;

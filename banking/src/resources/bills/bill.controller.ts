@@ -19,7 +19,7 @@ class BillController implements IController {
   private initializeRoutes(): void {
     this.router.get(`${this.path}/categories/:billCategory/providers`, authenticatedMiddleware, kudaTokenHandler, this.getBillProviders);
     this.router.post(`${this.path}/customer/verify`, validationMiddleware(validationObject.verifyBillCustomer), authenticatedMiddleware, kudaTokenHandler, this.verifyCustomer);
-    this.router.post(`${this.path}/purchase`, validationMiddleware(validationObject.billPurchase), authenticatedMiddleware, this.purchaseBill)
+    this.router.post(`${this.path}/purchase`, validationMiddleware(validationObject.billPurchase), authenticatedMiddleware, kudaTokenHandler, this.purchaseBill)
   }
 
   private getBillProviders = async (

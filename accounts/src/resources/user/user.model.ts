@@ -58,7 +58,8 @@ const UserSchema = new Schema({
     isPinSet: {
         type: Boolean,
         default: false
-    }
+    },
+    deviceId: String
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {
