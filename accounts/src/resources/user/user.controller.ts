@@ -522,7 +522,9 @@ class UserController implements IController {
 
     private setDeviceId = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
         try {
-            await this.UserService.saveUserDeviceId(req.body)
+            const { oneSignalId } : { oneSignalId: string } = req.body
+
+            await this.UserService.saveUserDeviceId(req.user, oneSignalId)
 
             res.status(200).json({
                 success: true,

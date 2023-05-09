@@ -96,8 +96,8 @@ class BillService {
                 ? "https://kuda-openapi.kuda.com/v2.1"
                 : "https://kuda-openapi-uat.kudabank.com/v2.1",
             data: {
-              ServiceType: "PURCHASE_BILL",
-              RequestRef: v4(),
+              serviceType: "PURCHASE_BILL",
+              requestref: v4(),
               Data: {
                 TrackingReference: referenceId,
                 Amount: amount,
