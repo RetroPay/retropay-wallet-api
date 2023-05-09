@@ -46,7 +46,7 @@ class UserController implements IController {
         this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
         this.router.post('/user/verification/cancelled', authenticatedMiddleware, this.kycVerificationCanceled)
 
-        this.router.put('/user/profile/deviceId/set', validationMiddleware(validate.saveDeviceId), this.setDeviceId)
+        this.router.put('/user/profile/deviceId/set', authenticatedMiddleware,validationMiddleware(validate.saveDeviceId), this.setDeviceId)
 
         this.router.get('/user/notifications', authenticatedMiddleware, this.getNotifications)
 
