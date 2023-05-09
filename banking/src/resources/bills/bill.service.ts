@@ -96,13 +96,14 @@ class BillService {
                 ? "https://kuda-openapi.kuda.com/v2.1"
                 : "https://kuda-openapi-uat.kudabank.com/v2.1",
             data: {
-              serviceType: "PURCHASE_BILL",
-              requestref: v4(),
+              ServiceType: "PURCHASE_BILL",
+              // requestref: v4(),
+              RequestRef: "",
               Data: {
                 TrackingReference: referenceId,
                 Amount: amount,
                 BillItemIdentifier: KudaBillItemIdentifier,
-                PhoneNumber: phoneNumber || "",
+                // PhoneNumber: phoneNumber || "",
                 CustomerIdentifier: CustomerIdentification
               },
             },
