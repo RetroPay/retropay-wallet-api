@@ -78,6 +78,10 @@ const authByPin = Joi.object({
     pin: Joi.string().required().min(4).max(4)
 })
 
+const saveDeviceId = Joi.object({
+    deviceId: Joi.string().required()
+})
+
 export default { 
     register,
     login,
@@ -94,5 +98,6 @@ export default {
     changePin,
     addFavorites,
     removeFavorite,
-    forgotPin
+    forgotPin,
+    saveDeviceId
 }

@@ -103,7 +103,7 @@ class BillService {
                 TrackingReference: referenceId,
                 Amount: amount,
                 BillItemIdentifier: KudaBillItemIdentifier,
-                PhoneNumber: phoneNumber,
+                // PhoneNumber: phoneNumber || "",
                 CustomerIdentifier: CustomerIdentification
               },
             },
