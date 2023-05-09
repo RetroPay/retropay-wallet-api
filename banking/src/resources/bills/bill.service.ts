@@ -3,6 +3,7 @@ import axios from "axios";
 import { v4 } from "uuid";
 import translateError from "@/helpers/mongod.helper";
 import Bill from "./bill.interface";
+import generateOtp from "@/services/otp";
 
 class BillService {
   /**
@@ -98,7 +99,7 @@ class BillService {
             data: {
               ServiceType: "PURCHASE_BILL",
               // RequestRef: v4(),
-              RequestRef: v4(),
+              RequestRef: generateOtp(25),
               Data: {
                 TrackingReference: referenceId,
                 Amount: amount,
