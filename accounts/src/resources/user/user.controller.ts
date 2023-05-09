@@ -46,6 +46,8 @@ class UserController implements IController {
         this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
         this.router.post('/user/verification/cancelled', authenticatedMiddleware, this.kycVerificationCanceled)
 
+        this.router.put('/user/profile/deviceId/set', validationMiddleware(validate.saveDeviceId), this.setDeviceId)
+
         this.router.get('/user/notifications', authenticatedMiddleware, this.getNotifications)
 
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.setPin), this.setPin)
@@ -76,7 +78,6 @@ class UserController implements IController {
             //     subject: `Howdy ${firstname}, welcome aboard!`,
             //     text: emailTemplate.text,
             //     html: emailTemplate.html,
-            // });
 
             //Remove _id before responding to client
             delete user.user._id
@@ -218,7 +219,11 @@ class UserController implements IController {
 
     private forgotPassword = async (req: Request | any, res: Response, next: NextFunction):Promise<IUser | void> => {
         try {
-            const result: any = await this.UserService.forgotPassword(req.body)
+            const result: {
+                otp: string, 
+                firstname: string
+            } | null = await this.UserService.forgotPassword(req.body)
+            
             if(result.otp) {
                 const emailTemplate = passwordResetEmail(result.firstname, result.otp)
                 const mailService = MailService.getInstance();
@@ -509,6 +514,19 @@ class UserController implements IController {
             res.status(200).json({
                 success: true,
                 message: "Verification canceled",
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message))
+        }
+    }
+
+    private setDeviceId = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            await this.UserService.saveUserDeviceId(req.body)
+
+            res.status(200).json({
+                success: true,
+                message: "Notification enabled successfully",
             })
         } catch (error: any) {
             return next(new HttpExeception(400, error.message))
