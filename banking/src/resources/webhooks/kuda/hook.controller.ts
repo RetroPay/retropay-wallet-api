@@ -32,6 +32,8 @@ class WebhookController implements IController {
         try {
             await webhookModel.create(req.body);
 
+            console.log(req.body)
+
             res.sendStatus(200);
             const { transactionType } = req.body;
             const {

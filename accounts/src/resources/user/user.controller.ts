@@ -38,7 +38,8 @@ class UserController implements IController {
         //Profile routes
         this.router.post('/user/profile/send-email-token', authenticatedMiddleware, this.sendVerifyEmailToken)
         this.router.patch('/user/profile/verify-email', authenticatedMiddleware, validationMiddleware(validate.verifyEmail), this.verifyEmail)
-        this.router.post('/user/profile/send-phone-token', authenticatedMiddleware, validationMiddleware(validate.phoneVerification), this.sendVerifyPhoneToken)
+        this.router.post('/user/profile/send-phone-token/voice', authenticatedMiddleware, validationMiddleware(validate.phoneVerification), this.sendVerifyPhoneTokenVoice)
+        this.router.post('/user/profile/send-phone-token', authenticatedMiddleware, validationMiddleware(validate.phoneVerification), this.sendVerifyPhoneTokenSms)
         this.router.patch('/user/profile/verify-phone', authenticatedMiddleware, validationMiddleware(validate.verifyPhone), this.verifyPhone)
         this.router.get('/user/profile/account-tag/verify/:username', authenticatedMiddleware, this.verifyAvailableAccountTag)
         this.router.patch('/user/profile/account-tag/setup', authenticatedMiddleware, validationMiddleware(validate.setupUsername), this.setupUsername)
@@ -290,9 +291,21 @@ class UserController implements IController {
         }
     }
 
-    private sendVerifyPhoneToken = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
+    private sendVerifyPhoneTokenSms = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
-            const result = await this.UserService.generatePhoneToken(req.user, req.body.phoneNumber)
+            await this.UserService.generatePhoneTokenSms(req.user, req.body.phoneNumber)
+            res.status(200).json({
+                success: true,
+                message: "Phone verification token sent. Expires in 10 minutes",
+            })
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message || 'Unable to send verification sms.'))
+        }
+    }
+
+    private sendVerifyPhoneTokenVoice = async (req: Request | any, res: Response, next: NextFunction): Promise<IUser | void> => {
+        try {
+            await this.UserService.generatePhoneTokenVoice(req.user, req.body.phoneNumber)
             res.status(200).json({
                 success: true,
                 message: "Phone verification token sent. Expires in 10 minutes",
