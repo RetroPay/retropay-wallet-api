@@ -517,9 +517,9 @@ class UserService {
     }
   }
 
-  public async generatePhoneToken(
+  public async generatePhoneTokenSms(
     userId: string,
-    phoneNumber: string
+    phoneNumber: string,
   ): Promise<object | null> {
     try {
       const foundUser = await userModel
@@ -573,6 +573,56 @@ class UserService {
         phoneNumber,
       };
     } catch (error: any) {
+      throw new Error(
+        translateError(error)[0] || "We were unable to send a verification token, please try again."
+      );
+    }
+  }
+
+  public async generatePhoneTokenVoice (userId: string, phoneNumber: string): Promise<void> {
+    try {
+      const foundUser = await userModel
+        .findById(userId)
+        .select("firstname lastname email isPhoneVerified phoneVerification");
+      if (!foundUser) throw new Error("Unable to verify phone number.");
+
+      if (foundUser.isPhoneVerified == true)
+        throw new Error("Your Phone number has already been verified.");
+
+      // Generate token of length 5
+      const token = generateOtp(5);
+
+      const termiiPayload = {
+        api_key: process.env.TERMII_API_KEY,
+        phone_number: phoneNumber,
+        code: Number(token)
+      };
+
+      const response = await axios({
+        method: "POST",
+        url: "https://api.ng.termii.com/api/sms/otp/call",
+        data: termiiPayload,
+      });
+
+      console.log(response)
+
+      if (response.data.code !== "ok")
+        throw new Error("We were unable to send a verification token, please try again.");
+
+      const phoneVerification = {
+        token,
+        expires: moment(new Date()).add(10, "m").toDate(),
+      };
+
+      const updatedUser: IUser | null = await userModel.findByIdAndUpdate(
+        userId,
+        { phoneVerification, phoneNumber },
+        { new: true }
+      );
+
+      if (!updatedUser)
+        throw new Error("We were unable to send a verification token, please try again.");
+    } catch (error) {
       throw new Error(
         translateError(error)[0] || "We were unable to send a verification token, please try again."
       );
