@@ -4,6 +4,8 @@ import { v4 } from "uuid";
 import translateError from "@/helpers/mongod.helper";
 import Bill from "./bill.interface";
 import generateOtp from "@/services/otp";
+import billModel from "./bill.model";
+import { redisClient, logsnag } from "../../server";
 
 class BillService {
   /**
@@ -44,90 +46,161 @@ class BillService {
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-          "We were unable to get the bill providers, please try again."
+        "We were unable to get the bill providers, please try again."
       );
     }
   }
 
   public async verifyCustomer(k_token: string, referenceId: string, KudaBillItemIdentifier: string, CustomerIdentification: string) {
     try {
-        const response = await axios({
-            method: "POST",
-            url:
-              process.env.NODE_ENV == "production"
-                ? "https://kuda-openapi.kuda.com/v2.1"
-                : "https://kuda-openapi-uat.kudabank.com/v2.1",
-            data: {
-              ServiceType: "VERIFY_BILL_CUSTOMER",
-              RequestRef: v4(),
-              Data: {
-                trackingReference: referenceId,
-                KudaBillItemIdentifier,
-                CustomerIdentification
-              },
-            },
-            headers: {
-              Authorization: `Bearer ${k_token}`,
-            },
-          });
-    
-          console.log(response);
-          const data = response.data;
-    
-          if (!data.status)
-            throw new Error(
-              "We were unable to verify the bill recipient, please try again."
-            );
-    
-          return data.data;
-    } catch (error) {
+      const response = await axios({
+        method: "POST",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          ServiceType: "VERIFY_BILL_CUSTOMER",
+          RequestRef: v4(),
+          Data: {
+            trackingReference: referenceId,
+            KudaBillItemIdentifier,
+            CustomerIdentification
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${k_token}`,
+        },
+      });
+
+      console.log(response);
+      const data = response.data;
+
+      if (!data.status)
         throw new Error(
-            translateError(error)[0] ||
-              "We were unable to verify the bill recipient, please try again."
-          );
+          "We were unable to verify the bill recipient, please try again."
+        );
+
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        translateError(error)[0] ||
+        "We were unable to verify the bill recipient, please try again."
+      );
     }
   }
 
   public async purchaseBill(k_token: string, referenceId: string, phoneNumber: string, amount: number, KudaBillItemIdentifier: string, CustomerIdentification: string) {
     try {
-        const response = await axios({
-            method: "POST",
-            url:
-              process.env.NODE_ENV == "production"
-                ? "https://kuda-openapi.kuda.com/v2.1"
-                : "https://kuda-openapi-uat.kudabank.com/v2.1",
-            data: {
-              ServiceType: "PURCHASE_BILL",
-              // RequestRef: v4(),
-              RequestRef: generateOtp(25),
-              Data: {
-                TrackingReference: referenceId,
-                Amount: amount,
-                BillItemIdentifier: KudaBillItemIdentifier,
-                PhoneNumber: phoneNumber || "",
-                CustomerIdentifier: CustomerIdentification
-              },
-            },
-            headers: {
-              Authorization: `Bearer ${k_token}`,
-            },
-          });
-    
-          console.log(response);
-          const data = response.data;
-          
-        //  implement error message based on status codes
-          if (!data.status)
-            throw new Error(
-              "Bill payment failed"
-            );
-    
-          return data.data;
+      const response = await axios({
+        method: "POST",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          ServiceType: "PURCHASE_BILL",
+          // RequestRef: v4(),
+          RequestRef: generateOtp(25),
+          Data: {
+            TrackingReference: referenceId,
+            Amount: amount * 100,
+            BillItemIdentifier: KudaBillItemIdentifier,
+            PhoneNumber: phoneNumber || CustomerIdentification || "",
+            CustomerIdentifier: CustomerIdentification
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${k_token}`,
+        },
+      });
+
+      console.log(response);
+      const data = response.data;
+
+      //  implement error message based on status codes
+      if (!data.status) {
+        const { responseCode } = data
+
+        switch (String(responseCode)) {
+          case 'k11' || '11': throw new Error('Bill payment failed.')
+            break;
+          case '06': throw new Error('Bill payment failed.')
+            break;
+          case 'k12': throw new Error('Your bill payment is currently pending.')
+            break;
+          case '51' || 'k51': throw new Error('Transfer failed - Insufficient funds on account.')
+            break;
+          case 'k25' || 'k09': throw new Error('Bill payment failed - invalid customer ID or Phone number.')
+            break;
+          case 'k26': throw new Error('Bill payment failed - Please try again.')
+            break;
+          default: throw new Error("Bill payment failed")
+        }
+      }
+
+      //save bill transaction
+      const newBillPurchase = await billModel.create({
+        fundOriginatorAccount: referenceId,
+        amount: amount,  //amount in naira
+        billItemIdentifier: KudaBillItemIdentifier,
+        phoneNumber,
+        customerIdentifier: CustomerIdentification,
+        transactionReference: data.data.reference,
+        status: "pending"
+      })
+
+      return {
+        amount: newBillPurchase.amount,
+        phoneNumber,
+        customerIdentifier: CustomerIdentification,
+        transactionReference: newBillPurchase.transactionReference,
+      }
+
+      // return data.data;
     } catch (error) {
-        throw new Error(
-            translateError(error)[0] ||
-              "Bill payment failed"
-          );
+      throw new Error(
+        translateError(error)[0] ||
+        "We're were unable to process your bill purchase, Please try again"
+      );
+    }
+  }
+
+  public async updateBillPurchase(k_token: string, payingBank: string, transactionReference: string, narrations: string, instrumentNumber: string): Promise<void> {
+    try {
+      //Get bill purchase status
+      const response = await axios({
+        method: "POST",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          ServiceType: "BILL_TSQ",
+          RequestRef: v4(),
+          Data: {
+            BillResponseReference: transactionReference
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${k_token}`,
+        },
+      });
+
+      console.log(response);
+      const data = response.data;
+
+
+      const transaction = await billModel.findOneAndUpdate(
+        { transactionReference },
+        {
+          narrations,
+          instrumentNumber, status: data.Data.HasBeenReserved ? 'reversed' : "success"
+        }, { new: true })
+
+      if (!transaction) throw new Error('Bill purchase record not found')
+    } catch (error) {
+      throw new Error(`Unable to process update bill purchase webhook. error: ${error}`);
     }
   }
 }
