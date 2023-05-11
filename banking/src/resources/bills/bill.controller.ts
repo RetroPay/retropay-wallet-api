@@ -20,6 +20,7 @@ class BillController implements IController {
     this.router.get(`${this.path}/categories/:billCategory/providers`, authenticatedMiddleware, kudaTokenHandler, this.getBillProviders);
     this.router.post(`${this.path}/customer/verify`, validationMiddleware(validationObject.verifyBillCustomer), authenticatedMiddleware, kudaTokenHandler, this.verifyCustomer);
     this.router.post(`${this.path}/purchase`, validationMiddleware(validationObject.billPurchase), authenticatedMiddleware, kudaTokenHandler, this.purchaseBill)
+    this.router.get(`${this.path}/history`, authenticatedMiddleware, kudaTokenHandler, this.getBillsHistory)
   }
 
   private getBillProviders = async (
@@ -125,6 +126,14 @@ class BillController implements IController {
         return next(new HttpExeception(400, error.message));
     }
   };
+
+  private getBillsHistory = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // const history = await this.billService.getHistoryById(req.user)
+    } catch (error) {
+      
+    }
+  }
 }
 
 export default BillController;

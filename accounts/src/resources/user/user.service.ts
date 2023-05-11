@@ -999,8 +999,7 @@ class UserService {
             const updatedUser = await userModel.findOneAndUpdate(
               { username: accountTag },
               {
-                verificationStatus: "verified",
-                $set: { isIdentityVerified: true, withdrawPermission: true },
+                $set: { isIdentityVerified: true, withdrawPermission: true, verificationStatus: "verified" },
               },
               { new: true }
             );
