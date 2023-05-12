@@ -29,7 +29,6 @@ class metaMapWebhookController implements IController {
         const isValidPayload = crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(`${signature}`));
 
         if(isValidPayload){
-            console.log(req.body)
             const { eventName, metadata, identityStatus } = req.body
     
             switch (eventName) {

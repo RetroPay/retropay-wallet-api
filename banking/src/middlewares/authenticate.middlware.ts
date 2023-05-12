@@ -27,7 +27,6 @@ async function authenticatedMiddleware(
         }
 
         const user = await UserModel.findById(payload.id).select('username email referenceId').exec()
-        console.log(user, "the user auth")
         
         if (!user) {
             return next(new HttpException(401, 'Your account could not be found, Kindly contact support'))

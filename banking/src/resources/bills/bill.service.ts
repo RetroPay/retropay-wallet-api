@@ -34,7 +34,6 @@ class BillService {
         },
       });
 
-      console.log(response);
       const data = response.data;
 
       if (!data.status)
@@ -73,7 +72,6 @@ class BillService {
         },
       });
 
-      console.log(response);
       const data = response.data;
 
       if (!data.status)
@@ -115,7 +113,6 @@ class BillService {
         },
       });
 
-      console.log(response);
       const data = response.data;
 
       //  implement error message based on status codes
@@ -187,7 +184,6 @@ class BillService {
         },
       });
 
-      console.log(response);
       const data = response.data;
 
 
