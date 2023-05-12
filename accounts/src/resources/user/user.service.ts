@@ -1030,7 +1030,7 @@ class UserService {
 
   public async saveUserDeviceId (id: string, deviceId: string): Promise<void> {
     try {
-      const updatedUser = await userModel.findByIdAndUpdate(id, { deviceId }, { new: true })
+      const updatedUser = await userModel.findByIdAndUpdate(id, { deviceId, $set: { isPushNotificationAllowed: true } }, { new: true })
 
       if(!updatedUser) throw new Error("Unable to allow notification, please try again.")
     } catch (error) {
