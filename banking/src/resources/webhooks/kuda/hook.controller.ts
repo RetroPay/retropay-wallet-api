@@ -37,8 +37,6 @@ class WebhookController implements IController {
         try {
             await webhookModel.create(req.body);
 
-            console.log(req.body)
-
             res.sendStatus(200);
             const { transactionType } = req.body;
             const {
@@ -301,8 +299,6 @@ class WebhookController implements IController {
         next: NextFunction): Promise<void> => {
         try {
             await billsHookModel.create(req.body);
-
-            console.log(req.body)
 
             res.sendStatus(200);
             const { transactionType } = req.body;

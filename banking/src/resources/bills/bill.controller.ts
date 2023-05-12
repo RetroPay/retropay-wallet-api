@@ -30,7 +30,6 @@ class BillController implements IController {
   ): Promise<void> => {
     try {
       const { billCategory }: { billCategory: string | undefined } = req.params;
-      console.log(billCategory, "bill category");
 
       if (!billCategory)
         return next(new HttpExeception(400, "Include valid bill category."));
@@ -49,7 +48,6 @@ class BillController implements IController {
         req.k_token,
         billCategory
       );
-      console.log(providers, "billers");
 
       res.status(200).json({
         success: true,
@@ -79,8 +77,6 @@ class BillController implements IController {
         kudaBillItemIdentifier,
         customerIdentification
       );
-
-      console.log(customer, "customer");
 
       res.status(200).json({
         success: true,
@@ -114,8 +110,6 @@ class BillController implements IController {
         kudaBillItemIdentifier,
         customerIdentification
       );
-
-      console.log(response, "response");
 
       res.status(200).json({
         success: true,

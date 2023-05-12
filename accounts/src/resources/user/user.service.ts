@@ -16,8 +16,6 @@ class UserService {
       payload = JSON.parse(payload);
       const { data, event } = payload;
 
-      console.log(payload, "message broker");
-
       if (!data || !event) throw new Error("==== Invalid Payload ====");
 
       switch (event) {
@@ -72,7 +70,7 @@ class UserService {
         { new: true }
       );
     } catch (error: any) {
-      console.log(error, "message broker processing catch error");
+      console.log(error, "Unable to queue save transaction");
     }
   }
 
@@ -126,8 +124,6 @@ class UserService {
       });
 
       if (!newUser) throw new Error("Unable to create user account.");
-
-      console.log(newUser);
 
       const {
         username,
@@ -604,8 +600,6 @@ class UserService {
         data: termiiPayload,
       });
 
-      console.log(response)
-
       if (response.data.code !== "ok")
         throw new Error("We were unable to send a verification token, please try again.");
 
@@ -956,7 +950,6 @@ class UserService {
   public async cancelKyc(id: string): Promise<void> {
     try {
       const user = await userModel.findByIdAndUpdate(id, { verificationStatus: "not started" }, {new: true})
-      console.log(user)
     } catch (error) {
       throw new Error(
         translateError(error)[0] || "Unable to update verification status."
@@ -1030,7 +1023,7 @@ class UserService {
 
   public async saveUserDeviceId (id: string, deviceId: string): Promise<void> {
     try {
-      const updatedUser = await userModel.findByIdAndUpdate(id, { deviceId }, { new: true })
+      const updatedUser = await userModel.findByIdAndUpdate(id, { deviceId, $set: { isPushNotificationAllowed: true } }, { new: true })
 
       if(!updatedUser) throw new Error("Unable to allow notification, please try again.")
     } catch (error) {

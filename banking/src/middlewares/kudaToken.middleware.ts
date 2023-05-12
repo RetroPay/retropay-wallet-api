@@ -26,7 +26,6 @@ async function kudaTokenHandler(
             await redisClient.setEx('K_TOKEN', 720, `${accessToken}`)
         }
 
-        console.log(k_token)
         req.k_token = k_token
         next()
     } catch (error) {
