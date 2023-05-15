@@ -25,8 +25,8 @@ class WebhookController implements IController {
     }
 
     private initialiseRoutes(): void {
-        this.router.post(`${this.path}/kuda`, this.processWebhooks);
-        this.router.post(`${this.path}/kuda/bills`, kudaTokenHandler, this.processBillsWebhooks);
+        this.router.post(`${this.path}/camo/kuda`, this.processWebhooks);
+        this.router.post(`${this.path}/camo/kuda/bills`, kudaTokenHandler, this.processBillsWebhooks);
     }
 
     private processWebhooks = async (
