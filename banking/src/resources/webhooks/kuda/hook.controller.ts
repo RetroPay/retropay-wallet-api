@@ -25,8 +25,8 @@ class WebhookController implements IController {
     }
 
     private initialiseRoutes(): void {
-        this.router.post(`${this.path}/kuda`, this.processWebhooks);
-        this.router.post(`${this.path}/kuda/bills`, kudaTokenHandler, this.processBillsWebhooks);
+        this.router.post(`${this.path}/cam/kuda`, this.processWebhooks);
+        this.router.post(`${this.path}/cam/kuda/bills`, kudaTokenHandler, this.processBillsWebhooks);
     }
 
     private processWebhooks = async (
@@ -36,6 +36,7 @@ class WebhookController implements IController {
     ): Promise<IWallet | void> => {
         try {
             await webhookModel.create(req.body);
+            console.log(req.body);
 
             res.sendStatus(200);
             const { transactionType } = req.body;
