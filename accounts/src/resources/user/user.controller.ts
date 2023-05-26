@@ -44,20 +44,26 @@ class UserController implements IController {
         this.router.get('/user/profile/account-tag/verify/:username', authenticatedMiddleware, this.verifyAvailableAccountTag)
         this.router.patch('/user/profile/account-tag/setup', authenticatedMiddleware, validationMiddleware(validate.setupUsername), this.setupUsername)
         this.router.put('/user/profile/upload-photo', authenticatedMiddleware, this.uploadProfilePhoto)
+        
+        // Verification
         this.router.get('/user/verification/status', authenticatedMiddleware, this.getVerificationStatus)
         this.router.post('/user/verification/cancelled', authenticatedMiddleware, this.kycVerificationCanceled)
 
+        // Notification
         this.router.put('/user/profile/deviceId/set', authenticatedMiddleware,validationMiddleware(validate.saveDeviceId), this.setDeviceId)
-
         this.router.get('/user/notifications', authenticatedMiddleware, this.getNotifications)
 
+        // Pin
         this.router.put('/user/pin/set', authenticatedMiddleware, validationMiddleware(validate.setPin), this.setPin)
         this.router.patch('/user/pin/change', authenticatedMiddleware, validationMiddleware(validate.changePin), this.changeTransactionPin)
         this.router.patch('/user/pin/forgot', authenticatedMiddleware, validationMiddleware(validate.forgotPin), this.forgotTransactionPin)
+        
+        // Favorites
         this.router.get("/user/:username/resolve", authenticatedMiddleware, this.resolveAccountTag)
         this.router.post("/user/profile/favorite-recipients/add", authenticatedMiddleware, validationMiddleware(validate.addFavorites), this.favoriteRecipient)
         this.router.delete("/user/profile/favorite-recipients/delete", authenticatedMiddleware, validationMiddleware(validate.removeFavorite), this.unfavoriteRecipient)
         this.router.get("/user/profile/favorite-recipients/list", authenticatedMiddleware, this.getFavoriteRecipients)
+        
         this.router.get("/user/profile", authenticatedMiddleware, this.getUserDetails)
         this.router.delete("/user/deactivate", authenticatedMiddleware, this.softDeleteUserAccount)
 
@@ -69,16 +75,6 @@ class UserController implements IController {
     private register = async (req: Request, res: Response, next: NextFunction): Promise<IUser | void> => {
         try {
             const user = await this.UserService.register(req.body)
-            
-            // const { firstname, lastname, email, username, _id } = user.user
-
-            // const emailTemplate = welcomeEmail(req.body.firstname)
-            // const mailService = MailService.getInstance();
-            // mailService.sendMail({
-            //     to: req.body.email,
-            //     subject: `Howdy ${firstname}, welcome aboard!`,
-            //     text: emailTemplate.text,
-            //     html: emailTemplate.html,
 
             //Remove _id before responding to client
             delete user.user._id

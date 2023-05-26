@@ -33,10 +33,10 @@ class App {
         this.express.use(express.json())
         this.express.use(express.urlencoded({ extended: true }))
         this.express.use(compression())
-        //1000 requests in an hour
+        //300 requests in an hour
         this.express.use(rateLimit({
             windowMs: 60*60*1000,
-            max: 1000,
+            max: 100,
             standardHeaders: false,
             legacyHeaders: false,
         }))
@@ -75,7 +75,7 @@ class App {
             https: process.env.NODE_ENV == 'development' ? true : false
         }))
         
-        /* This particular proxy only exists because no optimal solution was found for parsing request body for image upload. 
+        /* This proxy only exists because no optimal solution was found for parsing request body for image upload. 
             By default, express-proxy sets the parseReqBody property to true, this simply parses data from client and makes req.body accessible,
             but parseReqBody chunks this data forcing formiddable to close down without fully receiving the entire image file. 
             Hence the setting of parseReqBody to false here.

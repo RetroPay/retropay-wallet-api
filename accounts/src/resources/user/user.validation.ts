@@ -79,7 +79,7 @@ const authByPin = Joi.object({
 })
 
 const saveDeviceId = Joi.object({
-    deviceId: Joi.string().required()
+    oneSignalId: Joi.string().required()
 })
 
 export default { 

@@ -8,25 +8,8 @@ import moment from "moment";
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface";
 import axios from "axios";
 import { v4 } from "uuid";
-import mongoose from "mongoose";
 
 class UserService {
-  public async handleSubscribedEvents(payload: any): Promise<void> {
-    try {
-      payload = JSON.parse(payload);
-      const { data, event } = payload;
-
-      if (!data || !event) throw new Error("==== Invalid Payload ====");
-
-      switch (event) {
-        case "QUEUE_NOTIFICATION":
-          await this.queueNotification(data);
-          break;
-        default:
-          break;
-      }
-    } catch (error) {}
-  }
 
   public async queueNotification(reqData: {
     id: string;
@@ -70,7 +53,7 @@ class UserService {
         { new: true }
       );
     } catch (error: any) {
-      console.log(error, "Unable to queue save transaction");
+      throw new Error("Unable to queue save transaction.");
     }
   }
 
@@ -79,7 +62,7 @@ class UserService {
       const user = await userModel
         .findById(id, { _id: 0, firstname: 1 })
         .select(
-          "firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified isUsernameSet isPinSet deviceId"
+          "firstname lastname profilePhoto email username phoneNumber isIdentityVerified verificationStatus transferPermission nubanAccountDetails isEmailVerified isPhoneVerified isUsernameSet isPinSet oneSignalDeviceId isPushNotificationAllowed"
         );
 
       if (!user) throw new Error("Unable to retrieve details");
@@ -1021,9 +1004,9 @@ class UserService {
     }
   }
 
-  public async saveUserDeviceId (id: string, deviceId: string): Promise<void> {
+  public async saveUserDeviceId (id: string, oneSignalDeviceId: string): Promise<void> {
     try {
-      const updatedUser = await userModel.findByIdAndUpdate(id, { deviceId, $set: { isPushNotificationAllowed: true } }, { new: true })
+      const updatedUser = await userModel.findByIdAndUpdate(id, { oneSignalDeviceId, $set: { isPushNotificationAllowed: true } }, { new: true })
 
       if(!updatedUser) throw new Error("Unable to allow notification, please try again.")
     } catch (error) {
