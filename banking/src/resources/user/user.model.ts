@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose"
+import mongoose from "mongoose"
 import IUser from "./user.interface"
 import bcrypt from "bcrypt"
 
@@ -34,7 +35,7 @@ const UserSchema = new Schema({
         type: Object
     },
     pin: String,
-    referenceId: { type: Schema.Types.ObjectId, required: true, unique: true },
+    referenceId: { type: Schema.Types.ObjectId, required: true, unique: true, default: mongoose.Types.ObjectId },
     username: { type: String, unique: true },
     isPhoneVerified: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
@@ -48,7 +49,8 @@ const UserSchema = new Schema({
     customerCode: { type: String, },
     nubanAccountDetails: nubanAccountSchema,
     favoritedRecipients: { type: Array },
-    isAccountActive: { type: Boolean, default: true }, 
+    isAccountActive: { type: Boolean, default: true },
+    isPushNotificationAllowed: { type: Boolean, default: false },
     notifications: [],
     isUsernameSet: {
         type: Boolean,
@@ -57,7 +59,8 @@ const UserSchema = new Schema({
     isPinSet: {
         type: Boolean,
         default: false
-    }
+    },
+    oneSignalDeviceId: String
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {
