@@ -98,11 +98,14 @@ class BillController implements IController {
         kudaBillItemIdentifier,
         customerIdentification,
         amount,
-        phoneNumber
-      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: number, phoneNumber: string } =
+        phoneNumber,
+        pin
+      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: number, phoneNumber: string, pin: string } =
         req.body;
 
       const response: {} = await this.billService.purchaseBill(
+        req.user,
+        pin,
         req.k_token,
         req.referenceId,
         phoneNumber,

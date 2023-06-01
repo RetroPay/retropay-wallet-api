@@ -12,8 +12,6 @@ import passwordResetEmail from "@/templates/passwordReset.template";
 import verifyEmailTemplate from "@/templates/verifyEmail.template";
 import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable"
-import welcomeEmail from "@/templates/welcome.template";
-import transferInRecieptEmail from "@/templates/transferin-receipt.template";
 import { logsnag } from "../../server"
 
 class UserController implements IController {

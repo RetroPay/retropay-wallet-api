@@ -88,8 +88,27 @@ class BillService {
     }
   }
 
-  public async purchaseBill(k_token: string, referenceId: string, phoneNumber: string, amount: number, KudaBillItemIdentifier: string, CustomerIdentification: string) {
+  private async validatePin(formPin: string, userId: string): Promise<boolean> {
     try {
+      const foundUser = await userModel.findById(userId);
+
+      if (!foundUser) throw new Error("Error validating your pin");
+
+      if (await foundUser.isValidPin(formPin)) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      throw new Error("Unable to validate pin.");
+    }
+  }
+
+  public async purchaseBill(userId: string, formPin: string, k_token: string, referenceId: string, phoneNumber: string, amount: number, KudaBillItemIdentifier: string, CustomerIdentification: string) {
+    try {
+
+      if (!(await this.validatePin(formPin, userId)))
+        throw new Error("Transfer failed - Incorrect transaction pin");
+
       const response = await axios({
         method: "POST",
         url:
@@ -126,7 +145,7 @@ class BillService {
             break;
           case 'k12': throw new Error('Your bill payment is currently pending.')
             break;
-          case '51' || 'k51': throw new Error('Transfer failed - Insufficient funds on account.')
+          case '51' || 'k51': throw new Error('Payment failed - Insufficient funds on account.')
             break;
           case 'k25' || 'k09': throw new Error('Bill payment failed - invalid customer ID or Phone number.')
             break;
@@ -138,7 +157,7 @@ class BillService {
 
       //save bill transaction
       const newBillPurchase = await billModel.create({
-        fundOriginatorAccount: referenceId,
+        fundOriginatorAccount: userId,
         amount: amount,  //amount in naira
         billItemIdentifier: KudaBillItemIdentifier,
         phoneNumber,
