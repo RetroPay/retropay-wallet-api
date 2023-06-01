@@ -32,7 +32,8 @@ export default interface IUser {
     }
     favoritedRecipients?: string[]
     isAccountActive: boolean
-
+    oneSignalDeviceId: string
+    
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>
 }
