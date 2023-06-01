@@ -13,6 +13,7 @@ import userModel from "@/resources/user/user.model";
 import billsHookModel from "./bills-hook.model";
 import BillService from "@/resources/bills/bill.service";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
+import sendPushNotification from "@/services/sendPushNotification";
 
 class WebhookController implements IController {
     public path = "/webhook";
@@ -85,7 +86,7 @@ class WebhookController implements IController {
                                             }
                                         }, { new: true })
 
-
+                                        // Send mail notification
                                         const emailTemplate = transferInRecieptEmail(
                                             transaction.recipientTag,
                                             transaction.amount,
@@ -101,6 +102,8 @@ class WebhookController implements IController {
                                             html: emailTemplate.html,
                                         })
 
+
+                                        //SMS alert
                                         const termiiPayload = {
                                             api_key: process.env.TERMII_API_KEY,
                                             to: transaction.recipientPhoneNumber,
@@ -115,6 +118,16 @@ class WebhookController implements IController {
                                             url: 'https://api.ng.termii.com/api/sms/send',
                                             data: termiiPayload,
                                         })
+
+
+                                        //Push notification alert
+                                        if(transaction.oneSignalPlayerId) {
+                                            await sendPushNotification(
+                                                transaction.oneSignalPlayerId,
+                                                `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}.`,
+                                                "Retro Wallet - Credit Alert"
+                                            )
+                                        }
                                     }
                                     break;
                                 case "Funding" || "funding":
@@ -132,6 +145,15 @@ class WebhookController implements IController {
                                                 notifications: payload,
                                             }
                                         }, { new: true })
+
+                                        //Push notification alert
+                                        if(transaction.oneSignalPlayerId) {
+                                            await sendPushNotification(
+                                                transaction.oneSignalPlayerId,
+                                                `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderName}(${transaction.senderBank}).`,
+                                                "Retro Wallet - Credit Alert"
+                                            )
+                                        }
 
                                         const termiiPayload = {
                                             api_key: process.env.TERMII_API_KEY,
@@ -193,6 +215,15 @@ class WebhookController implements IController {
                                             }
                                         }, { new: true })
 
+                                        //Push notification alert
+                                        if(transaction.oneSignalPlayerId) {
+                                            await sendPushNotification(
+                                                transaction.oneSignalPlayerId,
+                                                `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.recipientTag}.`,
+                                                "Retro Wallet - Debit Alert"
+                                            )
+                                        }
+
                                         // Send email notification
                                         const emailTemplate = transferOutRecieptEmail(
                                             transaction.senderTag,
@@ -209,6 +240,8 @@ class WebhookController implements IController {
                                             html: emailTemplate.html,
                                         });
 
+
+                                        //sms notification
                                         const termiiPayload = {
                                             api_key: process.env.TERMII_API_KEY,
                                             to: transaction.senderPhoneNumber,
@@ -238,6 +271,15 @@ class WebhookController implements IController {
                                             },
                                         }
                                     }, { new: true })
+
+                                    //Push notification alert
+                                    if(transaction.oneSignalPlayerId) {
+                                        await sendPushNotification(
+                                            transaction.oneSignalPlayerId,
+                                            `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}.`,
+                                            "Retro Wallet - Debit Alert"
+                                        )
+                                    }
 
                                     // Send email notification
                                     const emailTemplate = transferOutRecieptEmail(

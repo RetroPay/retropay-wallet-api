@@ -6,6 +6,7 @@ import Bill from "./bill.interface";
 import generateOtp from "@/services/otp";
 import billModel from "./bill.model";
 import { redisClient, logsnag } from "../../server";
+import IBill from "./bill.interface";
 
 class BillService {
   /**
@@ -50,6 +51,14 @@ class BillService {
     }
   }
 
+  /**
+   * 
+   * @param k_token 
+   * @param referenceId 
+   * @param KudaBillItemIdentifier 
+   * @param CustomerIdentification 
+   * @returns customer information, if verification request is successful, customer's identity has been verified
+   */
   public async verifyCustomer(k_token: string, referenceId: string, KudaBillItemIdentifier: string, CustomerIdentification: string) {
     try {
       const response = await axios({
@@ -88,6 +97,12 @@ class BillService {
     }
   }
 
+  /**
+   * 
+   * @param formPin 
+   * @param userId 
+   * @returns true if pin is correct and false if pin is incorrect
+   */
   private async validatePin(formPin: string, userId: string): Promise<boolean> {
     try {
       const foundUser = await userModel.findById(userId);
@@ -103,7 +118,19 @@ class BillService {
     }
   }
 
-  public async purchaseBill(userId: string, formPin: string, k_token: string, referenceId: string, phoneNumber: string, amount: number, KudaBillItemIdentifier: string, CustomerIdentification: string) {
+  /**
+   * Purchase all bill types
+   * @param userId 
+   * @param formPin 
+   * @param k_token 
+   * @param referenceId 
+   * @param phoneNumber 
+   * @param amount 
+   * @param KudaBillItemIdentifier 
+   * @param CustomerIdentification 
+   * @returns 
+   */
+  public async purchaseBill(userId: string, formPin: string, k_token: string, billCategory: string, referenceId: string, phoneNumber: string, amount: number, KudaBillItemIdentifier: string, CustomerIdentification: string) {
     try {
 
       if (!(await this.validatePin(formPin, userId)))
@@ -163,7 +190,8 @@ class BillService {
         phoneNumber,
         customerIdentifier: CustomerIdentification,
         transactionReference: data.data.reference,
-        status: "pending"
+        status: "pending",
+        billCategory
       })
 
       return {
@@ -205,17 +233,29 @@ class BillService {
 
       const data = response.data;
 
-
       const transaction = await billModel.findOneAndUpdate(
         { transactionReference },
         {
           narrations,
+          payingBank,
           instrumentNumber, status: data.Data.HasBeenReserved ? 'reversed' : "success"
         }, { new: true })
 
       if (!transaction) throw new Error('Bill purchase record not found')
     } catch (error) {
       throw new Error(`Unable to process update bill purchase webhook. error: ${error}`);
+    }
+  }
+
+  public async getBillHistoryById(userId: string, billCategory: string): Promise<IBill[]> {
+    try {
+      const billHistory: IBill[] = await billModel.find({fundOriginatorAccount: userId, billCategory, $or: [{status: 'success'}, {status: 'reversed'}]}).select("amount narrations billItemIdentifier payingBank createdAt transactionReference")
+
+      if(!billHistory) throw new Error("Failed to retrieve bill history, please try again.")
+      
+      return billHistory;
+    } catch (error) {
+      throw new Error(`Unable to process update bill purchase webhook. error: ${error}`)
     }
   }
 }
