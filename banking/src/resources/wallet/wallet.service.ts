@@ -871,7 +871,7 @@ class WalletService {
           createdAt: newTransaction.createdAt,
           id: foundRecipient.referenceId,
           recipientPhoneNumber: foundRecipient.phoneNumber,
-          oneSignalPlayerId: foundRecipient.oneSignalDeviceId,
+          oneSignalPlayerId: foundRecipient?.oneSignalDeviceId || null,
         };
       }
 
@@ -885,7 +885,7 @@ class WalletService {
         recipientTag: foundRecipient.username,
         recipientEmail: foundRecipient.email,
         recipientPhoneNumber: foundRecipient.phoneNumber,
-        oneSignalPlayerId: foundRecipient.oneSignalDeviceId, //one signal player ID for Push notification
+        oneSignalPlayerId: foundRecipient?.oneSignalDeviceId || null, //one signal player ID for Push notification
       };
     } catch (error) {
       await logsnag.publish({
@@ -940,7 +940,7 @@ class WalletService {
           senderEmail: foundSender?.email,
           senderPhoneNumber: foundSender?.phoneNumber,
           transactionType: "Withdrawal",
-          oneSignalPlayerId: foundSender?.oneSignalDeviceId
+          oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
         };
       }
 
@@ -954,7 +954,7 @@ class WalletService {
         transactionId: transaction.referenceId,
         senderEmail: foundSender?.email,
         senderPhoneNumber: foundSender?.phoneNumber,
-        oneSignalPlayerId: foundSender?.oneSignalDeviceId
+        oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
       };
     } catch (error) {
       await logsnag.publish({
