@@ -252,7 +252,8 @@ class BillService {
         amount: transaction.amount,
         oneSignalPlayerId: billPurchaser?.oneSignalDeviceId,
         narrations,
-        createdAt: transaction.createdAt
+        createdAt: transaction.createdAt,
+        status: transaction.status
       }
     } catch (error) {
       throw new Error(`Unable to process update bill purchase webhook. error: ${error}`);

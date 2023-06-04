@@ -336,7 +336,7 @@ class WebhookController implements IController {
                                         await sendPushNotification(
                                             transaction.oneSignalPlayerId,
                                             `Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Narration ${transaction.narrations}.`,
-                                            "Retro Wallet - Bill Payment"
+                                            `Retro Wallet - Bill Purchase ${transaction.status}`
                                         )
                                     }
                                 }
