@@ -322,8 +322,8 @@ class WebhookController implements IController {
                                             notifications: {
                                                 id: transaction.id,
                                                 trType: "withdrawal",
-                                                amount: transaction.amount,
-                                                recipientBankInfo: transaction.beneficiary,
+                                                amount: transaction.amount/100,
+                                                recipientBankInfo: `${transaction.payingBank} - ${transaction.narrations}`,
                                                 timestamp: transaction.createdAt,
                                             },
                                         }
@@ -333,7 +333,7 @@ class WebhookController implements IController {
                                     if (transaction.oneSignalPlayerId) {
                                         await sendPushNotification(
                                             transaction.oneSignalPlayerId,
-                                            `Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Narration ${transaction.narrations}.`,
+                                            `Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Narration: ${transaction.narrations}.`,
                                             `Retro Wallet - Bill Purchase ${transaction.status}`
                                         )
                                     }
