@@ -322,7 +322,7 @@ class WebhookController implements IController {
                                             notifications: {
                                                 id: transaction.id,
                                                 trType: "withdrawal",
-                                                amount: transaction.amount/100,
+                                                amount: transaction.amount * 100,
                                                 recipientBankInfo: `${transaction.payingBank} - ${transaction.narrations}`,
                                                 timestamp: transaction.createdAt,
                                             },
