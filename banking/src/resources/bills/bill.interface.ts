@@ -9,4 +9,6 @@ export default interface IBill {
     narrations: string
     instrumentNumber: string
     status: string
+    billCategory: string
+    createdAt: string
 }

@@ -7,6 +7,7 @@ import generateOtp from "@/services/otp";
 import billModel from "./bill.model";
 import { redisClient, logsnag } from "../../server";
 import IBill from "./bill.interface";
+import IUser from "../user/user.interface";
 
 class BillService {
   /**
@@ -210,7 +211,7 @@ class BillService {
     }
   }
 
-  public async updateBillPurchase(k_token: string, payingBank: string, transactionReference: string, narrations: string, instrumentNumber: string): Promise<void> {
+  public async updateBillPurchase(k_token: string, payingBank: string, transactionReference: string, narrations: string, instrumentNumber: string): Promise<any> {
     try {
       //Get bill purchase status
       const response = await axios({
@@ -233,7 +234,7 @@ class BillService {
 
       const data = response.data;
 
-      const transaction = await billModel.findOneAndUpdate(
+      const transaction: IBill | null = await billModel.findOneAndUpdate(
         { transactionReference },
         {
           narrations,
@@ -242,6 +243,17 @@ class BillService {
         }, { new: true })
 
       if (!transaction) throw new Error('Bill purchase record not found')
+
+      const billPurchaser: IUser | null = await userModel.findById(transaction.fundOriginatorAccount)
+
+      return {
+        transactionType: 'BillPurchase',
+        id: billPurchaser?.referenceId,
+        amount: transaction.amount,
+        oneSignalPlayerId: billPurchaser?.oneSignalDeviceId,
+        narrations,
+        createdAt: transaction.createdAt
+      }
     } catch (error) {
       throw new Error(`Unable to process update bill purchase webhook. error: ${error}`);
     }

@@ -6,6 +6,9 @@ import translateError from "@/helpers/mongod.helper";
 import mongoose from "mongoose";
 import axios from "axios";
 import { redisClient, logsnag } from "../../server";
+import billModel from "../bills/bill.model";
+import IBill from "../bills/bill.interface";
+import BillService from "../bills/bill.service";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -904,10 +907,14 @@ class WalletService {
   public async acknowledgeFundsTransfer(
     amount: string,
     transactionReference: string,
+    narrations: string,
     sessionId: string,
-    instrumentNumber: string
+    instrumentNumber: string,
+    payingBank: string,
+    k_token: string
   ): Promise<any> {
     try {
+      // Check transaction is a payment transaction
       const transaction: IWallet | null = await walletModel.findOneAndUpdate(
         {
           $or: [
@@ -918,10 +925,29 @@ class WalletService {
         { $set: { senderWebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
+      
+      // Check transaction is a bill payment
+      const billTransaction: IBill | null = await billModel.findOne({
+        transactionReference,
+      })
+      
+      // If incoming transaction is not payment or bill purchase, kill webhook processing
+      if (!transaction  && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");
 
-      if (!transaction) throw new Error("Failed to update transaction");
+      // if incoming transaction is a bill transaction not payment
+      if(billTransaction && !transaction) {
+        // process bill purchase transaction
+        const billService = new BillService;
+        const processedTransaction = await billService.updateBillPurchase(k_token, payingBank, transactionReference, narrations, instrumentNumber)
 
-      // const foundSender = await userModel.findOne({ _id: new mongoose.Types.ObjectId(transaction?.fundOriginatorAccount) });
+        return processedTransaction;
+      }
+
+      if(!transaction) throw new Error("Invalid transaction: Payment record not found")
+
+
+      // continue processing webhook if incoming transaction is payment and not bill transaction
+
       const foundSender = await userModel.findById(
         transaction?.fundOriginatorAccount
       );
@@ -956,6 +982,9 @@ class WalletService {
         senderPhoneNumber: foundSender?.phoneNumber,
         oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
       };
+
+
+
     } catch (error) {
       await logsnag.publish({
         channel: "failed-requests",
