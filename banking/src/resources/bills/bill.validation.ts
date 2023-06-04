@@ -1,19 +1,26 @@
-import Joi from 'joi'
+import Joi from "joi";
 
 const billPurchase = Joi.object({
-    amount: Joi.number().required(),
-    kudaBillItemIdentifier: Joi.string().required(),
-    customerIdentification: Joi.string().required(),
-    phoneNumber: Joi.string(),
-    pin: Joi.string().required().max(4).min(4),
-})
+  amount: Joi.number().required(),
+  kudaBillItemIdentifier: Joi.string().required(),
+  customerIdentification: Joi.string().required(),
+  phoneNumber: Joi.string(),
+  pin: Joi.string().required().max(4).min(4),
+  billCategory: Joi.string().valid(
+    "airtime",
+    "betting",
+    "internet Data",
+    "electricity",
+    "cableTv"
+  ),
+});
 
 const verifyBillCustomer = Joi.object({
-    kudaBillItemIdentifier: Joi.string().required(),
-    customerIdentification: Joi.string().required()
-})
+  kudaBillItemIdentifier: Joi.string().required(),
+  customerIdentification: Joi.string().required(),
+});
 
 export default {
-    verifyBillCustomer,
-    billPurchase
-}
+  verifyBillCustomer,
+  billPurchase,
+};

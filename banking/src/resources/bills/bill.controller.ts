@@ -6,6 +6,7 @@ import validationMiddleware from "@/middlewares/validation.middleware";
 import authenticatedMiddleware from "@/middlewares/authenticate.middlware";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
 import validationObject from './bill.validation'
+import IBill from "./bill.interface";
 
 class BillController implements IController {
   public path = "/bills";
@@ -20,7 +21,7 @@ class BillController implements IController {
     this.router.get(`${this.path}/categories/:billCategory/providers`, authenticatedMiddleware, kudaTokenHandler, this.getBillProviders);
     this.router.post(`${this.path}/customer/verify`, validationMiddleware(validationObject.verifyBillCustomer), authenticatedMiddleware, kudaTokenHandler, this.verifyCustomer);
     this.router.post(`${this.path}/purchase`, validationMiddleware(validationObject.billPurchase), authenticatedMiddleware, kudaTokenHandler, this.purchaseBill)
-    this.router.get(`${this.path}/history`, authenticatedMiddleware, kudaTokenHandler, this.getBillsHistory)
+    this.router.get(`${this.path}/history/:billCategory`, authenticatedMiddleware, kudaTokenHandler, this.getBillsHistory)
   }
 
   private getBillProviders = async (
@@ -99,14 +100,16 @@ class BillController implements IController {
         customerIdentification,
         amount,
         phoneNumber,
-        pin
-      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: number, phoneNumber: string, pin: string } =
+        pin,
+        billCategory
+      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: number, phoneNumber: string, pin: string, billCategory: string } =
         req.body;
 
       const response: {} = await this.billService.purchaseBill(
         req.user,
         pin,
         req.k_token,
+        billCategory,
         req.referenceId,
         phoneNumber,
         amount,
@@ -126,9 +129,29 @@ class BillController implements IController {
 
   private getBillsHistory = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // const history = await this.billService.getHistoryById(req.user)
-    } catch (error) {
+
+      const { billCategory }: { billCategory: string | undefined } = req.params;
+
+      const allowedCategories: string[] = [
+        "airtime",
+        "betting",
+        "internet Data",
+        "electricity",
+        "cableTv",
+      ];
+      if (!billCategory || !allowedCategories.includes(billCategory))
+        return next(new HttpExeception(400, "Invalid bill category."));
       
+      const billHistory = await this.billService.getBillHistoryById(req.user, billCategory);
+
+      res.status(200).json({
+        success: true,
+        message: "Transactions retrieved successfully",
+        data: billHistory
+    })
+
+    } catch (error: any) {
+      return next(new HttpExeception(400, error.message))
     }
   }
 }

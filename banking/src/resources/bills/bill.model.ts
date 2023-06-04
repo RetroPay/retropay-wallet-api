@@ -10,7 +10,8 @@ const billSchema = new Schema({
     transactionReference: { type: String, required: true, unique: true },
     narrations: { type: String },
     instrumentNumber: {type: String },
-    status: { type: String, enum: ["success", "pending", "reversed"]}
+    status: { type: String, enum: ["success", "pending", "reversed"]},
+    billCategory: { type: String, required: true }
 }, {
     timestamps: true
 });
