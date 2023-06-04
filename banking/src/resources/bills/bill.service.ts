@@ -234,8 +234,6 @@ class BillService {
       });
 
       const data = response.data;
-      console.log(data)
-
 
       const transaction: IBill | null = await billModel.findOneAndUpdate(
         { transactionReference },
