@@ -255,6 +255,7 @@ class BillService {
         amount: transaction.amount,
         oneSignalPlayerId: billPurchaser?.oneSignalDeviceId,
         narrations,
+        payingBank,
         createdAt: transaction.createdAt,
         status: transaction.status
       }
