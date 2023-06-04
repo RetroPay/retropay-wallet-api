@@ -234,6 +234,7 @@ class BillService {
       });
 
       const data = response.data;
+      console.log(data)
 
 
       const transaction: IBill | null = await billModel.findOneAndUpdate(
@@ -241,7 +242,7 @@ class BillService {
         {
           narrations,
           payingBank,
-          instrumentNumber, status: data.Data.HasBeenReserved ? 'reversed' : "success"
+          instrumentNumber, status: data.data.HasBeenReserved ? 'reversed' : "success"
         }, { new: true })
 
       if (!transaction) throw new Error('Bill purchase record not found')
