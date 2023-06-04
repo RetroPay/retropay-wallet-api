@@ -26,7 +26,7 @@ class WebhookController implements IController {
     }
 
     private initialiseRoutes(): void {
-        this.router.post(`${this.path}/camo/kuda`, this.processWebhooks);
+        this.router.post(`${this.path}/camo/kuda`, kudaTokenHandler, this.processWebhooks);
         this.router.post(`${this.path}/camo/kuda/bills`, kudaTokenHandler, this.processBillsWebhooks);
     }
 
@@ -37,6 +37,8 @@ class WebhookController implements IController {
     ): Promise<IWallet | void> => {
         try {
             await webhookModel.create(req.body);
+
+            console.log(req.body)
 
             res.sendStatus(200);
             const { transactionType } = req.body;
@@ -119,8 +121,6 @@ class WebhookController implements IController {
                                             data: termiiPayload,
                                         })
 
-
-                                        //Push notification alert
                                         if(transaction.oneSignalPlayerId) {
                                             await sendPushNotification(
                                                 transaction.oneSignalPlayerId,
@@ -147,7 +147,7 @@ class WebhookController implements IController {
                                         }, { new: true })
 
                                         //Push notification alert
-                                        if(transaction.oneSignalPlayerId) {
+                                        if (transaction.oneSignalPlayerId) {
                                             await sendPushNotification(
                                                 transaction.oneSignalPlayerId,
                                                 `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderName}(${transaction.senderBank}).`,
@@ -194,8 +194,11 @@ class WebhookController implements IController {
                                 await this.walletService.acknowledgeFundsTransfer(
                                     amount,
                                     transactionReference,
+                                    narrations,
                                     sessionId,
-                                    instrumentNumber
+                                    instrumentNumber,
+                                    payingBank,
+                                    req.k_token
                                 );
 
                             const { transactionType } = transaction;
@@ -216,7 +219,7 @@ class WebhookController implements IController {
                                         }, { new: true })
 
                                         //Push notification alert
-                                        if(transaction.oneSignalPlayerId) {
+                                        if (transaction.oneSignalPlayerId) {
                                             await sendPushNotification(
                                                 transaction.oneSignalPlayerId,
                                                 `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.recipientTag}.`,
@@ -273,7 +276,7 @@ class WebhookController implements IController {
                                     }, { new: true })
 
                                     //Push notification alert
-                                    if(transaction.oneSignalPlayerId) {
+                                    if (transaction.oneSignalPlayerId) {
                                         await sendPushNotification(
                                             transaction.oneSignalPlayerId,
                                             `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Recipient: ${transaction.beneficiaryName}/${transaction.beneficiaryAccount}.`,
@@ -311,6 +314,29 @@ class WebhookController implements IController {
                                         url: 'https://api.ng.termii.com/api/sms/send',
                                         data: termiiPayload,
                                     })
+                                }
+                                    break;
+                                case 'BillPurchase': {
+                                    await userModel.findOneAndUpdate({ referenceId: transaction.id }, {
+                                        $push: {
+                                            notifications: {
+                                                id: transaction.id,
+                                                trType: "withdrawal",
+                                                amount: transaction.amount,
+                                                recipientBankInfo: transaction.beneficiary,
+                                                timestamp: transaction.createdAt,
+                                            },
+                                        }
+                                    }, { new: true })
+
+                                    //Push notification alert
+                                    if (transaction.oneSignalPlayerId) {
+                                        await sendPushNotification(
+                                            transaction.oneSignalPlayerId,
+                                            `Amount: NGN${(transaction.amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Narration ${transaction.narrations}.`,
+                                            `Retro Wallet - Bill Purchase ${transaction.status}`
+                                        )
+                                    }
                                 }
                                     break;
                                 default:
