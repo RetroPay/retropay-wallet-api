@@ -27,6 +27,8 @@ function validateEnv(): void {
         TERMII_API_KEY: str(),
         TERMII_SECRET_KEY: str(),
         TERMII_SENDER_ID: str(),
+        ONESIGNAL_APP_ID: str(),
+        ONESIGNAL_REST_API_KEY: str(),
     })
 }
 
