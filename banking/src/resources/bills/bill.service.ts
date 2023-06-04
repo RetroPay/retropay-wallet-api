@@ -9,6 +9,7 @@ import { redisClient, logsnag } from "../../server";
 import IBill from "./bill.interface";
 import IUser from "../user/user.interface";
 
+
 class BillService {
   /**
    * retrieves the list of all billers by Kuda
@@ -233,6 +234,7 @@ class BillService {
       });
 
       const data = response.data;
+
 
       const transaction: IBill | null = await billModel.findOneAndUpdate(
         { transactionReference },

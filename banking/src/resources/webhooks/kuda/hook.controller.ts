@@ -121,9 +121,7 @@ class WebhookController implements IController {
                                             data: termiiPayload,
                                         })
 
-
-                                        //Push notification alert
-                                        if (transaction.oneSignalPlayerId) {
+                                        if(transaction.oneSignalPlayerId) {
                                             await sendPushNotification(
                                                 transaction.oneSignalPlayerId,
                                                 `Amount: NGN${(transaction.amount / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}. Sender: ${transaction.senderTag}.`,

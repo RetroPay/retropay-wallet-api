@@ -982,9 +982,7 @@ class WalletService {
         senderPhoneNumber: foundSender?.phoneNumber,
         oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
       };
-
-
-
+      
     } catch (error) {
       await logsnag.publish({
         channel: "failed-requests",
