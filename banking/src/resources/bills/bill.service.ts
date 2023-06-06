@@ -181,7 +181,7 @@ class BillService {
             break;
           case 'k26': throw new Error('Bill payment failed - Please try again.')
             break;
-          default: throw new Error("Bill payment failed")
+          default: throw new Error(data.message)
         }
       }
 
