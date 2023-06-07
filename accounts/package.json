@@ -53,7 +53,7 @@
     "express-formidable-v2": "^2.2.1",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^6.7.0",
-    "formidable": "^2.0.1",
+    "formidable": "^2.1.2",
     "helmet": "^6.0.0",
     "joi": "^17.6.2",
     "jsonwebtoken": "^9.0.0",
