@@ -1,5 +1,6 @@
 version: "3"
 services:
+
   # nosql-db:
   #   image: mongo
   #   ports:
@@ -8,37 +9,47 @@ services:
   #   volumes:
   #     - ./db/:/data/db+
   accounts:
-    build:
-      dockerfile: Dockerfile
-      context: ./accounts
+    build: ./accounts
     container_name: accounts
     ports:
       - "8002:8002"
-    restart: always
+    restart: on_failure
+    networks:
+      - backend
     volumes:
       - .:/app
       - /app/accounts/node_modules
     env_file:
       - ./accounts/.env
+
   banking:
-    build:
-      dockerfile: Dockerfile
-      context: ./banking
+    build: ./banking
     container_name: banking
     ports:
       - "8001:8001"
-    restart: always
+    restart: on_failure
+    networks:
+      - backend
     volumes:
       - .:/app
       - /app/banking/node_modules
     env_file:
       - ./banking/.env
+
   nginx-proxy:
-    build:
-      dockerfile: Dockerfile
-      context: ./proxy
+    build: ./proxy
     depends_on:
       - banking
       - accounts
+    restart: on_failure
+    networks:
+      - backend
+      - gateway
     ports:
       - 80:80
+
+networks:
+  backend:
+    internal: true
+  gateway:
+    internal: false
