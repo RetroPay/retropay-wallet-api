@@ -1,13 +1,14 @@
-FROM node:20.2-bullseye-slim
+FROM node:alpine
 
-WORKDIR /app/account
+WORKDIR /app/banking
 
 COPY package.json ./
 COPY tsconfig.json ./
 COPY src ./src
 
 RUN npm install
+COPY . .
 
-EXPOSE 8002
+EXPOSE 8001
 CMD ["npm", "start"]
 

@@ -1,12 +1,13 @@
-FROM node
-WORKDIR /app/banking
+FROM node:alpine
+
+WORKDIR /app/account
 
 COPY package.json ./
 COPY tsconfig.json ./
 COPY src ./src
 
 RUN npm install
-# COPY . .
-EXPOSE 8001
+
+EXPOSE 8002
 CMD ["npm", "start"]
 
