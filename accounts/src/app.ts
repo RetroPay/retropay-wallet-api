@@ -46,6 +46,7 @@ class App {
     private async initialiseDatabaseConnection(): Promise<void> {
         const { MONGODB_URI_CLOUD } = process.env
 
+        mongoose.set('strictQuery', false)
         await mongoose.connect(`${MONGODB_URI_CLOUD}`)
         .then(() => {
             this.listen()
