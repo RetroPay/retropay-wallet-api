@@ -1,38 +1,25 @@
 version: "3"
 services:
 
-  # nosql-db:
-  #   image: mongo
-  #   ports:
-  #     - "27018:27017"
-  #   container_name: nosql-db
-  #   volumes:
-  #     - ./db/:/data/db+
-  accounts:
+  account:
     build: ./accounts
-    container_name: accounts
-    ports:
-      - "8002:8002"
-    restart: on_failure
+    container_name: account
+    restart: always
+    expose:
+      - "4002"
     networks:
       - backend
-    volumes:
-      - .:/app
-      - /app/accounts/node_modules
     env_file:
       - ./accounts/.env
 
   banking:
     build: ./banking
     container_name: banking
-    ports:
-      - "8001:8001"
-    restart: on_failure
+    restart: always
+    expose:
+      - "4001"
     networks:
       - backend
-    volumes:
-      - .:/app
-      - /app/banking/node_modules
     env_file:
       - ./banking/.env
 
@@ -40,8 +27,8 @@ services:
     build: ./proxy
     depends_on:
       - banking
-      - accounts
-    restart: on_failure
+      - account
+    restart: always
     networks:
       - backend
       - gateway
@@ -50,6 +37,4 @@ services:
 
 networks:
   backend:
-    internal: true
   gateway:
-    internal: false
