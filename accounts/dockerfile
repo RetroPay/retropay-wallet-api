@@ -1,4 +1,4 @@
-FROM node:20.2-bullseye-slim
+FROM node:bullseye-slim
 
 WORKDIR /app/account
 
