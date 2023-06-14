@@ -1,4 +1,4 @@
-class HttpExeception extends Error {
+class HttpException extends Error {
     public status: number
     public message: string
 
@@ -9,4 +9,4 @@ class HttpExeception extends Error {
     }
 }
 
-export default HttpExeception
+export default HttpException
