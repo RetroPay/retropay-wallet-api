@@ -9,13 +9,14 @@ interface IBudget {
         budgetItemName: string
     }[]
     totalBudgetAmount: number
-    budgetAmountRemaining: number
+    budgetAmountSpent: number
     currency: string
     budgetMonth?: string
     budgetYear?: string
     createdAt: string
     budgetUniqueId: string
     id: string
+    budgetType: string
 }
 
 export default IBudget

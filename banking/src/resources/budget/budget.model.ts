@@ -18,7 +18,7 @@ const budgetModel = new Schema(
       required: true,
       default: 0
     },
-    budgetAmountRemaining: {
+    budgetAmountSpent: {
       type: Number,
       required: true,
       default: 0
@@ -34,7 +34,7 @@ const budgetModel = new Schema(
           type: Number,
           default: 0,
         },
-        budgetItemAmountRemaining: {
+        budgetItemAmountSpent: {
           type: Number,
           default: 0,
         },
@@ -64,6 +64,11 @@ const budgetModel = new Schema(
       type: String,
     },
     budgetUniqueId: {
+      type: String,
+      required: true,
+      unique: true
+    },
+    budgetType: {
       type: String,
       required: true
     }
