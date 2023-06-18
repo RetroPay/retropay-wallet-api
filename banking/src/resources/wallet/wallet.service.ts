@@ -251,7 +251,7 @@ class WalletService {
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-          "Transfer failed - Unable to process transfer."
+          "Sorry. We were unable to retrieve your balance, please try again."
       );
     }
   }

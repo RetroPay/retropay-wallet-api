@@ -42,7 +42,7 @@ export default {
 const app = new App([
     new DemoController, 
     new UserController,
-    new metaMapWebhookController
+    // new metaMapWebhookController
 ], Number(process.env.PORT) || 4002)
 
 //Connect to DB and run server

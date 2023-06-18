@@ -11,7 +11,7 @@ const WalletSchema = new Schema(
       enum: ['funding', 'withdrawal', 'transfer'],
       required: true
     },
-    currency: {type: String, enum: ['NGN', 'USD']},
+    currency: {type: String, enum: ['NGN', 'USD', 'GHC', 'KSH', 'XAF']},
     fundRecipientAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     fundOriginatorAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     status: {

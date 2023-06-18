@@ -6,6 +6,7 @@ import DemoController from "@/resources/status/status.controller"
 import WalletController from "@/resources/wallet/wallet.controller"
 import WebhookController from "@/resources/webhooks/kuda/hook.controller"
 import BillController from './resources/bills/bill.controller'
+import BudgetController from './resources/budget/budget.controller'
 import { createClient } from "redis"
 import { LogSnag } from "logsnag"
 
@@ -15,7 +16,8 @@ const app = new App([
     new DemoController,
     new WalletController,
     new WebhookController,
-    new BillController
+    new BillController,
+    new BudgetController
 ], Number(process.env.PORT) || 4001)
 
 

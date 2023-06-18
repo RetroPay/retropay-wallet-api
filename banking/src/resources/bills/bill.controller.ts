@@ -1,9 +1,9 @@
 import IController from "@/utils/interfaces/controller.interface";
 import { Router, Response, Request, NextFunction } from "express";
 import BillService from "./bill.service";
-import HttpExeception from "@/utils/exceptions/http.exception";
+import HttpException from "@/utils/exceptions/http.exception";
 import validationMiddleware from "@/middlewares/validation.middleware";
-import authenticatedMiddleware from "@/middlewares/authenticate.middlware";
+import authenticatedMiddleware from "@/middlewares/authenticate.middleware";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
 import validationObject from './bill.validation'
 import IBill from "./bill.interface";
@@ -33,7 +33,7 @@ class BillController implements IController {
       const { billCategory }: { billCategory: string | undefined } = req.params;
 
       if (!billCategory)
-        return next(new HttpExeception(400, "Include valid bill category."));
+        return next(new HttpException(400, "Include valid bill category."));
 
       const allowedCategories: string[] = [
         "airtime",
@@ -43,7 +43,7 @@ class BillController implements IController {
         "cableTv",
       ];
       if (!allowedCategories.includes(billCategory))
-        return next(new HttpExeception(400, "Include valid bill category."));
+        return next(new HttpException(400, "Include valid bill category."));
 
       const providers: object[] = await this.billService.getBillProviders(
         req.k_token,
@@ -56,7 +56,7 @@ class BillController implements IController {
         data: providers,
       });
     } catch (error: any) {
-      return next(new HttpExeception(400, error.message));
+      return next(new HttpException(400, error.message));
     }
   };
 
@@ -85,7 +85,7 @@ class BillController implements IController {
         data: customer,
       });
     } catch (error: any) {
-        return next(new HttpExeception(400, error.message));
+        return next(new HttpException(400, error.message));
     }
   };
 
@@ -123,7 +123,7 @@ class BillController implements IController {
         data: response,
       });
     } catch (error: any) {
-        return next(new HttpExeception(400, error.message));
+        return next(new HttpException(400, error.message));
     }
   };
 
@@ -140,7 +140,7 @@ class BillController implements IController {
         "cableTv",
       ];
       if (!billCategory || !allowedCategories.includes(billCategory))
-        return next(new HttpExeception(400, "Invalid bill category."));
+        return next(new HttpException(400, "Invalid bill category."));
       
       const billHistory = await this.billService.getBillHistoryById(req.user, billCategory);
 
@@ -151,7 +151,7 @@ class BillController implements IController {
     })
 
     } catch (error: any) {
-      return next(new HttpExeception(400, error.message))
+      return next(new HttpException(400, error.message))
     }
   }
 }

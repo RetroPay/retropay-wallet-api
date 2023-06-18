@@ -60,6 +60,19 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false
     },
+    verificationInformation: {
+        country: {
+            type: String,
+            enum: ["NG", "US", "GH", "TZ", "CM", "KE"]
+        },
+        documentType: {
+            type: String,
+            enum: ["NIN", "PASSPORT", "VOTERS_CARD", "DRIVERS_LICENSE"]
+        },
+        documentNumber: String,
+        documentFrontPicture: String,
+        documentBackPicture: String
+    },
     oneSignalDeviceId: String
 }, { timestamps: true})
 
