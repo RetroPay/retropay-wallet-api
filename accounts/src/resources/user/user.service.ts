@@ -1009,9 +1009,36 @@ class UserService {
       const updatedUser = await userModel.findByIdAndUpdate(id, { oneSignalDeviceId, $set: { isPushNotificationAllowed: true } }, { new: true })
 
       if(!updatedUser) throw new Error("Unable to allow notification, please try again.")
+
+      return
     } catch (error) {
       throw new Error(
         translateError(error)[0] || "Unable to allow notification, please try again."
+      );
+    }
+  }
+
+  public async uploadVerificationDocument(userId: string, country: string, documentType: string, documentNumber: string, documentFrontPicture: any, documentBackPicture: any): Promise<void> {
+    try {
+      const updatedUser = await userModel.findByIdAndUpdate(userId, {
+        $set: {
+          verificationInformation: {
+            country,
+            documentType,
+            documentNumber,
+            documentFrontPicture,
+            documentBackPicture,
+          }
+        },
+        verificationStatus: "pending"
+      }, { new: true });
+
+      if(!updatedUser) throw new Error("Verification document upload failed. Please try again")
+
+      console.log(updatedUser)
+    } catch (error) {
+      throw new Error(
+        translateError(error)[0] || "Verification document upload failed. Please try again."
       );
     }
   }

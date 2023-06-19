@@ -1,13 +1,15 @@
-FROM node:20.2-bullseye-slim
+FROM node:alpine
 
 WORKDIR /app/account
 
 COPY package.json ./
 COPY tsconfig.json ./
 COPY src ./src
+COPY .env .
 
 RUN npm install
 
-EXPOSE 8002
+
+EXPOSE 4002
 CMD ["npm", "start"]
 

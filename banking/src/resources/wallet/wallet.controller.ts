@@ -1,9 +1,9 @@
 import IController from "@/utils/interfaces/controller.interface"
 import { Router, Request, Response, NextFunction } from "express"
-import HttpExeception from "@/utils/exceptions/http.exception"
+import HttpException from "@/utils/exceptions/http.exception"
 import IWallet from "./wallet.interface"
 import WalletService from "./wallet.service"
-import authenticatedMiddleware from "@/middlewares/authenticate.middlware"
+import authenticatedMiddleware from "@/middlewares/authenticate.middleware"
 import validationMiddleware from "@/middlewares/validation.middleware"
 import validate from "./wallet.validation"
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware"
@@ -56,7 +56,7 @@ class WalletController implements IController {
                 data: result
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -73,7 +73,7 @@ class WalletController implements IController {
                 data: result
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -90,7 +90,7 @@ class WalletController implements IController {
                 data: transaction
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -110,7 +110,7 @@ class WalletController implements IController {
                 data: { transaction }
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -127,7 +127,7 @@ class WalletController implements IController {
                 }
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -144,7 +144,7 @@ class WalletController implements IController {
                 }
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))  
+            return next(new HttpException(400, error.message))  
         }
     }
 
@@ -163,7 +163,7 @@ class WalletController implements IController {
                 }
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -178,7 +178,7 @@ class WalletController implements IController {
                 }
             })
         } catch (error :any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -193,7 +193,7 @@ class WalletController implements IController {
                 }
             })
         } catch (error :any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 
@@ -208,7 +208,7 @@ class WalletController implements IController {
                 }
             })
         } catch (error: any) {
-            return next(new HttpExeception(400, error.message))
+            return next(new HttpException(400, error.message))
         }
     }
 }

@@ -102,7 +102,6 @@ class WebhookController implements IController {
                                             html: emailTemplate.html,
                                         })
 
-
                                         //SMS alert
                                         const termiiPayload = {
                                             api_key: process.env.TERMII_API_KEY,
