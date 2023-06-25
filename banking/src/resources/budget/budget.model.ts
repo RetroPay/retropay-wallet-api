@@ -43,34 +43,18 @@ const budgetModel = new Schema(
         },
       },
     ],
-    budgetMonth: {
-      type: String,
-      enum: [
-        "january",
-        "february",
-        "march",
-        "april",
-        "may",
-        "june",
-        "july",
-        "august",
-        "september",
-        "october",
-        "november",
-        "december",
-      ],
+    endDate: {
+      type: Date,
+      required: true
     },
-    budgetYear: {
-      type: String,
+    startDate: {
+      type: Date,
+      required: true
     },
     budgetUniqueId: {
       type: String,
       required: true,
       unique: true
-    },
-    budgetType: {
-      type: String,
-      required: true
     }
   },
   {

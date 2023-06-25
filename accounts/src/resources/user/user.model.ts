@@ -43,7 +43,7 @@ const UserSchema = new Schema({
     emailVerification: tokenSchema,
     passwordReset: [tokenSchema],
     isIdentityVerified: { type: Boolean, default: false },
-    verificationStatus: { type: String, enum: ['pending', 'rejected', 'verified', 'not started', 'in review'], default: 'not started' },
+    verificationStatus: { type: String, enum: ['pending', 'rejected', 'verified', 'not started'], default: 'not started' },
     transferPermission: { type: Boolean, default: false },
     withdrawPermission: { type: Boolean, default: false },
     customerCode: { type: String, },
