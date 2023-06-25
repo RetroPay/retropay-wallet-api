@@ -9,6 +9,7 @@ import { redisClient, logsnag } from "../../server";
 import billModel from "../bills/bill.model";
 import IBill from "../bills/bill.interface";
 import BillService from "../bills/bill.service";
+import logger from "@/utils/logger";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -332,6 +333,7 @@ class WalletService {
       });
 
       const data = response.data;
+      logger(data)
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) {
@@ -400,6 +402,7 @@ class WalletService {
         createdAt: newTransaction?.createdAt,
       };
     } catch (error) {
+      logger(error)
       await logsnag.publish({
         channel: "failed-requests",
         event: "Transfer failed",

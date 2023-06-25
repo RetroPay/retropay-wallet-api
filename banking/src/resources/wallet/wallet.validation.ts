@@ -22,7 +22,7 @@ const resolveAccountTag = Joi.object({
 })
 
 const withdrawFunds = Joi.object({
-    pin: Joi.string().required(),
+    pin: Joi.string().required().min(4).max(4),
     amount: Joi.number().required(),
     beneficiaryAccount: Joi.string().required(),
     comment: Joi.string().required(), 

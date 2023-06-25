@@ -3,20 +3,22 @@ interface IBudget {
     budgetOwnerId: string
     budgetTheme?: string
     budgetEmoji?: string
-    budgetItems?: {
+    budgetItems: {
+        _id: string
         budgetItemAmount: number
-        budgetItemAmountRemaining: number
+        budgetItemAmountSpent: number
         budgetItemName: string
     }[]
     totalBudgetAmount: number
     budgetAmountSpent: number
     currency: string
-    budgetMonth?: string
-    budgetYear?: string
+    startDate: string
+    endDate: string
     createdAt: string
     budgetUniqueId: string
     id: string
     budgetType: string
+    budgetBalance: number
 }
 
 export default IBudget
