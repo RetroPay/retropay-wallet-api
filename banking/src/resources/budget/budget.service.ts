@@ -186,7 +186,7 @@ class BudgetService {
       console.error(data.message, "error")
       if (!data.status) throw new Error(data.message);
 
-      //update budget
+      // update budget
       const updatedBudget = await budgetModel.findOneAndUpdate(
         { budgetUniqueId },
         { $inc: { totalBudgetAmount: amount, "budgetItems.$[elem].budgetItemAmount": amount } },
@@ -216,6 +216,21 @@ class BudgetService {
       console.error(error, "error")
       throw new Error(
         "We were unable to retrieve this budget, please try again."
+      )
+    }
+  }
+
+  public async getAllBudgets(userId: string): Promise<any> {
+    try {
+      const budgets: IBudget[] | null = await budgetModel.find({ budgetOwnerId: userId})
+
+      if (!budgets) throw new Error("Budgets not found.");
+
+      return budgets
+    } catch (error: any) {
+      console.error(error, "error")
+      throw new Error(
+        "We were unable to retrieve your budgets, please try again."
       )
     }
   }

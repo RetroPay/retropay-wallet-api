@@ -41,6 +41,9 @@ const budgetModel = new Schema(
         budgetItemName: {
           type: String,
         },
+        budgetItemIcon: {
+          type: String,
+        },
       },
     ],
     endDate: {

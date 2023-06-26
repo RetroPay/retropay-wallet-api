@@ -22,6 +22,7 @@ class BudgetController implements IController {
         this.router.post(`${this.path}/create`, validationMiddleware(validate.createBudget), authenticatedMiddleware, kudaTokenHandler, this.createBudget)
         this.router.post(`${this.path}/add-funds`, validationMiddleware(validate.addFundsToBudget), authenticatedMiddleware, kudaTokenHandler, this.topUpBudget)
         this.router.get(`${this.path}/:budgetUniqueId`, authenticatedMiddleware, this.getBudgetDetails)
+        this.router.get(`${this.path}`, authenticatedMiddleware, this.getAllBudgets)
         this.router.post(`${this.path}/transfer`, validationMiddleware(validate.transferFromBudget), authenticatedMiddleware, kudaTokenHandler, this.transferFundsFromBudget)
     }
 
@@ -80,6 +81,24 @@ class BudgetController implements IController {
                 message: "Budget retrieved successfully",
                 data: {
                     budget
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private getAllBudgets = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
+        try {
+            const budgets = await this.budgetService.getAllBudgets(
+                req.user
+            )
+
+            res.status(201).json({
+                success: true,
+                message: "Budgets retrieved successfully",
+                data: {
+                    budgets
                 }
             })
         } catch (error: any) {
