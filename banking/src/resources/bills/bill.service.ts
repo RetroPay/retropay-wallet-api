@@ -162,7 +162,6 @@ class BillService {
       });
 
       const data = response.data;
-      console.log(data);
 
       //  implement error message based on status codes
       if (!data.status) {

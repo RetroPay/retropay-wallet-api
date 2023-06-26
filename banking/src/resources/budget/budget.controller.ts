@@ -19,55 +19,27 @@ class BudgetController implements IController {
     }
 
     private initializeRoutes(): void {
-        this.router.post(`${this.path}/monthly/ngn/create`, validationMiddleware(validate.createMonthBudget), authenticatedMiddleware, kudaTokenHandler, this.createNairaMonthlyBudget)
-        this.router.post(`${this.path}/goal/ngn/create`, validationMiddleware(validate.createGoalBudget), authenticatedMiddleware, kudaTokenHandler, this.createNairaGoalBudget)
-        this.router.post(`${this.path}/goal/ngn/add-funds`, validationMiddleware(validate.addFundsToBudget), authenticatedMiddleware, kudaTokenHandler, this.fundNairaGoalBudget)
-        this.router.post(`${this.path}/monthly/ngn/add-funds`, validationMiddleware(validate.addFundsToBudget), authenticatedMiddleware, kudaTokenHandler, this.fundNairaMonthlyBudget)
+        this.router.post(`${this.path}/create`, validationMiddleware(validate.createBudget), authenticatedMiddleware, kudaTokenHandler, this.createBudget)
+        this.router.post(`${this.path}/add-funds`, validationMiddleware(validate.addFundsToBudget), authenticatedMiddleware, kudaTokenHandler, this.topUpBudget)
         this.router.get(`${this.path}/:budgetUniqueId`, authenticatedMiddleware, this.getBudgetDetails)
+        this.router.get(`${this.path}`, authenticatedMiddleware, this.getAllBudgets)
+        this.router.post(`${this.path}/transfer`, validationMiddleware(validate.transferFromBudget), authenticatedMiddleware, kudaTokenHandler, this.transferFundsFromBudget)
     }
 
-    private createNairaMonthlyBudget = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
+    private createBudget = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
         try {
-            const { budgetName, budgetAmount, budgetYear, budgetMonth, budgetItems } = req.body 
-            const budget: IBudget = await this.budgetService.createNairaMonthlyBudget(
+            const { budgetName, budgetAmount, startDate, endDate, budgetItems, currency } = req.body
+
+            const budget: IBudget = await this.budgetService.createBudget(
                 req.user,
                 req.referenceId,
                 req.k_token,
                 budgetAmount,
-                budgetMonth,
-                budgetYear,
+                startDate,
+                endDate,
                 budgetName,
-                budgetItems
-            )
-            res.status(201).json({
-                success: true,
-                message: "Budget created successfully",
-                data: {
-                    budget: {
-                        budgetName,
-                        totalBudgetAmount: budget.totalBudgetAmount,
-                        currency: budget.currency,
-                        budgetAmountSpent: budget.budgetAmountSpent,
-                        budgetUniqueId: budget.budgetUniqueId,
-                        budgetType: budget.budgetType,
-                        budgetItems: budget.budgetItems
-                    }
-                }
-            })
-        } catch (error: any) {
-            return next(new HttpException(400, error.message))
-        }
-    }
-
-    private createNairaGoalBudget = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
-        try {
-            const { budgetName, budgetAmount } = req.body 
-            const budget: IBudget = await this.budgetService.createNairaGoalBudget(
-                req.user,
-                req.referenceId,
-                req.k_token,
-                budgetAmount,
-                budgetName
+                budgetItems,
+                currency
             )
 
             res.status(201).json({
@@ -81,6 +53,9 @@ class BudgetController implements IController {
                         budgetAmountSpent: budget.budgetAmountSpent,
                         budgetUniqueId: budget.budgetUniqueId,
                         budgetType: budget.budgetType,
+                        budgetItems: budget.budgetItems,
+                        startDate: budget.startDate,
+                        endDate: budget.endDate
                     }
                 }
             })
@@ -93,7 +68,7 @@ class BudgetController implements IController {
         try {
             const { budgetUniqueId } = req.params
 
-            if(!budgetUniqueId || budgetUniqueId === '') throw new Error("Invalid request - budget ID required.")
+            if (!budgetUniqueId || budgetUniqueId === '') throw new Error("Invalid request - budget ID required.")
 
             const budget = await this.budgetService.getBudgetDetails(
                 req.user,
@@ -109,43 +84,40 @@ class BudgetController implements IController {
                 }
             })
         } catch (error: any) {
-            return next(new HttpException(400, error.message)) 
+            return next(new HttpException(400, error.message))
         }
     }
 
-    private fundNairaGoalBudget = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
+    private getAllBudgets = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
         try {
-            const { budgetUniqueId, amount } = req.body;
-
-            const budget = await this.budgetService.fundNairaGoalBudget(
-                req.k_token,
-                amount,
-                budgetUniqueId
+            const budgets = await this.budgetService.getAllBudgets(
+                req.user
             )
-            
+
             res.status(201).json({
                 success: true,
-                message: "Budget funded successfully",
+                message: "Budgets retrieved successfully",
                 data: {
-                    budget
+                    budgets
                 }
             })
         } catch (error: any) {
-            return next(new HttpException(400, error.message))    
+            return next(new HttpException(400, error.message))
         }
     }
 
-    private fundNairaMonthlyBudget = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
+    private topUpBudget = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
         try {
-            const { budgetUniqueId, amount , budgetItemId} = req.body;
+            const { budgetUniqueId, amount, budgetItemId } = req.body;
 
-            const budget = await this.budgetService.fundNairaMonthlyBudget(
+            const budget = await this.budgetService.topUpBudget(
+                req.user,
                 req.k_token,
                 amount,
                 budgetUniqueId,
                 budgetItemId
             )
-            
+
             res.status(201).json({
                 success: true,
                 message: "Budget funded successfully",
@@ -154,7 +126,42 @@ class BudgetController implements IController {
                 }
             })
         } catch (error: any) {
-            return next(new HttpException(400, error.message))    
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private transferFundsFromBudget = async (req: Request | any, res: Response | any, next: NextFunction): Promise<IBudget | void> => {
+        try {
+            const { 
+                budgetUniqueId, 
+                amount, 
+                budgetItemId, 
+                pin,
+                recipientTag,
+                comment,
+                beneficiaryName } = req.body;
+
+            const budget = await this.budgetService.transferFromBudget(
+                req.k_token,
+                budgetUniqueId,
+                budgetItemId,
+                amount,
+                pin,
+                recipientTag,
+                comment,
+                req.user,
+                req.username,
+                req.referenceId,
+                beneficiaryName
+            )
+
+            res.status(200).json({
+                success: true,
+                message: "Transaction successful.",
+                data: budget
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
         }
     }
 }
