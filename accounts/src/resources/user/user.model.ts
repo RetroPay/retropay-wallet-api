@@ -73,7 +73,13 @@ const UserSchema = new Schema({
         documentFrontPicture: String,
         documentBackPicture: String
     },
-    oneSignalDeviceId: String
+    oneSignalDeviceId: String,
+    customCategories: [
+        {
+            name: String,
+            icon: String
+        }
+    ]
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {

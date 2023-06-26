@@ -60,7 +60,13 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false
     },
-    oneSignalDeviceId: String
+    oneSignalDeviceId: String,
+    customCategories: [
+        {
+            name: String,
+            icon: String
+        }
+    ]
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {
