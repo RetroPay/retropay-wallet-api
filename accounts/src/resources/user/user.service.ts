@@ -8,6 +8,7 @@ import moment from "moment";
 import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface";
 import axios from "axios";
 import { v4 } from "uuid";
+import logger from "@/utils/logger";
 
 class UserService {
 
@@ -824,7 +825,7 @@ class UserService {
       );
       if (!updatedUser) throw new Error("Unable to add to favorite.");
 
-      //return ID of favorited recipient
+      // return ID of favorited recipient
       return foundRecipient.id;
     } catch (error: any) {
       throw new Error(
@@ -1030,15 +1031,44 @@ class UserService {
             documentBackPicture,
           }
         },
-        verificationStatus: "pending"
+        verificationStatus: "pending",
+        isIdentityVerified: false
       }, { new: true });
 
       if(!updatedUser) throw new Error("Verification document upload failed. Please try again")
 
-      console.log(updatedUser)
+      logger(updatedUser)
     } catch (error) {
       throw new Error(
         translateError(error)[0] || "Verification document upload failed. Please try again."
+      );
+    }
+  }
+
+  public async addCustomCategory(userId: string, icon: string, categoryName: string): Promise<void> {
+    try {
+      const newCategory = await userModel.findByIdAndUpdate(userId, { $push: { customCategories: { name: categoryName, icon }}},{ new: true }).select("customCategories")
+      
+      if(!newCategory) throw new Error("Custom category creation failed, please try again.")
+
+      logger(newCategory)
+    } catch (error: any) {
+      throw new Error(
+        translateError(error)[0] || "Custom category creation failed, please try again."
+      );
+    }
+  }
+
+  public async retrieveCustomCategories(userId: string): Promise<IUser> {
+    try {
+      const categories = await userModel.findById(userId).select("customCategories")
+
+      if(!categories) throw new Error("Unable to retrieve custom categories")
+
+      return categories
+    } catch (error) {
+      throw new Error(
+        translateError(error)[0] || "Custom category creation failed, please try again."
       );
     }
   }

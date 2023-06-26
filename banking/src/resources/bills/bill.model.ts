@@ -9,9 +9,10 @@ const billSchema = new Schema({
 	customerIdentifier: { type: String,  },
     transactionReference: { type: String, required: true, unique: true },
     narrations: { type: String },
-    instrumentNumber: {type: String },
+    instrumentNumber: { type: String },
     status: { type: String, enum: ["success", "pending", "reversed"]},
-    billCategory: { type: String, required: true }
+    billCategory: { type: String, required: true },
+    payingBank: { type: String }
 }, {
     timestamps: true
 });

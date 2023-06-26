@@ -29,6 +29,10 @@ export default interface IUser {
     isAccountActive:boolean
     verificationStatus? : string
     referenceId: string
+    customCategories: {
+        name: string,
+        icon: string
+    }[]
 
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>

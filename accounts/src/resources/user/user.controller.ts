@@ -13,6 +13,7 @@ import verifyEmailTemplate from "@/templates/verifyEmail.template";
 import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable";
 import { logsnag } from "../../server";
+import logger from "@/utils/logger";
 
 class UserController implements IController {
     public path = "";
@@ -105,11 +106,22 @@ class UserController implements IController {
             authenticatedMiddleware,
             this.uploadProfilePhoto
         );
+        this.router.put(
+            "/user/profile/custom-categories",
+            validationMiddleware(validate.addCustomCategory),
+            authenticatedMiddleware,
+            this.addCustomCategory
+        );
+        this.router.get(
+            "/user/profile/custom-categories",
+            authenticatedMiddleware,
+            this.retrieveCustomCategories
+        );
         this.router.post(
             "/user/profile/kyc",
             authenticatedMiddleware,
             this.uploadVerificationDocumentInfo
-        )
+        );
 
         // Verification
         this.router.get(
@@ -442,6 +454,53 @@ class UserController implements IController {
         }
     };
 
+    private addCustomCategory = async (req: Request | any,
+        res: Response,
+        next: NextFunction
+    ): Promise<IUser | void> => {
+        try {
+            const { name, icon }: { name: string, icon: string } = req.body;
+
+            const updatedUser = await this.UserService.addCustomCategory(
+                req.user,
+                icon,
+                name
+            ) 
+            logger(updatedUser)
+
+            res.status(200).json({
+                success: true,
+                message: "Custom category created successfully.",
+            });
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message));
+        }
+    }
+
+    private retrieveCustomCategories = async (req: Request | any,
+        res: Response,
+        next: NextFunction
+    ): Promise<IUser | void> => {
+        try {
+            const { name, icon }: { name: string, icon: string } = req.body;
+
+            const categories = await this.UserService.retrieveCustomCategories(
+                req.user
+            )
+            
+            delete categories._id
+            logger(categories)
+
+            res.status(200).json({
+                success: true,
+                message: "Custom category retrieved successfully.",
+                data: categories
+            });
+        } catch (error: any) {
+            return next(new HttpExeception(400, error.message));
+        }
+    }
+
     private sendVerifyEmailToken = async (
         req: Request | any,
         res: Response,
@@ -450,7 +509,7 @@ class UserController implements IController {
         try {
             const result: any = await this.UserService.generateEmailToken(req.email);
             if (result.otp) {
-                const emailTemplate = verifyEmailTemplate(result.firstname, result.otp);
+                const emailTemplate: { html: string, text: string } = verifyEmailTemplate(result.firstname, result.otp);
                 const mailService = MailService.getInstance();
                 mailService.sendMail({
                     to: req.email,
