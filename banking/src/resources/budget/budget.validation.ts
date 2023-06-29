@@ -31,8 +31,22 @@ export const transferFromBudget = joi.object({
     beneficiaryName: joi.string().required()
 })
 
+export const withdrawFromBudget = joi.object({
+    budgetUniqueId: joi.string().required(), 
+    amount: joi.number().required(), 
+    budgetItemId: joi.string().required(), 
+    pin: joi.string().required().min(4).max(4),
+    comment: joi.string().required(),
+    beneficiaryName: joi.string().required(),
+    beneficiaryBankCode: joi.string().required(),
+    beneficiaryBank: joi.string().required(),
+    beneficiaryAccount: joi.string().required(),
+    nameEnquiryId: joi.string().required()
+})
+
 export default { 
     createBudget,
     addFundsToBudget,
-    transferFromBudget
+    transferFromBudget,
+    withdrawFromBudget
 }

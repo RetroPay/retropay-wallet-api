@@ -12,7 +12,9 @@ const billSchema = new Schema({
     instrumentNumber: { type: String },
     status: { type: String, enum: ["success", "pending", "reversed"]},
     billCategory: { type: String, required: true },
-    payingBank: { type: String }
+    payingBank: { type: String },
+    billerName: { type: String },
+    billerImageUrl: { type: String },
 }, {
     timestamps: true
 });
