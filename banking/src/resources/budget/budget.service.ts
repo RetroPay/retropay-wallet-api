@@ -28,6 +28,7 @@ class BudgetService {
             currency
           )
 
+          logger(newBudget)
           return newBudget
         }
           break;
@@ -107,6 +108,7 @@ class BudgetService {
         budgetName,
         budgetOwnerId: userId,
         totalBudgetAmount,
+        initialBudgetAmount: totalBudgetAmount,
         currency,
         budgetItems,
         startDate,
@@ -126,7 +128,7 @@ class BudgetService {
 
   public async topUpBudget(userId: string, k_token: string, amount: number, budgetUniqueId: string, budgetItemId: string): Promise<any> {
     try {
-      const budget: IBudget | null = await budgetModel.findOne({ budgetUniqueId }).select("currency budgetOwnerId")
+      const budget: IBudget | null = await budgetModel.findOne({ budgetUniqueId, "budgetItems._id": budgetItemId }).select("currency budgetOwnerId")
 
       if (!budget) throw new Error("Budget not found.")
 
@@ -189,18 +191,31 @@ class BudgetService {
       // update budget
       const updatedBudget = await budgetModel.findOneAndUpdate(
         { budgetUniqueId },
-        { $inc: { totalBudgetAmount: amount, "budgetItems.$[elem].budgetItemAmount": amount } },
+        { 
+          $inc: { 
+            totalBudgetAmount: amount, 
+            "budgetItems.$[elem].budgetItemAmount": amount 
+          }, 
+          "budgetItems.$[elem].isExceeded": true, 
+          $push: {
+            "budgetItems.$[elem].topUpHistory": { 
+              date: Date.now(), 
+              topUpAmount: amount 
+            } 
+          }
+        },
         { arrayFilters: [{ "elem._id": budgetItemId }], new: true }
       ).select("-budgetOwnerId");
 
-      if (!updatedBudget) throw new Error("We were unable to update this budget.")
+      logger(updatedBudget)
+      if (!updatedBudget) throw new Error("Unable to update this budget.")
 
       return updatedBudget
     } catch (error: any) {
       console.error(error, "error")
       throw new Error(
         translateError(error)[0] ||
-        "We were unable to fund this budget, please try again"
+        "Unable to fund this budget, please try again"
       )
     }
   }
@@ -215,7 +230,7 @@ class BudgetService {
     } catch (error: any) {
       console.error(error, "error")
       throw new Error(
-        "We were unable to retrieve this budget, please try again."
+        "Unable to retrieve this budget, please try again."
       )
     }
   }
@@ -224,13 +239,13 @@ class BudgetService {
     try {
       const budgets: IBudget[] | null = await budgetModel.find({ budgetOwnerId: userId})
 
-      if (!budgets) throw new Error("Budgets not found.");
+      if (!budgets) throw new Error("No Budgets found.");
 
       return budgets
     } catch (error: any) {
       console.error(error, "error")
       throw new Error(
-        "We were unable to retrieve your budgets, please try again."
+        "Unable to retrieve your budgets, please try again."
       )
     }
   }
@@ -357,7 +372,7 @@ class BudgetService {
             budgetAmountSpent: amount, 
             "budgetItems.$.budgetItemAmountSpent": amount 
           }
-        }, { new: true })
+        }, { new: true }).select("-budgetOwnerId")
 
       const transaction = await this.walletService.transferFunds(
         formPin,
@@ -369,6 +384,162 @@ class BudgetService {
         referenceId,
         k_token,
         beneficiaryName
+      )
+
+     return {
+      transaction,
+      budget
+     }
+
+    } catch (error) {
+      console.error(error, "error")
+      throw new Error(translateError(error)[0] || "Transfer failed - unable to process transfer.")
+    }
+  }
+
+  // Bank transfer
+  public async withdrawFromBudget( 
+    k_token: string, 
+    budgetUniqueId: string, 
+    budgetItemId: string, 
+    amount: number,
+    formPin: string,
+    comment: string,
+    userId: string,
+    referenceId: string,
+    beneficiaryName: string,
+    beneficiaryAccount: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    nameEnquiryId: string,
+    ): Promise<any> {
+    try {
+      const budget: IBudget | null = await budgetModel.findOne({ 
+          budgetUniqueId, "budgetItems._id": budgetItemId
+        }, 
+        { 
+          budgetItems: { $elemMatch: { _id: budgetItemId }},
+          totalBudgetAmount: 1,
+          currency: 1,
+          budgetAmountSpent: 1,
+          budgetOwnerId: 1,
+          budgetBalance: { $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"] },
+        }
+      )
+
+      logger(budget)
+
+      if (!budget) throw new Error("Budget not found.")
+
+      const { currency, budgetOwnerId, budgetItems, budgetBalance } = budget
+      const budgetItemBalance = budgetItems[0].budgetItemAmount - budgetItems[0].budgetItemAmountSpent
+
+      if(budgetBalance < amount) throw new Error("Transfer failed - Insufficient funds on this budget.")
+
+      if(budgetItemBalance < amount) throw new Error("Transfer failed - Insufficient funds on this budget category.")
+
+      switch (currency.toLocaleLowerCase()) {
+        case "ngn": {
+          const response = await this.withdrawFromNairaBudget(
+            budgetUniqueId,
+            budgetItemId,
+            formPin,
+            referenceId,
+            userId,
+            amount,
+            beneficiaryAccount,
+            comment,
+            beneficiaryBankCode,
+            beneficiaryBank,
+            beneficiaryName,
+            nameEnquiryId,
+            k_token
+          )
+
+          logger(response)
+          return response
+        }
+          break;
+
+        default: throw new Error("Budget not found.")
+          break;
+      }
+
+    } catch (error: any) {
+      console.error(error, "error")
+      throw new Error(
+        translateError(error)[0] || "Transfer failed - unable to process transfer."
+      )
+    }
+  }
+
+  private async withdrawFromNairaBudget(
+    budgetUniqueId: string,
+    budgetItemId: string,
+    formPin: string,
+    referenceId: string,
+    userId: string,
+    amount: number,
+    beneficiaryAccount: string,
+    comment: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    beneficiaryName: string,
+    nameEnquiryId: string,
+    k_token: string
+    ) {
+    try {
+      const response = await axios({
+        method: "POST",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          ServiceType: "PLAIN_SAVE_DEBIT_CREDIT",
+          RequestRef: v4(),
+          data: {
+            amount: amount * 100, // convert to kobo
+            narration: `Spend from budget`,
+            transactionType: "d",
+            savingsId: budgetUniqueId
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${k_token}`,
+        },
+      });
+
+      const data = response.data;
+
+      logger(data)
+
+
+      /**
+       * Failed to move funds from budget account to naira spend balance, but we can't tell our users that lol.
+       */
+      if (!data.status) throw new Error("Transfer failed - Funds have been reversed to your naira spend balance.");
+      
+      const budget = await budgetModel.findOneAndUpdate(
+        { budgetUniqueId, "budgetItems._id":  budgetItemId }, 
+        { $inc: { 
+            budgetAmountSpent: amount, 
+            "budgetItems.$.budgetItemAmountSpent": amount 
+          }
+        }, { new: true }).select("-budgetOwnerId")
+
+      const transaction = await this.walletService.withdrawFunds(
+        formPin,
+        referenceId,
+        userId,
+        amount,
+        beneficiaryAccount,
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        nameEnquiryId,
+        k_token
       )
 
      return {

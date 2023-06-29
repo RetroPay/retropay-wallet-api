@@ -13,11 +13,21 @@ const budgetModel = new Schema(
       ref: "User",
       required: true,
     },
+    initialBudgetAmount: {
+      type: Number,
+      required: true,
+      // default: 0
+    },
     totalBudgetAmount: {
       type: Number, // currency smallest unit. e.g kobo for NGN, cent for USD
       required: true,
       default: 0
     },
+    // isExceeded: {
+    //   type: Boolean,
+    //   required: true,
+    //   default: false
+    // },
     budgetAmountSpent: {
       type: Number,
       required: true,
@@ -44,6 +54,16 @@ const budgetModel = new Schema(
         budgetItemIcon: {
           type: String,
         },
+        isExceeded: {
+          type: Boolean,
+          default: false
+        },
+        topUpHistory: [
+          {
+            date: Date,
+            topUpAmount: Number
+          }
+        ]
       },
     ],
     endDate: {

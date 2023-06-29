@@ -11,4 +11,6 @@ export default interface IBill {
     status: string
     billCategory: string
     createdAt: string
+    billerName: string
+    billerImageUrl: string
 }

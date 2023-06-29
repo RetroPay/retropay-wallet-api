@@ -8,6 +8,11 @@ interface IBudget {
         budgetItemAmount: number
         budgetItemAmountSpent: number
         budgetItemName: string
+        isExceeded: boolean
+        topUpHistory: {
+            date: string
+            topUpAmount: number
+        }[]
     }[]
     totalBudgetAmount: number
     budgetAmountSpent: number
@@ -16,9 +21,11 @@ interface IBudget {
     endDate: string
     createdAt: string
     budgetUniqueId: string
+    initialBudgetAmount: number
     id: string
     budgetType: string
-    budgetBalance: number
+    budgetBalance: number,
+    isExceeded: boolean
 }
 
 export default IBudget
