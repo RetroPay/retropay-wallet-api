@@ -9,7 +9,6 @@ import { redisClient, logsnag } from "../../server";
 import IBill from "./bill.interface";
 import IUser from "../user/user.interface";
 
-
 class BillService {
   /**
    * retrieves the list of all billers by Kuda
@@ -48,20 +47,25 @@ class BillService {
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-        "We were unable to get the bill providers, please try again."
+          "We were unable to get the bill providers, please try again."
       );
     }
   }
 
   /**
-   * 
-   * @param k_token 
-   * @param referenceId 
-   * @param KudaBillItemIdentifier 
-   * @param CustomerIdentification 
+   *
+   * @param k_token
+   * @param referenceId
+   * @param KudaBillItemIdentifier
+   * @param CustomerIdentification
    * @returns customer information, if verification request is successful, customer's identity has been verified
    */
-  public async verifyCustomer(k_token: string, referenceId: string, KudaBillItemIdentifier: string, CustomerIdentification: string) {
+  public async verifyCustomer(
+    k_token: string,
+    referenceId: string,
+    KudaBillItemIdentifier: string,
+    CustomerIdentification: string
+  ) {
     try {
       const response = await axios({
         method: "POST",
@@ -75,7 +79,7 @@ class BillService {
           Data: {
             trackingReference: referenceId,
             KudaBillItemIdentifier,
-            CustomerIdentification
+            CustomerIdentification,
           },
         },
         headers: {
@@ -94,15 +98,15 @@ class BillService {
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-        "We were unable to verify the bill recipient, please try again."
+          "We were unable to verify the bill recipient, please try again."
       );
     }
   }
 
   /**
-   * 
-   * @param formPin 
-   * @param userId 
+   *
+   * @param formPin
+   * @param userId
    * @returns true if pin is correct and false if pin is incorrect
    */
   private async validatePin(formPin: string, userId: string): Promise<boolean> {
@@ -122,19 +126,30 @@ class BillService {
 
   /**
    * Purchase all bill types
-   * @param userId 
-   * @param formPin 
-   * @param k_token 
-   * @param referenceId 
-   * @param phoneNumber 
-   * @param amount 
-   * @param KudaBillItemIdentifier 
-   * @param CustomerIdentification 
-   * @returns 
+   * @param userId
+   * @param formPin
+   * @param k_token
+   * @param referenceId
+   * @param phoneNumber
+   * @param amount
+   * @param KudaBillItemIdentifier
+   * @param CustomerIdentification
+   * @returns
    */
-  public async purchaseBill(userId: string, formPin: string, k_token: string, billCategory: string, referenceId: string, phoneNumber: string, amount: number, KudaBillItemIdentifier: string, CustomerIdentification: string) {
+  public async purchaseBill(
+    userId: string,
+    formPin: string,
+    k_token: string,
+    billCategory: string,
+    referenceId: string,
+    phoneNumber: string,
+    amount: number,
+    KudaBillItemIdentifier: string,
+    CustomerIdentification: string,
+    billerName: string,
+    billerImageUrl: string
+  ) {
     try {
-
       if (!(await this.validatePin(formPin, userId)))
         throw new Error("Transfer failed - Incorrect transaction pin");
 
@@ -153,7 +168,7 @@ class BillService {
             Amount: amount * 100,
             BillItemIdentifier: KudaBillItemIdentifier,
             PhoneNumber: phoneNumber || CustomerIdentification || "",
-            CustomerIdentifier: CustomerIdentification
+            CustomerIdentifier: CustomerIdentification,
           },
         },
         headers: {
@@ -165,54 +180,71 @@ class BillService {
 
       //  implement error message based on status codes
       if (!data.status) {
-        const { responseCode } = data
+        const { responseCode } = data;
 
         switch (String(responseCode)) {
-          case 'k11' || '11': throw new Error('Bill payment failed.')
+          case "k11" || "11":
+            throw new Error("Bill payment failed.");
             break;
-          case '06': throw new Error('Bill payment failed.')
+          case "06":
+            throw new Error("Bill payment failed.");
             break;
-          case 'k12': throw new Error('Your bill payment is currently pending.')
+          case "k12":
+            throw new Error("Your bill payment is currently pending.");
             break;
-          case '51' || 'k51': throw new Error('Payment failed - Insufficient funds on account.')
+          case "51" || "k51":
+            throw new Error("Payment failed - Insufficient funds on account.");
             break;
-          case 'k25' || 'k09': throw new Error('Bill payment failed - invalid customer ID or Phone number.')
+          case "k25" || "k09":
+            throw new Error(
+              "Bill payment failed - invalid customer ID or Phone number."
+            );
             break;
-          case 'k26': throw new Error('Bill payment failed - Please try again.')
+          case "k26":
+            throw new Error("Bill payment failed - Please try again.");
             break;
-          default: throw new Error(data.message)
+          default:
+            throw new Error(data.message);
         }
       }
 
       //save bill transaction
       const newBillPurchase = await billModel.create({
         fundOriginatorAccount: userId,
-        amount: amount,  //amount in naira
+        amount: amount, //amount in naira
         billItemIdentifier: KudaBillItemIdentifier,
         phoneNumber,
         customerIdentifier: CustomerIdentification,
         transactionReference: data.data.reference,
         status: "pending",
-        billCategory
-      })
+        billCategory,
+        billerName,
+        billerImageUrl
+      });
 
       return {
         amount: newBillPurchase.amount,
         phoneNumber,
         customerIdentifier: CustomerIdentification,
         transactionReference: newBillPurchase.transactionReference,
-      }
+      };
 
       // return data.data;
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-        "We're were unable to process your bill purchase, Please try again"
+          "We're were unable to process your bill purchase, Please try again"
       );
     }
   }
 
-  public async updateBillPurchase(k_token: string, payingBank: string, transactionReference: string, narrations: string, instrumentNumber: string): Promise<any> {
+  public async updateBillPurchase(
+    k_token: string,
+    payingBank: string,
+    transactionReference: string,
+    narrations: string,
+    instrumentNumber: string
+  ): Promise<any> {
     try {
       //Get bill purchase status
       const response = await axios({
@@ -225,7 +257,7 @@ class BillService {
           ServiceType: "BILL_TSQ",
           RequestRef: v4(),
           Data: {
-            BillResponseReference: transactionReference
+            BillResponseReference: transactionReference,
           },
         },
         headers: {
@@ -240,37 +272,55 @@ class BillService {
         {
           narrations,
           payingBank,
-          instrumentNumber, status: data.data.HasBeenReserved ? 'reversed' : "success"
-        }, { new: true })
+          instrumentNumber,
+          status: data.data.HasBeenReserved ? "reversed" : "success",
+        },
+        { new: true }
+      );
 
-      if (!transaction) throw new Error('Bill purchase record not found')
+      if (!transaction) throw new Error("Bill purchase record not found");
 
-      const billPurchaser: IUser | null = await userModel.findById(transaction.fundOriginatorAccount)
+      const billPurchaser: IUser | null = await userModel.findById(
+        transaction.fundOriginatorAccount
+      );
 
       return {
-        transactionType: 'BillPurchase',
+        transactionType: "BillPurchase",
         id: billPurchaser?.referenceId,
         amount: transaction.amount,
         oneSignalPlayerId: billPurchaser?.oneSignalDeviceId,
         narrations,
         payingBank,
         createdAt: transaction.createdAt,
-        status: transaction.status
-      }
+        status: transaction.status,
+      };
     } catch (error) {
-      throw new Error(`Unable to process update bill purchase webhook. error: ${error}`);
+      throw new Error(
+        `Unable to process update bill purchase webhook. error: ${error}`
+      );
     }
   }
 
-  public async getBillHistoryById(userId: string, billCategory: string): Promise<IBill[]> {
+  public async getBillHistoryById(
+    userId: string,
+    billCategory: string
+  ): Promise<IBill[]> {
     try {
-      const billHistory: IBill[] = await billModel.find({fundOriginatorAccount: userId, billCategory, $or: [{status: 'success'}, {status: 'reversed'}]}).select("amount narrations billItemIdentifier payingBank createdAt transactionReference phoneNumber")
+      const billHistory: IBill[] = await billModel
+        .find({
+          fundOriginatorAccount: userId,
+          billCategory,
+          $or: [{ status: "success" }, { status: "reversed" }],
+        }).select("-fundOriginatorAccount")
 
-      if(!billHistory) throw new Error("Failed to retrieve bill history, please try again.")
-      
+      if (!billHistory)
+        throw new Error("Failed to retrieve bill history, please try again.");
+
       return billHistory.reverse();
     } catch (error) {
-      throw new Error(`Unable to process update bill purchase webhook. error: ${error}`)
+      throw new Error(
+        `Unable to process update bill purchase webhook. error: ${error}`
+      );
     }
   }
 }

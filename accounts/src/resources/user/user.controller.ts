@@ -919,7 +919,6 @@ class UserController implements IController {
                     return next(new HttpExeception(400, "Unable to upload photo."));
                 }
 
-                console.log(files, fields);
                 // get image file (object)
                 const { frontPicture, backPicture }: any = files;
                 const { country, documentType, documentNumber }: any = fields;
