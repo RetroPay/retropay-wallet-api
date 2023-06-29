@@ -264,11 +264,11 @@ class BillService {
 
   public async getBillHistoryById(userId: string, billCategory: string): Promise<IBill[]> {
     try {
-      const billHistory: IBill[] = await billModel.find({fundOriginatorAccount: userId, billCategory, $or: [{status: 'success'}, {status: 'reversed'}]}).select("amount narrations billItemIdentifier payingBank createdAt transactionReference")
+      const billHistory: IBill[] = await billModel.find({fundOriginatorAccount: userId, billCategory, $or: [{status: 'success'}, {status: 'reversed'}]}).select("amount narrations billItemIdentifier payingBank createdAt transactionReference phoneNumber")
 
       if(!billHistory) throw new Error("Failed to retrieve bill history, please try again.")
       
-      return billHistory;
+      return billHistory.reverse();
     } catch (error) {
       throw new Error(`Unable to process update bill purchase webhook. error: ${error}`)
     }
