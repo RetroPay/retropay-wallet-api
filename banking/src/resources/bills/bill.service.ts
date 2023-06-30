@@ -134,6 +134,7 @@ class BillService {
    * @param amount
    * @param KudaBillItemIdentifier
    * @param CustomerIdentification
+   * @parem narrations
    * @returns
    */
   public async purchaseBill(
@@ -147,7 +148,8 @@ class BillService {
     KudaBillItemIdentifier: string,
     CustomerIdentification: string,
     billerName: string,
-    billerImageUrl: string
+    billerImageUrl: string,
+    narrations: string
   ) {
     try {
       if (!(await this.validatePin(formPin, userId)))
@@ -219,7 +221,8 @@ class BillService {
         status: "pending",
         billCategory,
         billerName,
-        billerImageUrl
+        billerImageUrl,
+        narrations
       });
 
       return {
@@ -227,6 +230,7 @@ class BillService {
         phoneNumber,
         customerIdentifier: CustomerIdentification,
         transactionReference: newBillPurchase.transactionReference,
+        narrations
       };
 
       // return data.data;
@@ -310,7 +314,7 @@ class BillService {
         .find({
           fundOriginatorAccount: userId,
           billCategory,
-          $or: [{ status: "success" }, { status: "reversed" }],
+          // $or: [{ status: "success" }, { status: "reversed" }],
         }).select("-fundOriginatorAccount")
 
       if (!billHistory)
