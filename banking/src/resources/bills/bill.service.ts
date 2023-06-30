@@ -310,7 +310,6 @@ class BillService {
         .find({
           fundOriginatorAccount: userId,
           billCategory,
-          $or: [{ status: "success" }, { status: "reversed" }],
         }).select("-fundOriginatorAccount")
 
       if (!billHistory)
