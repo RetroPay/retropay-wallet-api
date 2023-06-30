@@ -200,7 +200,7 @@ class WebhookController implements IController {
                                     payingBank,
                                     req.k_token
                                 );
-
+                            console.log("transaction", transaction)
                             const { transactionType } = transaction;
 
                             switch (transactionType) {
