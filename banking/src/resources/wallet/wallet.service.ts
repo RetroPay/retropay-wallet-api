@@ -934,8 +934,6 @@ class WalletService {
         transactionReference,
       })
 
-      console.log(transaction, "service transaction")
-      console.log(billTransaction, "bill service transaction")
       
       // If incoming transaction is not payment or bill purchase, kill webhook processing
       if (!transaction  && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");
