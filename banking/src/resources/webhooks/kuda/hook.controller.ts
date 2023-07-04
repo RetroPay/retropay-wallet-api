@@ -39,7 +39,6 @@ class WebhookController implements IController {
         try {
             await webhookModel.create(req.body);
             logger(req.body)
-            console.log(req.body)
 
             res.sendStatus(200);
             const { transactionType } = req.body;
@@ -200,7 +199,6 @@ class WebhookController implements IController {
                                     payingBank,
                                     req.k_token
                                 );
-                            console.log("transaction", transaction)
                             const { transactionType } = transaction;
 
                             switch (transactionType) {
