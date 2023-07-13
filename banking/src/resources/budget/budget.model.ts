@@ -8,6 +8,9 @@ const budgetModel = new Schema(
       type: String,
       required: true,
     },
+    budgetIcon: {
+      type: String,
+    },
     budgetOwnerId: {
       type: Schema.Types.ObjectId,
       ref: "User",

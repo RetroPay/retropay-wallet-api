@@ -1,6 +1,7 @@
 import joi from 'joi'
 
 export const createBudget = joi.object({
+    budgetIcon: joi.string(),
     budgetAmount: joi.number().required(),
     startDate: joi.date().required(),
     endDate: joi.date().required(),
@@ -18,7 +19,7 @@ export const createBudget = joi.object({
 export const addFundsToBudget = joi.object({
     amount: joi.number().required(),
     budgetUniqueId: joi.string().required(),
-    budgetItemId: joi.string()
+    budgetItemId: joi.string().required()
 })
 
 export const transferFromBudget = joi.object({

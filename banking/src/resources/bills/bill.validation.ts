@@ -15,7 +15,9 @@ const billPurchase = Joi.object({
   ),
   billerName: Joi.string().required(),
   billerImageUrl: Joi.string().required(),
-  narrations: Joi.string()
+  narrations: Joi.string(),
+  budgetUniqueId: Joi.string(),
+  budgetItemId: Joi.string(),
 });
 
 const verifyBillCustomer = Joi.object({
