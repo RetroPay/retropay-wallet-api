@@ -126,7 +126,9 @@ class BillController implements IController {
         billCategory,
         billerName,
         billerImageUrl,
-        narrations
+        narrations,
+        budgetUniqueId,
+        budgetItemId
       }: {
         kudaBillItemIdentifier: string;
         customerIdentification: string;
@@ -136,7 +138,9 @@ class BillController implements IController {
         billCategory: string;
         billerName: string;
         billerImageUrl: string;
-        narrations: string
+        narrations: string,
+        budgetUniqueId: string,
+        budgetItemId: string
       } = req.body;
 
       const response: {} = await this.billService.purchaseBill(
@@ -151,7 +155,9 @@ class BillController implements IController {
         customerIdentification,
         billerName,
         billerImageUrl,
-        narrations
+        narrations,
+        budgetUniqueId,
+        budgetItemId
       );
 
       res.status(200).json({

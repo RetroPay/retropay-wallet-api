@@ -7,6 +7,7 @@ import validate from "./budget.validation";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
 import BudgetService from "./budget.service";
 import IBudget from "./budget.interface";
+import logger from "@/utils/logger";
 
 class BudgetController implements IController {
   public path = "/budget";
@@ -42,6 +43,11 @@ class BudgetController implements IController {
       authenticatedMiddleware,
       this.getAllBudgets
     );
+    this.router.get(
+      `${this.path}/transactions/:year/:month`,
+      authenticatedMiddleware,
+      this.budgetTransactionHistory
+    )
     this.router.post(
       `${this.path}/transfer`,
       validationMiddleware(validate.transferFromBudget),
@@ -71,6 +77,7 @@ class BudgetController implements IController {
         endDate,
         budgetItems,
         currency,
+        budgetIcon,
       } = req.body;
 
       const budget: IBudget = await this.budgetService.createBudget(
@@ -82,7 +89,8 @@ class BudgetController implements IController {
         endDate,
         budgetName,
         budgetItems,
-        currency
+        currency,
+        budgetIcon
       );
 
       res.status(201).json({
@@ -264,6 +272,53 @@ class BudgetController implements IController {
         success: true,
         message: "Transaction successful.",
         data: budget,
+      });
+    } catch (error: any) {
+      return next(new HttpException(400, error.message));
+    }
+  };
+
+  private budgetTransactionHistory = async (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ): Promise<IBudget | void> => {
+    try {
+      const { month, year } = req.params;
+
+      logger(req.params)
+
+      if (month == "" || year == "") throw new Error("Invalid request. Include month or year.");
+
+      const months: string[] = [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+      ];
+
+      const monthNumber = months.indexOf(month.toLowerCase());
+      if (monthNumber == -1)
+        throw new Error("Invalid request. Include valid month");
+
+      const result =
+        await this.budgetService.getBudgetTransactionsByMonthAndYear(
+          monthNumber + 1,
+          year,
+          req.user
+        );
+      res.status(200).json({
+        success: true,
+        message: "Budget transactions retrieved successfully",
+        data: result,
       });
     } catch (error: any) {
       return next(new HttpException(400, error.message));

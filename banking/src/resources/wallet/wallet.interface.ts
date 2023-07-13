@@ -20,4 +20,7 @@ export default interface IWallet {
     createdAt?: string
     senderPicture?: string
     recipientProfile?: string
+    isBudgetTransaction?: boolean
+    budgetUniqueId?: string
+    budgetItemId?: string
 }

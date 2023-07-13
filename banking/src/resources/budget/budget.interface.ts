@@ -2,7 +2,7 @@ interface IBudget {
     budgetName: string
     budgetOwnerId: string
     budgetTheme?: string
-    budgetEmoji?: string
+    budgetIcon?: string
     budgetItems: {
         _id: string
         budgetItemAmount: number
