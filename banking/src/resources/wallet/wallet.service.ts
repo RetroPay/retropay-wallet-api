@@ -281,7 +281,10 @@ class WalletService {
     senderTag: string,
     referenceId: string,
     k_token: string,
-    beneficiaryName: string
+    beneficiaryName: string,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
   ): Promise<any> {
     try {
       //find recipient account
@@ -389,6 +392,9 @@ class WalletService {
         processingFees: 15,
         senderProfile: foundUser.profilePhoto?.url,
         recipientProfile: foundRecipient.profilePhoto?.url,
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId
       });
 
       // if transfer is successful, charge transaction fee
@@ -501,7 +507,10 @@ class WalletService {
     beneficiaryBank: string,
     beneficiaryName: string,
     nameEnquiryId: string,
-    k_token: string
+    k_token: string,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
   ): Promise<IWallet | any> {
     try {
       const foundUser = await userModel
@@ -582,8 +591,12 @@ class WalletService {
         beneficiaryAccount,
         responseCode: data.responseCode,
         currency: "NGN",
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId
       });
 
+      logger(newTransaction)
       // if transfer is successful, charge transaction fee
       this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
 

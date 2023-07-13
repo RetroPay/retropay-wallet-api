@@ -8,11 +8,15 @@ import billModel from "./bill.model";
 import { redisClient, logsnag } from "../../server";
 import IBill from "./bill.interface";
 import IUser from "../user/user.interface";
+import BudgetService from "../budget/budget.service";
+import logger from "@/utils/logger";
 
 class BillService {
   /**
    * retrieves the list of all billers by Kuda
    */
+  private budgetService = new BudgetService();
+
   public async getBillProviders(
     k_token: string,
     billCategory: string
@@ -149,11 +153,26 @@ class BillService {
     CustomerIdentification: string,
     billerName: string,
     billerImageUrl: string,
-    narrations: string
+    narrations: string,
+    budgetUniqueId?: string,
+    budgetItemId?: string,
+    currency?: string
   ) {
     try {
       if (!(await this.validatePin(formPin, userId)))
         throw new Error("Transfer failed - Incorrect transaction pin");
+
+      /**
+       * Debit budget account and fund naira spend balance if purchase is from budget
+       */
+      if(budgetUniqueId && budgetItemId) {
+        const updatedBudget = await this.budgetService.debitNairaBudgetAccount(
+          budgetUniqueId,
+          amount,
+          budgetItemId,
+          k_token
+        )
+      }
 
       const response = await axios({
         method: "POST",
@@ -180,7 +199,6 @@ class BillService {
 
       const data = response.data;
 
-      //  implement error message based on status codes
       if (!data.status) {
         const { responseCode } = data;
 
