@@ -295,6 +295,20 @@ class BudgetService {
     try {
       const budgets: IBudget[] | null = await budgetModel.find({
         budgetOwnerId: userId,
+      }, 
+      { 
+        budgetName: 1,
+        initialBudgetAmount: 1,
+        totalBudgetAmount: 1,
+        budgetAmountSpent: 1,
+        budgetItems: 1,
+        endDate: 1,
+        startDate: 1,
+        budgetUniqueId: 1,
+        createdAt: 1,
+        budgetBalance: {
+          $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"],
+        },
       }).select("-budgetOwnerId").sort({ createdAt: -1 });
 
       if (!budgets) throw new Error("No Budgets found.");
