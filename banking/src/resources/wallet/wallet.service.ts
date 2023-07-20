@@ -9,6 +9,7 @@ import { redisClient, logsnag } from "../../server";
 import billModel from "../bills/bill.model";
 import IBill from "../bills/bill.interface";
 import BillService from "../bills/bill.service";
+import logger from "@/utils/logger";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -280,7 +281,10 @@ class WalletService {
     senderTag: string,
     referenceId: string,
     k_token: string,
-    beneficiaryName: string
+    beneficiaryName: string,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
   ): Promise<any> {
     try {
       //find recipient account
@@ -332,6 +336,7 @@ class WalletService {
       });
 
       const data = response.data;
+      logger(data)
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) {
@@ -387,6 +392,9 @@ class WalletService {
         processingFees: 15,
         senderProfile: foundUser.profilePhoto?.url,
         recipientProfile: foundRecipient.profilePhoto?.url,
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId
       });
 
       // if transfer is successful, charge transaction fee
@@ -400,6 +408,7 @@ class WalletService {
         createdAt: newTransaction?.createdAt,
       };
     } catch (error) {
+      logger(error)
       await logsnag.publish({
         channel: "failed-requests",
         event: "Transfer failed",
@@ -498,7 +507,10 @@ class WalletService {
     beneficiaryBank: string,
     beneficiaryName: string,
     nameEnquiryId: string,
-    k_token: string
+    k_token: string,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
   ): Promise<IWallet | any> {
     try {
       const foundUser = await userModel
@@ -579,8 +591,12 @@ class WalletService {
         beneficiaryAccount,
         responseCode: data.responseCode,
         currency: "NGN",
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId
       });
 
+      logger(newTransaction)
       // if transfer is successful, charge transaction fee
       this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
 
@@ -930,6 +946,7 @@ class WalletService {
       const billTransaction: IBill | null = await billModel.findOne({
         transactionReference,
       })
+
       
       // If incoming transaction is not payment or bill purchase, kill webhook processing
       if (!transaction  && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");

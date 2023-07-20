@@ -13,6 +13,11 @@ const billPurchase = Joi.object({
     "electricity",
     "cableTv"
   ),
+  billerName: Joi.string().required(),
+  billerImageUrl: Joi.string().required(),
+  narrations: Joi.string(),
+  budgetUniqueId: Joi.string(),
+  budgetItemId: Joi.string(),
 });
 
 const verifyBillCustomer = Joi.object({

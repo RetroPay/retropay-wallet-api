@@ -2,21 +2,30 @@ interface IBudget {
     budgetName: string
     budgetOwnerId: string
     budgetTheme?: string
-    budgetEmoji?: string
-    budgetItems?: {
+    budgetIcon?: string
+    budgetItems: {
+        _id: string
         budgetItemAmount: number
-        budgetItemAmountRemaining: number
+        budgetItemAmountSpent: number
         budgetItemName: string
+        isExceeded: boolean
+        topUpHistory: {
+            date: string
+            topUpAmount: number
+        }[]
     }[]
     totalBudgetAmount: number
     budgetAmountSpent: number
     currency: string
-    budgetMonth?: string
-    budgetYear?: string
+    startDate: string
+    endDate: string
     createdAt: string
     budgetUniqueId: string
+    initialBudgetAmount: number
     id: string
     budgetType: string
+    budgetBalance: number,
+    isExceeded: boolean
 }
 
 export default IBudget

@@ -8,16 +8,29 @@ const budgetModel = new Schema(
       type: String,
       required: true,
     },
+    budgetIcon: {
+      type: String,
+    },
     budgetOwnerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    initialBudgetAmount: {
+      type: Number,
+      required: true,
+      // default: 0
     },
     totalBudgetAmount: {
       type: Number, // currency smallest unit. e.g kobo for NGN, cent for USD
       required: true,
       default: 0
     },
+    // isExceeded: {
+    //   type: Boolean,
+    //   required: true,
+    //   default: false
+    // },
     budgetAmountSpent: {
       type: Number,
       required: true,
@@ -41,36 +54,33 @@ const budgetModel = new Schema(
         budgetItemName: {
           type: String,
         },
+        budgetItemIcon: {
+          type: String,
+        },
+        isExceeded: {
+          type: Boolean,
+          default: false
+        },
+        topUpHistory: [
+          {
+            date: Date,
+            topUpAmount: Number
+          }
+        ]
       },
     ],
-    budgetMonth: {
-      type: String,
-      enum: [
-        "january",
-        "february",
-        "march",
-        "april",
-        "may",
-        "june",
-        "july",
-        "august",
-        "september",
-        "october",
-        "november",
-        "december",
-      ],
+    endDate: {
+      type: Date,
+      required: true
     },
-    budgetYear: {
-      type: String,
+    startDate: {
+      type: Date,
+      required: true
     },
     budgetUniqueId: {
       type: String,
       required: true,
       unique: true
-    },
-    budgetType: {
-      type: String,
-      required: true
     }
   },
   {

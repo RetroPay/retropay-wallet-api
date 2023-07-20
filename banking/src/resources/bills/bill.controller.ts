@@ -5,7 +5,7 @@ import HttpException from "@/utils/exceptions/http.exception";
 import validationMiddleware from "@/middlewares/validation.middleware";
 import authenticatedMiddleware from "@/middlewares/authenticate.middleware";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
-import validationObject from './bill.validation'
+import validationObject from "./bill.validation";
 import IBill from "./bill.interface";
 
 class BillController implements IController {
@@ -18,10 +18,32 @@ class BillController implements IController {
   }
 
   private initializeRoutes(): void {
-    this.router.get(`${this.path}/categories/:billCategory/providers`, authenticatedMiddleware, kudaTokenHandler, this.getBillProviders);
-    this.router.post(`${this.path}/customer/verify`, validationMiddleware(validationObject.verifyBillCustomer), authenticatedMiddleware, kudaTokenHandler, this.verifyCustomer);
-    this.router.post(`${this.path}/purchase`, validationMiddleware(validationObject.billPurchase), authenticatedMiddleware, kudaTokenHandler, this.purchaseBill)
-    this.router.get(`${this.path}/history/:billCategory`, authenticatedMiddleware, kudaTokenHandler, this.getBillsHistory)
+    this.router.get(
+      `${this.path}/categories/:billCategory/providers`,
+      authenticatedMiddleware,
+      kudaTokenHandler,
+      this.getBillProviders
+    );
+    this.router.post(
+      `${this.path}/customer/verify`,
+      validationMiddleware(validationObject.verifyBillCustomer),
+      authenticatedMiddleware,
+      kudaTokenHandler,
+      this.verifyCustomer
+    );
+    this.router.post(
+      `${this.path}/purchase`,
+      validationMiddleware(validationObject.billPurchase),
+      authenticatedMiddleware,
+      kudaTokenHandler,
+      this.purchaseBill
+    );
+    this.router.get(
+      `${this.path}/history/:billCategory`,
+      authenticatedMiddleware,
+      kudaTokenHandler,
+      this.getBillsHistory
+    );
   }
 
   private getBillProviders = async (
@@ -85,7 +107,7 @@ class BillController implements IController {
         data: customer,
       });
     } catch (error: any) {
-        return next(new HttpException(400, error.message));
+      return next(new HttpException(400, error.message));
     }
   };
 
@@ -101,9 +123,25 @@ class BillController implements IController {
         amount,
         phoneNumber,
         pin,
-        billCategory
-      }: { kudaBillItemIdentifier: string; customerIdentification: string, amount: number, phoneNumber: string, pin: string, billCategory: string } =
-        req.body;
+        billCategory,
+        billerName,
+        billerImageUrl,
+        narrations,
+        budgetUniqueId,
+        budgetItemId
+      }: {
+        kudaBillItemIdentifier: string;
+        customerIdentification: string;
+        amount: number;
+        phoneNumber: string;
+        pin: string;
+        billCategory: string;
+        billerName: string;
+        billerImageUrl: string;
+        narrations: string,
+        budgetUniqueId: string,
+        budgetItemId: string
+      } = req.body;
 
       const response: {} = await this.billService.purchaseBill(
         req.user,
@@ -114,7 +152,12 @@ class BillController implements IController {
         phoneNumber,
         amount,
         kudaBillItemIdentifier,
-        customerIdentification
+        customerIdentification,
+        billerName,
+        billerImageUrl,
+        narrations,
+        budgetUniqueId,
+        budgetItemId
       );
 
       res.status(200).json({
@@ -123,13 +166,16 @@ class BillController implements IController {
         data: response,
       });
     } catch (error: any) {
-        return next(new HttpException(400, error.message));
+      return next(new HttpException(400, error.message));
     }
   };
 
-  private getBillsHistory = async (req: Request | any, res: Response, next: NextFunction): Promise<void> => {
+  private getBillsHistory = async (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-
       const { billCategory }: { billCategory: string | undefined } = req.params;
 
       const allowedCategories: string[] = [
@@ -141,19 +187,21 @@ class BillController implements IController {
       ];
       if (!billCategory || !allowedCategories.includes(billCategory))
         return next(new HttpException(400, "Invalid bill category."));
-      
-      const billHistory = await this.billService.getBillHistoryById(req.user, billCategory);
+
+      const billHistory = await this.billService.getBillHistoryById(
+        req.user,
+        billCategory
+      );
 
       res.status(200).json({
         success: true,
         message: "Transactions retrieved successfully",
-        data: billHistory
-    })
-
+        data: billHistory,
+      });
     } catch (error: any) {
-      return next(new HttpException(400, error.message))
+      return next(new HttpException(400, error.message));
     }
-  }
+  };
 }
 
 export default BillController;

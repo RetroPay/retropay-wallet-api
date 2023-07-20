@@ -14,6 +14,7 @@ import billsHookModel from "./bills-hook.model";
 import BillService from "@/resources/bills/bill.service";
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware";
 import sendPushNotification from "@/services/sendPushNotification";
+import logger from "@/utils/logger";
 
 class WebhookController implements IController {
     public path = "/webhook";
@@ -37,6 +38,7 @@ class WebhookController implements IController {
     ): Promise<IWallet | void> => {
         try {
             await webhookModel.create(req.body);
+            logger(req.body)
 
             res.sendStatus(200);
             const { transactionType } = req.body;
@@ -197,7 +199,6 @@ class WebhookController implements IController {
                                     payingBank,
                                     req.k_token
                                 );
-
                             const { transactionType } = transaction;
 
                             switch (transactionType) {

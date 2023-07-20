@@ -42,7 +42,13 @@ const WalletSchema = new Schema(
     fundsReceivedbyRecipient: {type: Boolean, default: false},
     instrumentNumber: String,
     senderProfile: String,
-    recipientProfile: String
+    recipientProfile: String,
+    isBudgetTransaction: {
+      type: Boolean,
+      default: false
+    },
+    budgetUniqueId: { type: String },
+    budgetItemId: String
   },
   {
     timestamps: true

@@ -82,6 +82,11 @@ const saveDeviceId = Joi.object({
     oneSignalId: Joi.string().required()
 })
 
+const addCustomCategory = Joi.object({
+    name: Joi.string().required(),
+    icon: Joi.string().required()
+})
+
 export default { 
     register,
     login,
@@ -99,5 +104,6 @@ export default {
     addFavorites,
     removeFavorite,
     forgotPin,
-    saveDeviceId
+    saveDeviceId,
+    addCustomCategory
 }
