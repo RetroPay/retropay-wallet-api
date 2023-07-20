@@ -309,6 +309,9 @@ class BudgetService {
         budgetBalance: {
           $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"],
         },
+        budgetPercentageSpent: {
+          $multiply: [ { $divide: ["$budgetAmountSpent", "$totalBudgetAmount"]}, 100]
+        },
       }).select("-budgetOwnerId").sort({ createdAt: -1 });
 
       if (!budgets) throw new Error("No Budgets found.");
@@ -767,7 +770,8 @@ class BudgetService {
   public async getBudgetTransactionsByMonthAndYear(
     month: number,
     year: number,
-    userId: string
+    userId: string,
+    budgetUniqueId: string
   ): Promise<any | null> {
     try {
       const creditTransactions: any = await walletModel
@@ -775,6 +779,7 @@ class BudgetService {
           {
             fundRecipientAccount: userId,
             isBudgetTransaction: true,
+            budgetUniqueId,
             // status: "success",
             $and: [
               { $expr: { $eq: [{ $month: "$createdAt" }, Number(month)] } },
@@ -787,6 +792,9 @@ class BudgetService {
             WebhookAcknowledgement: 0,
             senderWebhookAcknowledgement: 0,
             fundsReceivedbyRecipient: 0,
+            responseCode: 0,
+            isBudgetTransaction: 0,
+            __v: 0
           }
         )
         .sort({ createdAt: -1 });
@@ -796,6 +804,7 @@ class BudgetService {
           {
             fundOriginatorAccount: userId,
             isBudgetTransaction: true,
+            budgetUniqueId,
             // status: "success",
             $and: [
               { $expr: { $eq: [{ $month: "$createdAt" }, Number(month)] } },
@@ -808,6 +817,9 @@ class BudgetService {
             WebhookAcknowledgement: 0,
             senderWebhookAcknowledgement: 0,
             fundsReceivedbyRecipient: 0,
+            responseCode: 0,
+            isBudgetTransaction: 0,
+            __v: 0
           }
         )
         .sort({ createdAt: -1 });
