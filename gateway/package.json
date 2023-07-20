@@ -10,7 +10,7 @@
     "build": "tsc",
     "postinstall": "npm run build"
   },
-  "author": "RetroPay Technologies",
+  "author": "Retrostack Technologies",
   "license": "ISC",
   "dependencies": {
     "compression": "^1.7.4",
