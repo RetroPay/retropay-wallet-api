@@ -47,7 +47,7 @@ class BudgetController implements IController {
       `${this.path}/transactions/:year/:month`,
       authenticatedMiddleware,
       this.budgetTransactionHistory
-    )
+    );
     this.router.post(
       `${this.path}/transfer`,
       validationMiddleware(validate.transferFromBudget),
@@ -61,6 +61,12 @@ class BudgetController implements IController {
       authenticatedMiddleware,
       kudaTokenHandler,
       this.withdrawFundsFromBudget
+    );
+    this.router.put(
+      `${this.path}/edit`,
+      authenticatedMiddleware,
+      kudaTokenHandler,
+      this.editBudget
     );
   }
 
@@ -286,9 +292,10 @@ class BudgetController implements IController {
     try {
       const { month, year } = req.params;
 
-      logger(req.params)
+      logger(req.params);
 
-      if (month == "" || year == "") throw new Error("Invalid request. Include month or year.");
+      if (month == "" || year == "")
+        throw new Error("Invalid request. Include month or year.");
 
       const months: string[] = [
         "january",
@@ -319,6 +326,37 @@ class BudgetController implements IController {
         success: true,
         message: "Budget transactions retrieved successfully",
         data: result,
+      });
+    } catch (error: any) {
+      return next(new HttpException(400, error.message));
+    }
+  };
+
+  private editBudget = async (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ): Promise<IBudget | void> => {
+    try {
+      const { budgetName, budgetIcon } = req.body;
+
+      logger(req.body);
+
+      const budget: IBudget = await this.budgetService.editBudget(
+        req.params.budgetId,
+        budgetName,
+        budgetIcon
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Budget edited successfully",
+        data: {
+          budget: {
+            budgetName,
+            budgetIcon,
+          },
+        },
       });
     } catch (error: any) {
       return next(new HttpException(400, error.message));
