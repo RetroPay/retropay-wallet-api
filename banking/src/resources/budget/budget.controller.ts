@@ -64,8 +64,8 @@ class BudgetController implements IController {
     );
     this.router.put(
       `${this.path}/edit`,
+      validationMiddleware(validate.editBudget),
       authenticatedMiddleware,
-      kudaTokenHandler,
       this.editBudget
     );
   }
@@ -343,7 +343,7 @@ class BudgetController implements IController {
       logger(req.body);
 
       const budget: IBudget = await this.budgetService.editBudget(
-        req.params.budgetId,
+        req.query.budgetId,
         budgetName,
         budgetIcon
       );

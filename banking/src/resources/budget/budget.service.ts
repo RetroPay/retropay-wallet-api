@@ -861,11 +861,13 @@ class BudgetService {
           return doc;
         })
         .catch((err) => {
-          throw new Error(err);
+          throw new Error(
+            translateError(err)[0] || "Unable to edit budget. Please try again."
+          );
         });
     } catch (error) {
       console.error(error, "error");
-      throw new Error(error as any);
+      throw new Error("We were unable to edit this budget, please try again");
     }
   }
 }
