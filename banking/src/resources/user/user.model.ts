@@ -66,7 +66,39 @@ const UserSchema = new Schema({
             name: String,
             icon: String
         }
-    ]
+    ],    
+    currencyAccounts: [
+        {
+            bankName: String,
+            accountNumber: String,
+            accountName: String,
+            currency: { 
+                type: String, 
+                enum: ["USD", "NGN", "NGN-X", "GHC", "KSH", "XAF"]
+            },
+            isActive: {
+                type: Boolean,
+                default: false,
+            },
+            status: {
+                type: String,
+                enum: ["pending", "approved", "declined"]
+            },
+            address: String,
+            bankShortCode: String,
+            bankSwiftCode: String,
+            checkNumber: String,
+            iBan: String,
+            reference: String,
+            sortCode: String,
+            creationDate: Date,
+            referenceId: String,
+            reason: String
+        }
+    ],
+    mapleradCustomerId: {
+        type: String
+    }
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {

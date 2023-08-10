@@ -860,6 +860,8 @@ class UserController implements IController {
                 req.k_token
             );
 
+            logger(createdAccount)
+
             res.status(200).json({
                 success: true,
                 message: "Successfully created nuban account",

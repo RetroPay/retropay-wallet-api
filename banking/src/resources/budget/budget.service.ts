@@ -26,7 +26,7 @@ class BudgetService {
     budgetIcon?: string
   ): Promise<IBudget> {
     try {
-      switch (currency.toLocaleLowerCase()) {
+      switch (currency.toLowerCase()) {
         case "ngn":
           {
             const newBudget = this.createNairaBudgetAccount(
@@ -168,12 +168,13 @@ class BudgetService {
   ): Promise<any> {
     try {
       const budget: IBudget | null = await budgetModel
-        .findOne({ budgetUniqueId, "budgetItems._id": budgetItemId })
-        .select("currency budgetOwnerId");
+        .findOne({ budgetUniqueId, "budgetItems._id": budgetItemId }).select("currency budgetItems")
+
+      logger(budget)
 
       if (!budget) throw new Error("Budget not found.");
 
-      const { currency, budgetOwnerId } = budget;
+      const { currency } = budget;
 
       switch (currency.toLocaleLowerCase()) {
         case "ngn":
@@ -182,7 +183,7 @@ class BudgetService {
               k_token,
               amount,
               budgetUniqueId,
-              budgetItemId
+              budgetItemId,
             );
 
             return updatedBudget;
@@ -206,7 +207,7 @@ class BudgetService {
     k_token: string,
     amount: number,
     budgetUniqueId: string,
-    budgetItemId: string
+    budgetItemId: string,
   ): Promise<any> {
     try {
       const response = await axios({
@@ -256,7 +257,6 @@ class BudgetService {
         )
         .select("-budgetOwnerId");
 
-      logger(updatedBudget);
       if (!updatedBudget) throw new Error("Unable to update this budget.");
 
       return updatedBudget;
