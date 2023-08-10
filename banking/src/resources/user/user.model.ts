@@ -66,7 +66,7 @@ const UserSchema = new Schema({
             name: String,
             icon: String
         }
-    ],
+    ],    
     currencyAccounts: [
         {
             bankName: String,
@@ -74,7 +74,7 @@ const UserSchema = new Schema({
             accountName: String,
             currency: { 
                 type: String, 
-                enum: ["USD", "NGN", "GHC", "KSH", "XAF"]
+                enum: ["USD", "NGN", "NGN-X", "GHC", "KSH", "XAF"]
             },
             isActive: {
                 type: Boolean,
@@ -95,7 +95,10 @@ const UserSchema = new Schema({
             referenceId: String,
             reason: String
         }
-    ]
+    ],
+    mapleradCustomerId: {
+        type: String
+    }
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {

@@ -7,6 +7,8 @@ import authenticatedMiddleware from "@/middlewares/authenticate.middleware"
 import validationMiddleware from "@/middlewares/validation.middleware"
 import validate from "./wallet.validation"
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware"
+import { usdAccountMeta } from "./wallet.type"
+import logger from "@/utils/logger"
 
 class WalletController implements IController {
     public path = '/wallet'
@@ -22,8 +24,10 @@ class WalletController implements IController {
         this.router.get("/wallet/transactions/:reference/status", authenticatedMiddleware, kudaTokenHandler, this.queryTransactionStatus)
         this.router.get("/wallet/transactions/:year/:month", authenticatedMiddleware, this.getTransactionByMonth)
         this.router.get("/wallet/transactions/:reference", authenticatedMiddleware, this.getTransactionDetails)
-
         this.router.get("/wallet/transactions-summary/:year", authenticatedMiddleware, this.getYearTransactionSummary)
+
+        // virtual accounts
+        this.router.post("/wallet/accounts/create", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.createCurrencyAccount), this.createCurrencyAccount)
 
         //wallet balance
         this.router.get("/wallet/balance", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalance)
@@ -206,6 +210,22 @@ class WalletController implements IController {
                 data: {
                     banks,
                 }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private createCurrencyAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<any> => {
+        try {
+            logger("called")
+            const { currency, meta }: { currency: string, meta: usdAccountMeta | undefined} = req.body;
+            logger(currency)
+            logger(meta)
+            const account = await this.walletService.createCurrencyAccount(req.user, "req.map_customer_id", req.k_token, currency, meta)
+            res.status(200).json({
+                success: true,
+                message: "Account created successfully"
             })
         } catch (error: any) {
             return next(new HttpException(400, error.message))

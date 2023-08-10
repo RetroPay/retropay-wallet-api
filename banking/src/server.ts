@@ -9,6 +9,7 @@ import BillController from './resources/bills/bill.controller'
 import BudgetController from './resources/budget/budget.controller'
 import { createClient } from "redis"
 import { LogSnag } from "logsnag"
+import logger from './utils/logger'
 
 validateEnv()
 
@@ -27,7 +28,7 @@ app.createConnection()
 const url = process.env.REDIS_CONNECTION_STRING
 export const redisClient = url != undefined ? createClient({
     url: `${process.env.REDIS_CONNECTION_STRING}`
-}) : createClient()
+}) : createClient(); logger("Local Redis instance used")
 
 
 export const logsnag = new LogSnag({

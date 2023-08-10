@@ -14,7 +14,6 @@ import { usdAccountMeta } from "./wallet.type";
 import IUser from "../user/user.interface";
 
 class WalletService {
-
   public async getTransactionsByMonthandYear(
     month: number,
     year: number,
@@ -255,7 +254,7 @@ class WalletService {
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-        "Sorry. We were unable to retrieve your balance, please try again."
+          "Sorry. We were unable to retrieve your balance, please try again."
       );
     }
   }
@@ -339,7 +338,7 @@ class WalletService {
       });
 
       const data = response.data;
-      logger(data)
+      logger(data);
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) {
@@ -397,7 +396,7 @@ class WalletService {
         recipientProfile: foundRecipient.profilePhoto?.url,
         isBudgetTransaction,
         budgetUniqueId,
-        budgetItemId
+        budgetItemId,
       });
 
       // if transfer is successful, charge transaction fee
@@ -411,7 +410,7 @@ class WalletService {
         createdAt: newTransaction?.createdAt,
       };
     } catch (error) {
-      logger(error)
+      logger(error);
       await logsnag.publish({
         channel: "failed-requests",
         event: "Transfer failed",
@@ -596,10 +595,10 @@ class WalletService {
         currency: "NGN",
         isBudgetTransaction,
         budgetUniqueId,
-        budgetItemId
+        budgetItemId,
       });
 
-      logger(newTransaction)
+      logger(newTransaction);
       // if transfer is successful, charge transaction fee
       this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
 
@@ -623,7 +622,7 @@ class WalletService {
 
       throw new Error(
         translateError(error)[0] ||
-        "Transfer failed - Unable to process transfer."
+          "Transfer failed - Unable to process transfer."
       );
     }
   }
@@ -787,7 +786,7 @@ class WalletService {
     } catch (error: any) {
       throw new Error(
         translateError(error)[0] ||
-        "Network Error - We're unable to the recipient account at the moment."
+          "Network Error - We're unable to the recipient account at the moment."
       );
     }
   }
@@ -831,123 +830,289 @@ class WalletService {
     }
   }
 
-  public async createCurrencyAccount(userId: string, maplerad_customer_id: string, currency: string, meta?: usdAccountMeta): Promise<any> {
+  public async createCurrencyAccount(
+    userId: string,
+    maplerad_customer_id: string,
+    k_token: string,
+    currency: string,
+    meta?: usdAccountMeta
+  ): Promise<any> {
     try {
-      const currencies = ["XAF", "NGN", "USD", "GHC", "KES"]
+      logger(currency);
+      const currencies = ["XAF", "NGN", "USD", "GHC", "KES", "NGN-X"];
 
-      currency = currency.toUpperCase()
+      currency = currency.toUpperCase();
 
-      if (!currencies.includes(currency)) throw new Error("Currency not supported.")
+      if (!currencies.includes(currency))
+        throw new Error("Currency not supported.");
 
-      if (currency === "USD" && meta === undefined) throw new Error("Please provide all required documents to create a USD account.")
+      if (currency === "USD" && meta === undefined)
+        throw new Error(
+          "Provide all required documents to create a USD account."
+        );
 
       const payload: {
         customer_id: string;
         currency: string;
-        meta?: usdAccountMeta
+        meta?: usdAccountMeta;
       } = {
         customer_id: maplerad_customer_id,
         currency,
-      }
+      };
 
-      currency === "USD" ? payload.meta = meta : ''
+      const foundUser = await userModel
+        .findById(userId)
+        .select(
+          "email firstname referenceId lastname phoneNumber nubanAccountDetails isIdentityVerified"
+        );
+      logger(foundUser);
+
+      if (!foundUser)
+        throw new Error(
+          "We were unable to create your account, please try again."
+        );
+
+      if (!foundUser.isIdentityVerified)
+        throw new Error("Complete your KYC to proceed.");
+
+      currency === "USD" ? (payload.meta = meta) : "";
 
       switch (currency.toUpperCase()) {
-        case "USD": {
-          const response = await axios({
-            method: "post",
-            url:
-              process.env.NODE_ENV == "production"
-                ? "https://api.maplerad.com"
-                : "https://sandbox.api.maplerad.com/v1",
-            data: payload,
-            headers: {
-              Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
-            },
-          });
+        case "USD":
+        case "NGN-X":
+          {
+            const response = await axios({
+              method: "post",
+              url:
+                process.env.NODE_ENV == "production"
+                  ? "https://api.maplerad.com"
+                  : "https://sandbox.api.maplerad.com/v1",
+              data: payload,
+              headers: {
+                Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+              },
+            });
 
-          const responseData = response.data;
-          logger(responseData)
-          if (!responseData.status) throw new Error("We were unable to create your account, please try again.");
+            const responseData = response.data;
+            logger(responseData);
+            if (!responseData.status)
+              throw new Error(
+                "We were unable to create your account, please try again."
+              );
 
-          const {
-            id,
-            bank_name,
-            account_number,
-            account_name,
-            currency,
-            created_at,
-          } = responseData.data
+            const {
+              id,
+              bank_name,
+              account_number,
+              account_name,
+              currency,
+              created_at,
+            } = responseData.data;
 
-          const updateUser = await userModel.findOneAndUpdate(
-            { id: userId },
-            {
-              $push: {
-                currencyAccounts: {
-                  bankName: bank_name,
-                  accountNumber: account_number,
-                  accountName: account_name,
-                  referenceId: id,
-                  creationDate: created_at,
-                  currency,
-                  status: "pending",
-                }
+            const updateUser = await userModel.findOneAndUpdate(
+              {
+                _id: userId,
+                $or: [
+                  {
+                    "currencyAccounts.currency": {
+                      $ne: currency,
+                    },
+                  }, // Currency doesn't exist
+                  {
+                    "currencyAccounts.currency": currency,
+                    "currencyAccounts.status": "declined",
+                  }, // Currency exists, but status is declined. (user tried requesting account but was denied, hence they can try again)
+                ],
+              },
+              {
+                $addToSet: {
+                  currencyAccounts: {
+                    bankName: bank_name,
+                    accountNumber: account_number,
+                    accountName: account_name,
+                    referenceId: id,
+                    creationDate: created_at,
+                    currency,
+                    status: "pending",
+                    isActive: false,
+                  },
+                },
               }
-            }
-          )
+            );
 
-          if (!updateUser) throw new Error("We were unable to create your account, please try again.");
+            logger(updateUser?.isModified("currencyAccount"));
 
-          logger(updateUser)
+            if (!updateUser) throw new Error("Account already exists.");
 
-          return;
-        }
+            logger(updateUser);
+
+            return;
+          }
           break;
-        case "NGN": {
+        case "NGN":
+          /*
+           * create Kuda NGN virtual account, account creation is synchronous/instant
+           */
+          {
+            if (foundUser.nubanAccountDetails) {
+              /**
+               * if user already has a nuban (an ngn virtual account), update currencyAccounts array with already created nuban.
+               * */
+              const updatedUser = await userModel.findOneAndUpdate(
+                {
+                  _id: userId,
+                  $or: [
+                    {
+                      "currencyAccounts.currency": {
+                        $ne: currency,
+                      },
+                    },
+                    {
+                      "currencyAccounts.currency": currency,
+                      "currencyAccounts.status": "declined",
+                    },
+                  ],
+                },
+                {
+                  $addToSet: {
+                    currencyAccounts: {
+                      bankName: "Kuda Bank",
+                      accountNumber: foundUser.nubanAccountDetails.nuban,
+                      currency,
+                      isActive: true,
+                      status: "approved",
+                    },
+                  },
+                  $set: { transferPermission: true },
+                },
+                { new: true }
+              );
 
-        }
+              logger(updatedUser);
+
+              throw new Error("NGN account already exists.");
+            }
+
+            const {
+              email,
+              firstname,
+              lastname,
+              middlename,
+              phoneNumber,
+              referenceId,
+            } = foundUser;
+
+            /* Phone numbers are stored with their respective country codes e.g +234, 
+              strip away the country code which is the first 4 characters */
+            const formatPhoneNumber = "0" + phoneNumber?.substring(4);
+
+            const response = await axios({
+              method: "POST",
+              url:
+                process.env.NODE_ENV == "production"
+                  ? "https://kuda-openapi.kuda.com/v2.1"
+                  : "https://kuda-openapi-uat.kudabank.com/v2.1",
+              data: {
+                ServiceType: "ADMIN_CREATE_VIRTUAL_ACCOUNT",
+                RequestRef: v4(),
+                data: {
+                  email,
+                  phoneNumber: formatPhoneNumber,
+                  lastName: lastname.replace(" ", "-"),
+                  firstName: firstname.replace(" ", "-"),
+                  middleName: middlename?.replace(" ", "-") || "",
+                  trackingReference: referenceId,
+                },
+              },
+              headers: {
+                Authorization: `Bearer ${k_token}`,
+              },
+            });
+
+            const data = response.data;
+
+            // if axios call is successful but kuda status returns failed e'g 400 errors
+            if (!data.status) throw new Error(data.message);
+
+            const updatedUser = await userModel.findOneAndUpdate(
+              {
+                _id: userId,
+                $or: [
+                  {
+                    "currencyAccounts.currency": {
+                      $ne: currency,
+                    },
+                  },
+                  {
+                    "currencyAccounts.currency": currency,
+                    "currencyAccounts.status": "declined",
+                  },
+                ],
+              },
+              {
+                nubanAccountDetails: { nuban: data.data.accountNumber },
+                $addToSet: {
+                  currencyAccounts: {
+                    bankName: "Kuda Bank",
+                    accountNumber: data.data.accountNumber,
+                    currency,
+                    isActive: true,
+                    status: "approved",
+                  },
+                },
+                $set: { transferPermission: true },
+              },
+              { new: true }
+            );
+            logger(updatedUser);
+
+            if (!updatedUser) throw new Error("");
+
+            return data.data;
+          }
           break;
         case "GHC":
         case "KES":
-        case "XAF": {
+        case "XAF":
+          {
+            // enable mobile money currency
+            const updateUser = await userModel.findOneAndUpdate(
+              {
+                _id: userId,
+                $or: [
+                  {
+                    "currencyAccounts.currency": {
+                      $ne: currency,
+                    },
+                  },
+                  {
+                    "currencyAccounts.currency": currency,
+                    "currencyAccounts.status": "declined",
+                  },
+                ],
+              },
+              {
+                $addToSet: {
+                  currencyAccounts: {
+                    currency,
+                    isActive: true,
+                    status: "approved",
+                  },
+                },
+              },
+              { new: true }
+            );
 
-        };
+            return;
+          }
           break;
-
-        default: throw new Error("Currency not supported.")
+        default:
+          throw new Error("Currency not supported.");
           break;
       }
-
-
-
-      // save
-
-
-      /**
-       * NGN
-       * "data": {
-          "id": "05859dd9-494e-4378-bb11-09aaea98558e",
-          "bank_name": "WEMA BANK",
-          "account_number": "9003001001",
-          "account_name": "JOHN DOE",
-          "currency": "NGN",
-          "created_at": "2022-03-17T23:26:48.73051-05:00"
-        }
-
-
-        USD
-          "data": {
-            "id": "d8736275-df44-45d7-8e43-d70590edddc1",
-            "bank_name": "Blacktron finance",
-            "account_name": "Jane Doe",
-            "currency": "USD",
-            "status": "PENDING",
-            "created_at": "2023-02-15T12:02:47.171025+01:00"
-          }
-       */
-
     } catch (error: any) {
-
+      console.error(error);
+      throw new Error(error);
     }
   }
 
@@ -1068,23 +1233,31 @@ class WalletService {
       // Check transaction is a bill payment
       const billTransaction: IBill | null = await billModel.findOne({
         transactionReference,
-      })
-
+      });
 
       // If incoming transaction is not payment or bill purchase, kill webhook processing
-      if (!transaction && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");
+      if (!transaction && !billTransaction)
+        throw new Error(
+          "Invalid Transaction: Payment and Bill transaction not found"
+        );
 
       // if incoming transaction is a bill transaction not payment
       if (billTransaction && !transaction) {
         // process bill purchase transaction
-        const billService = new BillService;
-        const processedTransaction = await billService.updateBillPurchase(k_token, payingBank, transactionReference, narrations, instrumentNumber)
+        const billService = new BillService();
+        const processedTransaction = await billService.updateBillPurchase(
+          k_token,
+          payingBank,
+          transactionReference,
+          narrations,
+          instrumentNumber
+        );
 
         return processedTransaction;
       }
 
-      if (!transaction) throw new Error("Invalid transaction: Payment record not found")
-
+      if (!transaction)
+        throw new Error("Invalid transaction: Payment record not found");
 
       // continue processing webhook if incoming transaction is payment and not bill transaction
 
@@ -1106,7 +1279,7 @@ class WalletService {
           senderEmail: foundSender?.email,
           senderPhoneNumber: foundSender?.phoneNumber,
           transactionType: "Withdrawal",
-          oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
+          oneSignalPlayerId: foundSender?.oneSignalDeviceId || null,
         };
       }
 
@@ -1120,9 +1293,8 @@ class WalletService {
         transactionId: transaction.referenceId,
         senderEmail: foundSender?.email,
         senderPhoneNumber: foundSender?.phoneNumber,
-        oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
+        oneSignalPlayerId: foundSender?.oneSignalDeviceId || null,
       };
-
     } catch (error) {
       await logsnag.publish({
         channel: "failed-requests",
