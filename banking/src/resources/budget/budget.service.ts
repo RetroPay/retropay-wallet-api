@@ -149,7 +149,7 @@ class BudgetService {
         endDate,
         budgetUniqueId: data.data.savingsId,
         budgetType: "monthly",
-        budgetIcon
+        budgetIcon,
       });
 
       return newBudget;
@@ -293,26 +293,28 @@ class BudgetService {
 
   public async getAllBudgets(userId: string): Promise<any> {
     try {
-      const budgets: IBudget[] | null = await budgetModel.find({
-        budgetOwnerId: userId,
-      }, 
-      { 
-        budgetName: 1,
-        initialBudgetAmount: 1,
-        totalBudgetAmount: 1,
-        budgetAmountSpent: 1,
-        budgetItems: 1,
-        endDate: 1,
-        startDate: 1,
-        budgetUniqueId: 1,
-        createdAt: 1,
-        budgetBalance: {
-          $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"],
-        },
-        budgetPercentageSpent: {
-          $multiply: [ { $divide: ["$budgetAmountSpent", "$totalBudgetAmount"]}, 100]
-        },
-      }).select("-budgetOwnerId").sort({ createdAt: -1 });
+      const budgets: IBudget[] | null = await budgetModel
+        .find(
+          {
+            budgetOwnerId: userId,
+          },
+          {
+            budgetName: 1,
+            initialBudgetAmount: 1,
+            totalBudgetAmount: 1,
+            budgetAmountSpent: 1,
+            budgetItems: 1,
+            endDate: 1,
+            startDate: 1,
+            budgetUniqueId: 1,
+            createdAt: 1,
+            budgetBalance: {
+              $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"],
+            },
+          }
+        )
+        .select("-budgetOwnerId")
+        .sort({ createdAt: -1 });
 
       if (!budgets) throw new Error("No Budgets found.");
 
@@ -441,9 +443,7 @@ class BudgetService {
         throw new Error("Insufficient funds on this budget.");
 
       if (budgetItemBalance < amount)
-        throw new Error(
-          "Insufficient funds on this budget category."
-        );
+        throw new Error("Insufficient funds on this budget category.");
 
       const response = await axios({
         method: "POST",
@@ -829,6 +829,54 @@ class BudgetService {
       throw new Error(
         translateError(error)[0] || "Unable to retrieve transactions"
       );
+    }
+  }
+
+  public async editBudget(
+    budgetId: string,
+    budgetName?: string,
+    budgetIcon?: string
+  ): Promise<any> {
+    try {
+      const budget = await budgetModel.findOne({ _id: budgetId }).exec();
+
+      if (!budget) {
+        throw new Error("This budget does not exist");
+      }
+
+      let newBudgetName: string = budget.budgetName;
+      let newBudgetIcon: string | undefined = budget.budgetIcon;
+
+      if (budgetName !== undefined && budgetName?.length > 0) {
+        newBudgetName = budgetName;
+      }
+
+      if (budgetIcon !== undefined && budgetIcon?.length > 0) {
+        newBudgetIcon = budgetIcon;
+      }
+
+      return await budgetModel
+        .findOneAndUpdate(
+          { _id: budgetId },
+          {
+            $set: {
+              budgetName: newBudgetName,
+              budgetIcon: newBudgetIcon,
+            },
+          },
+          { new: true }
+        )
+        .then((doc) => {
+          return doc;
+        })
+        .catch((err) => {
+          throw new Error(
+            translateError(err)[0] || "Unable to edit budget. Please try again."
+          );
+        });
+    } catch (error) {
+      console.error(error, "error");
+      throw new Error("We were unable to edit this budget, please try again");
     }
   }
 }
