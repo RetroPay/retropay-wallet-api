@@ -191,7 +191,7 @@ class WalletService {
     reference: string
   ): Promise<IWallet | any> {
     try {
-      const transaction = await walletModel.aggregate([
+      const transaction: IWallet[] = await walletModel.aggregate([
         {
           $match: {
             referenceId: reference,
@@ -202,8 +202,8 @@ class WalletService {
       if (!transaction) throw new Error("Transaction not found.");
 
       if (
-        transaction[0].fundRecipientAccount != userId &&
-        transaction[0].fundOriginatorAccount != userId
+        transaction[0]?.fundRecipientAccount != userId &&
+        transaction[0]?.fundOriginatorAccount != userId
       )
         throw new Error("Unauthorized");
       return transaction[0];
@@ -807,7 +807,8 @@ class WalletService {
           Authorization: `Bearer ${kuda_token}`,
         },
       });
-
+      
+      logger(response)
       if (!response) throw new Error("Unable to retrieve list of banks.");
 
       const kudaBankObject = response.data.data.banks.find((obj: any) => {

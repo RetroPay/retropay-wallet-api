@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { redisClient, logsnag } from '../server'
 import axios from 'axios'
 import HttpException from '@/utils/exceptions/http.exception'
+import logger from '@/utils/logger'
 
 async function kudaTokenHandler(
     req: Request | any,
@@ -26,6 +27,7 @@ async function kudaTokenHandler(
             await redisClient.setEx('K_TOKEN', 720, `${accessToken}`)
         }
         req.k_token = k_token
+        logger(k_token)
         next()
     } catch (error) {
         await logsnag.publish({
