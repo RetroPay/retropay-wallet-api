@@ -9,6 +9,7 @@ import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface
 import axios from "axios";
 import { v4 } from "uuid";
 import logger from "@/utils/logger";
+import { isValidEmail } from "@/utils/emailPolicy";
 
 class UserService {
   public async queueNotification(reqData: {
@@ -97,6 +98,8 @@ class UserService {
         throw new Error(
           "Password is not secure. Include at least one uppercase, lowercase, special character and number."
         );
+      
+        if(!await isValidEmail(email)) throw new Error("Invalid email, please try signing up with a different email")
 
       const newUser: IUser = await userModel.create({
         firstname,
@@ -378,12 +381,12 @@ class UserService {
         { new: true }
       );
 
-      if (!updatedUser) throw new Error("Unable to send reset password mail");
+      if (!updatedUser) throw new Error("Unable to send reset password mail. Please try again");
 
       return { otp: passwordReset.token, firstname: updatedUser.firstname };
     } catch (error) {
       throw new Error(
-        translateError(error)[0] || "Unable to send reset password mail."
+        translateError(error)[0] || "Unable to send reset password mail. Try again."
       );
     }
   }

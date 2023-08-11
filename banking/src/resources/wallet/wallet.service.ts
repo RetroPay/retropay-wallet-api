@@ -807,16 +807,17 @@ class WalletService {
           Authorization: `Bearer ${kuda_token}`,
         },
       });
-      
-      logger(response)
-      if (!response) throw new Error("Unable to retrieve list of banks.");
 
-      const kudaBankObject = response.data.data.banks.find((obj: any) => {
-        return obj.bankName.includes("Kuda." || "Kudimoney(Kudabank)");
+      if (!response.data.status)
+        throw new Error("Unable to retrieve list of banks.");
+
+      const kudaBankObject = await response.data.data.banks.find((obj: {bankCode: string, bankName: string}) => {
+        return obj.bankName == "kuda." || "Kudimoney(Kudabank)";
       });
 
       // Store current Kuda bank code
-      await redisClient.set("kudaBankCode", kudaBankObject.bankCode);
+      if (kudaBankObject)
+        await redisClient.set("kudaBankCode", kudaBankObject.bankCode);
 
       return response.data.data.banks;
     } catch (error: any) {
@@ -827,7 +828,7 @@ class WalletService {
         icon: "😭",
         notify: true,
       });
-      throw new Error("Unable to retrieve list of banks.");
+      throw new Error(error);
     }
   }
 
@@ -941,11 +942,7 @@ class WalletService {
               }
             );
 
-            logger(updateUser?.isModified("currencyAccount"));
-
             if (!updateUser) throw new Error("Account already exists.");
-
-            logger(updateUser);
 
             return;
           }
