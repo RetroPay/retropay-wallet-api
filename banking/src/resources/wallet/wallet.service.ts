@@ -10,7 +10,7 @@ import billModel from "../bills/bill.model";
 import IBill from "../bills/bill.interface";
 import BillService from "../bills/bill.service";
 import logger from "@/utils/logger";
-import { usdAccountMeta } from "./wallet.type";
+import { usdAccountMeta, usdRecipientInfo } from "./wallet.type";
 import IUser from "../user/user.interface";
 
 class WalletService {
@@ -640,6 +640,7 @@ class WalletService {
     k_token: string,
     beneficiaryName: string,
     nameEnquiryId?: string,
+    recipientInfo?: usdRecipientInfo,
     isBudgetTransaction?: boolean,
     budgetUniqueId?: string,
     budgetItemId?: string
@@ -668,8 +669,6 @@ class WalletService {
       const args: Args = {
         currency,
         formPin,
-        // referenceId,
-        // userId,
         amount,
         beneficiaryAccount,
         comment,
@@ -677,10 +676,7 @@ class WalletService {
         beneficiaryBank,
         beneficiaryName,
         nameEnquiryId,
-        // k_token,
-        // isBudgetTransaction?: boolean,
-        // budgetUniqueId?: string,
-        // budgetItemId?: string
+        recipientInfo,
       };
 
       switch (currency) {
@@ -700,18 +696,17 @@ class WalletService {
             //   (key, index) =>
             //     args.hasOwnProperty(key) && args[key] !== undefined
             // );
-            // if(!hasAllRequiredKeys) throw new Error("Incomplete request")
+            // if(!hasAllRequiredKeys) throw new Error(`Incomplete request, provide the required properties for this currency.`)
 
-
-            // check required parameters for ngn currency is passed in request
+            // check that required parameters for ngn currency payments are passed to method
             const errors: string[] = [];
 
-            for (const key in ngnRequiredProperties) {
+            for (const key of ngnRequiredProperties) {
               if (!args.hasOwnProperty(key) || args[key] === undefined)
-                errors.push(`${key} is required.`);
+                errors.push(`${key} is required for this currency.`);
             }
 
-            if(errors.length > 0) throw new Error(errors.toString())
+            if (errors.length > 0) throw new Error(errors.toString());
 
             const response = await this.initialize_ngn_payment(
               referenceId,
@@ -733,9 +728,32 @@ class WalletService {
 
             return response;
           }
-
           break;
+        case "USD":
+          {
+            const usdRequiredProperties: (keyof Args)[] = [
+              "amount",
+              "beneficiaryAccount",
+              "comment",
+              "beneficiaryBankCode",
+              "beneficiaryBank",
+              "beneficiaryName",
+              "recipientInfo",
+            ];
 
+            // check that required parameters for ngn currency payments are passed to method
+            const errors: string[] = [];
+
+            for (const key of usdRequiredProperties) {
+              if (!args.hasOwnProperty(key) || args[key] === undefined)
+                errors.push(`${key} is required for this currency.`);
+            }
+            logger(errors);
+            if (errors.length > 0) throw new Error(errors.toString());
+
+            return "Vibesssssssss";
+          }
+          break;
         default:
           break;
       }
@@ -890,9 +908,86 @@ class WalletService {
     } catch (error: any) {}
   }
 
-  private async initialize_USD_Payment(): Promise<any> {
+  private async initialize_USD_Payment(
+    userId: string,
+    accountNumber: string,
+    bankCode: string,
+    amount: number,
+    reason: string,
+    currency: string,
+    firstname: string,
+    lastname: string,
+    phoneNumber: string,
+    address: string,
+    countryCode: string,
+    recipientInfo: usdRecipientInfo
+  ): Promise<any> {
     try {
-    } catch (error: any) {}
+      const fundSender = await userModel.findById(userId).select("firstname lastname")
+
+      if(!fundSender) throw new Error("Transfer failed - Unable process transfer")
+
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+          requestRef: v4(),
+          data: {
+            account_number: accountNumber,
+            bank_code: bankCode,
+            amount,
+            reason: "retro-trf: " + reason,
+            currency,
+            reference:
+              process.env.NODE_ENV == "development"
+                ? "test-withdrawal" + v4()
+                : "retro-" + v4(),
+            meta: {
+              scheme: "DOM",
+              sender: {
+                first_name: firstname,
+                last_name: lastname,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode
+              },
+              counterparty: {
+                first_name: recipientInfo.first_name,
+                last_name: recipientInfo.last_name,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode
+              }
+            }
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+        },
+      });
+
+      const data = response.data;
+
+      // TO BE CONTINUED....
+
+    } catch (error: any) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw USDfunds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
   }
 
   public async getTransactionStatus(
@@ -1079,7 +1174,7 @@ class WalletService {
       if (!response) throw new Error("Unable to retrieve list of banks.");
 
       const kudaBankObject = response.data.data.banks.find((obj: any) => {
-        return obj.bankName = "Kuda." || "Kudimoney(Kudabank)";
+        return (obj.bankName = "Kuda." || "Kudimoney(Kudabank)");
       });
 
       // Store current Kuda bank code

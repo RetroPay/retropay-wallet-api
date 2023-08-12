@@ -40,7 +40,7 @@ class WalletController implements IController {
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
         this.router.post("/wallet/withdraw", authenticatedMiddleware, validationMiddleware(validate.withdrawFunds), kudaTokenHandler, this.withdrawFunds)
-        this.router.post("/wallet/withdraw/v2", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.withdrawFunds), this.withdrawFundsV2)
+        this.router.post("/wallet/withdraw/v2", authenticatedMiddleware, validationMiddleware(validate.withdrawFundsV2), kudaTokenHandler,this.withdrawFundsV2)
     }
 
     private getTransactionByMonth = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
@@ -175,9 +175,9 @@ class WalletController implements IController {
     
     private withdrawFundsV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
-            const { currency, pin, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryName, beneficiaryBank, nameEnquiryId } = req.body
+            const { currency, pin, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryName, beneficiaryBank, nameEnquiryId, recipientInfo } = req.body
 
-            const transaction = await this.walletService.withdrawFunds_v2(currency, pin, req.referenceId, req.user, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryBank, req.k_token, beneficiaryName, nameEnquiryId)
+            const transaction = await this.walletService.withdrawFunds_v2(currency, pin, req.referenceId, req.user, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryBank, req.k_token, beneficiaryName, nameEnquiryId, recipientInfo)
             
             res.status(201).json({
                 success: true,
