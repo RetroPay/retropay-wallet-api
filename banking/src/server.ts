@@ -26,6 +26,7 @@ const app = new App([
 app.createConnection()
 
 const url = process.env.REDIS_CONNECTION_STRING
+logger(url)
 export const redisClient = url != undefined ? createClient({
     url: `${process.env.REDIS_CONNECTION_STRING}`
 }) : createClient(); logger("Local Redis instance used")

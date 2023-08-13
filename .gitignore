@@ -1,2 +1,3 @@
 banking.env
 accounts.env
+*.rdb

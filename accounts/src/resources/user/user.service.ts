@@ -9,9 +9,9 @@ import ICloudinaryResponse from "@/utils/interfaces/cloudinaryResponse.interface
 import axios from "axios";
 import { v4 } from "uuid";
 import logger from "@/utils/logger";
+import { isValidEmail } from "@/utils/emailPolicy";
 
 class UserService {
-
   public async queueNotification(reqData: {
     id: string;
     trType: string;
@@ -98,6 +98,8 @@ class UserService {
         throw new Error(
           "Password is not secure. Include at least one uppercase, lowercase, special character and number."
         );
+      
+        if(!await isValidEmail(email)) throw new Error("Invalid email, please try signing up with a different email")
 
       const newUser: IUser = await userModel.create({
         firstname,
@@ -152,7 +154,7 @@ class UserService {
           { username: reqData.emailOrUsername },
         ],
       });
-      
+
       if (!foundUser) throw new Error("Incorrect username or password");
 
       if (foundUser.isAccountActive == false)
@@ -362,30 +364,29 @@ class UserService {
 
   public async forgotPassword(reqData: {
     email: string;
-  }): Promise<{ otp: string, firstname: string }> {
+  }): Promise<{ otp: string; firstname: string } | undefined> {
     try {
       const foundUser: any = await userModel.findOne({ email: reqData.email });
-      if (foundUser) {
-        const passwordReset = {
-          token: generateOtp(5),
-          expires: moment(new Date()).add(5, "m").toDate(),
-        };
 
-        const updatedUser = await userModel.findOneAndUpdate(
-          { email: foundUser.email },
-          { $push: { passwordReset } },
-          { new: true }
-        );
+      if (!foundUser) return; // Email doesn't exist, but don't throw error.
 
-        if (!updatedUser) throw new Error("Unable to send reset password mail");
+      const passwordReset = {
+        token: generateOtp(5),
+        expires: moment(new Date()).add(5, "m").toDate(),
+      };
 
-        return { otp: passwordReset.token, firstname: updatedUser.firstname };
-      } else {
-        throw new Error("Unable to send reset password mail");
-      }
+      const updatedUser = await userModel.findOneAndUpdate(
+        { email: foundUser.email },
+        { $push: { passwordReset } },
+        { new: true }
+      );
+
+      if (!updatedUser) throw new Error("Unable to send reset password mail. Please try again");
+
+      return { otp: passwordReset.token, firstname: updatedUser.firstname };
     } catch (error) {
       throw new Error(
-        translateError(error)[0] || "Unable to send reset password mail."
+        translateError(error)[0] || "Unable to send reset password mail. Try again."
       );
     }
   }
@@ -499,7 +500,7 @@ class UserService {
 
   public async generatePhoneTokenSms(
     userId: string,
-    phoneNumber: string,
+    phoneNumber: string
   ): Promise<object | null> {
     try {
       const foundUser = await userModel
@@ -531,7 +532,9 @@ class UserService {
       });
 
       if (response.data.code !== "ok")
-        throw new Error("We were unable to send a verification token, please try again.");
+        throw new Error(
+          "We were unable to send a verification token, please try again."
+        );
 
       const phoneVerification = {
         token,
@@ -545,7 +548,9 @@ class UserService {
       );
 
       if (!updatedUser)
-        throw new Error("We were unable to send a verification token, please try again.");
+        throw new Error(
+          "We were unable to send a verification token, please try again."
+        );
 
       return {
         otp: phoneVerification.token,
@@ -554,12 +559,16 @@ class UserService {
       };
     } catch (error: any) {
       throw new Error(
-        translateError(error)[0] || "We were unable to send a verification token, please try again."
+        translateError(error)[0] ||
+          "We were unable to send a verification token, please try again."
       );
     }
   }
 
-  public async generatePhoneTokenVoice (userId: string, phoneNumber: string): Promise<void> {
+  public async generatePhoneTokenVoice(
+    userId: string,
+    phoneNumber: string
+  ): Promise<void> {
     try {
       const foundUser = await userModel
         .findById(userId)
@@ -575,7 +584,7 @@ class UserService {
       const termiiPayload = {
         api_key: process.env.TERMII_API_KEY,
         phone_number: phoneNumber,
-        code: Number(token)
+        code: Number(token),
       };
 
       const response = await axios({
@@ -585,7 +594,9 @@ class UserService {
       });
 
       if (response.data.code !== "ok")
-        throw new Error("We were unable to send a verification token, please try again.");
+        throw new Error(
+          "We were unable to send a verification token, please try again."
+        );
 
       const phoneVerification = {
         token,
@@ -599,10 +610,13 @@ class UserService {
       );
 
       if (!updatedUser)
-        throw new Error("We were unable to send a verification token, please try again.");
+        throw new Error(
+          "We were unable to send a verification token, please try again."
+        );
     } catch (error) {
       throw new Error(
-        translateError(error)[0] || "We were unable to send a verification token, please try again."
+        translateError(error)[0] ||
+          "We were unable to send a verification token, please try again."
       );
     }
   }
@@ -933,7 +947,11 @@ class UserService {
 
   public async cancelKyc(id: string): Promise<void> {
     try {
-      const user = await userModel.findByIdAndUpdate(id, { verificationStatus: "not started" }, {new: true})
+      const user = await userModel.findByIdAndUpdate(
+        id,
+        { verificationStatus: "not started" },
+        { new: true }
+      );
     } catch (error) {
       throw new Error(
         translateError(error)[0] || "Unable to update verification status."
@@ -976,7 +994,11 @@ class UserService {
             const updatedUser = await userModel.findOneAndUpdate(
               { username: accountTag },
               {
-                $set: { isIdentityVerified: true, withdrawPermission: true, verificationStatus: "verified" },
+                $set: {
+                  isIdentityVerified: true,
+                  withdrawPermission: true,
+                  verificationStatus: "verified",
+                },
               },
               { new: true }
             );
@@ -1005,74 +1027,112 @@ class UserService {
     }
   }
 
-  public async saveUserDeviceId (id: string, oneSignalDeviceId: string): Promise<void> {
+  public async saveUserDeviceId(
+    id: string,
+    oneSignalDeviceId: string
+  ): Promise<void> {
     try {
-      const updatedUser = await userModel.findByIdAndUpdate(id, { oneSignalDeviceId, $set: { isPushNotificationAllowed: true } }, { new: true })
+      const updatedUser = await userModel.findByIdAndUpdate(
+        id,
+        { oneSignalDeviceId, $set: { isPushNotificationAllowed: true } },
+        { new: true }
+      );
 
-      if(!updatedUser) throw new Error("Unable to allow notification, please try again.")
+      if (!updatedUser)
+        throw new Error("Unable to allow notification, please try again.");
 
-      return
+      return;
     } catch (error) {
       throw new Error(
-        translateError(error)[0] || "Unable to allow notification, please try again."
+        translateError(error)[0] ||
+          "Unable to allow notification, please try again."
       );
     }
   }
 
-  public async uploadVerificationDocument(userId: string, country: string, documentType: string, documentNumber: string, documentFrontPicture: any, documentBackPicture: any): Promise<void> {
+  public async uploadVerificationDocument(
+    userId: string,
+    country: string,
+    documentType: string,
+    documentNumber: string,
+    documentFrontPicture: any,
+    documentBackPicture: any
+  ): Promise<void> {
     try {
-      const updatedUser = await userModel.findByIdAndUpdate(userId, {
-        $set: {
-          verificationInformation: {
-            country,
-            documentType,
-            documentNumber,
-            documentFrontPicture,
-            documentBackPicture,
-          }
+      const updatedUser = await userModel.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            verificationInformation: {
+              country,
+              documentType,
+              documentNumber,
+              documentFrontPicture,
+              documentBackPicture,
+            },
+          },
+          verificationStatus: "pending",
+          isIdentityVerified: false,
         },
-        verificationStatus: "pending",
-        isIdentityVerified: false
-      }, { new: true });
+        { new: true }
+      );
 
-      if(!updatedUser) throw new Error("Verification document upload failed. Please try again")
+      if (!updatedUser)
+        throw new Error(
+          "Verification document upload failed. Please try again"
+        );
 
-      logger(updatedUser)
+      logger(updatedUser);
     } catch (error) {
       throw new Error(
-        translateError(error)[0] || "Verification document upload failed. Please try again."
+        translateError(error)[0] ||
+          "Verification document upload failed. Please try again."
       );
     }
   }
 
-  public async addCustomCategory(userId: string, icon: string, categoryName: string): Promise<void> {
+  public async addCustomCategory(
+    userId: string,
+    icon: string,
+    categoryName: string
+  ): Promise<void> {
     try {
-      const newCategory = await userModel.findByIdAndUpdate(userId, { $push: { customCategories: { name: categoryName, icon }}},{ new: true }).select("customCategories")
-      
-      if(!newCategory) throw new Error("Custom category creation failed, please try again.")
+      const newCategory = await userModel
+        .findByIdAndUpdate(
+          userId,
+          { $push: { customCategories: { name: categoryName, icon } } },
+          { new: true }
+        )
+        .select("customCategories");
 
-      logger(newCategory)
+      if (!newCategory)
+        throw new Error("Custom category creation failed, please try again.");
+
+      logger(newCategory);
     } catch (error: any) {
       throw new Error(
-        translateError(error)[0] || "Custom category creation failed, please try again."
+        translateError(error)[0] ||
+          "Custom category creation failed, please try again."
       );
     }
   }
 
   public async retrieveCustomCategories(userId: string): Promise<IUser> {
     try {
-      const categories = await userModel.findById(userId).select("customCategories")
+      const categories = await userModel
+        .findById(userId)
+        .select("customCategories");
 
-      if(!categories) throw new Error("Unable to retrieve custom categories")
+      if (!categories) throw new Error("Unable to retrieve custom categories");
 
-      return categories
+      return categories;
     } catch (error) {
       throw new Error(
-        translateError(error)[0] || "Custom category creation failed, please try again."
+        translateError(error)[0] ||
+          "Custom category creation failed, please try again."
       );
     }
   }
-
 }
 
 export default UserService;
