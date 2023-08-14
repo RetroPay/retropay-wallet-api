@@ -10,7 +10,7 @@ import billModel from "../bills/bill.model";
 import IBill from "../bills/bill.interface";
 import BillService from "../bills/bill.service";
 import logger from "@/utils/logger";
-import { usdAccountMeta } from "./wallet.type";
+import { usdAccountMeta, usdRecipientInfo } from "./wallet.type";
 import IUser from "../user/user.interface";
 
 class WalletService {
@@ -191,7 +191,7 @@ class WalletService {
     reference: string
   ): Promise<IWallet | any> {
     try {
-      const transaction = await walletModel.aggregate([
+      const transaction: IWallet[] = await walletModel.aggregate([
         {
           $match: {
             referenceId: reference,
@@ -202,8 +202,8 @@ class WalletService {
       if (!transaction) throw new Error("Transaction not found.");
 
       if (
-        transaction[0].fundRecipientAccount != userId &&
-        transaction[0].fundOriginatorAccount != userId
+        transaction[0]?.fundRecipientAccount != userId &&
+        transaction[0]?.fundOriginatorAccount != userId
       )
         throw new Error("Unauthorized");
       return transaction[0];
@@ -627,6 +627,369 @@ class WalletService {
     }
   }
 
+  public async withdrawFunds_v2(
+    currency: string,
+    formPin: string,
+    referenceId: string,
+    userId: string,
+    amount: number,
+    beneficiaryAccount: string,
+    comment: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    k_token: string,
+    beneficiaryName: string,
+    nameEnquiryId?: string,
+    recipientInfo?: usdRecipientInfo,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
+  ): Promise<IWallet | any> {
+    try {
+      logger(currency);
+      const currencies = ["XAF", "NGN", "USD", "GHC", "KES", "NGN-X"];
+
+      currency = currency.toUpperCase();
+
+      if (!currencies.includes(currency))
+        throw new Error("Currency not supported.");
+
+      const foundUser = await userModel
+        .findById(userId)
+        .select("firstname lastname");
+      if (!foundUser) throw new Error("Unable to process transaction.");
+
+      if ((await this.validatePin(formPin, userId)) == false)
+        throw new Error("Transfer failed - Incorrect transaction pin");
+
+      interface Args {
+        [key: string]: any;
+      }
+
+      const args: Args = {
+        currency,
+        formPin,
+        amount,
+        beneficiaryAccount,
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        nameEnquiryId,
+        recipientInfo,
+      };
+
+      switch (currency) {
+        case "NGN":
+          {
+            const ngnRequiredProperties: (keyof Args)[] = [
+              "amount",
+              "beneficiaryAccount",
+              "comment",
+              "beneficiaryBankCode",
+              "beneficiaryBank",
+              "beneficiaryName",
+              "nameEnquiryId",
+            ];
+
+            // const hasAllRequiredKeys: boolean = ngnRequiredProperties.every(
+            //   (key, index) =>
+            //     args.hasOwnProperty(key) && args[key] !== undefined
+            // );
+            // if(!hasAllRequiredKeys) throw new Error(`Incomplete request, provide the required properties for this currency.`)
+
+            // check that required parameters for ngn currency payments are passed to method
+            const errors: string[] = [];
+
+            for (const key of ngnRequiredProperties) {
+              if (!args.hasOwnProperty(key) || args[key] === undefined)
+                errors.push(`${key} is required for this currency.`);
+            }
+
+            if (errors.length > 0) throw new Error(errors.toString());
+
+            const response = await this.initialize_ngn_payment(
+              referenceId,
+              userId,
+              amount,
+              beneficiaryAccount,
+              comment,
+              beneficiaryBankCode,
+              beneficiaryBank,
+              beneficiaryName,
+              k_token,
+              foundUser.firstname,
+              foundUser.lastname,
+              nameEnquiryId,
+              isBudgetTransaction,
+              budgetUniqueId,
+              budgetItemId
+            );
+
+            return response;
+          }
+          break;
+        case "USD":
+          {
+            const usdRequiredProperties: (keyof Args)[] = [
+              "amount",
+              "beneficiaryAccount",
+              "comment",
+              "beneficiaryBankCode",
+              "beneficiaryBank",
+              "beneficiaryName",
+              "recipientInfo",
+            ];
+
+            // check that required parameters for ngn currency payments are passed to method
+            const errors: string[] = [];
+
+            for (const key of usdRequiredProperties) {
+              if (!args.hasOwnProperty(key) || args[key] === undefined)
+                errors.push(`${key} is required for this currency.`);
+            }
+            logger(errors);
+            if (errors.length > 0) throw new Error(errors.toString());
+
+            return "Vibesssssssss";
+          }
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw funds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
+  private async initialize_ngn_payment(
+    referenceId: string,
+    userId: string,
+    amount: number,
+    beneficiaryAccount: string,
+    comment: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    beneficiaryName: string,
+    k_token: string,
+    firstname: string,
+    lastname: string,
+    nameEnquiryId?: string,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
+  ): Promise<IWallet | any> {
+    try {
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+          requestRef: v4(),
+          data: {
+            trackingReference: referenceId, //Unique identifier of user with Kuda
+            beneficiaryAccount,
+            amount: amount * 100, //amount in Kobo
+            narration: "retro-trf: " + comment,
+            beneficiaryBankCode,
+            beneficiaryName,
+            senderName: lastname + " " + firstname,
+            nameEnquiryId,
+            clientFeeCharge: 10 * 100,
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${k_token}`,
+        },
+      });
+
+      const data = response.data;
+
+      //if axios call is successful but kuda status returns failed e'g 400 errors
+      if (!data.status) {
+        const { responseCode } = data;
+
+        switch (responseCode) {
+          case "-1":
+            throw new Error("Transfer failed - Transaction cancelled.");
+            break;
+          case "-2":
+          case "51":
+            throw new Error("Transfer failed. Insufficient funds");
+            break;
+          case "-3":
+            throw new Error("Transfer failed - Unable to process transaction");
+            break;
+          case "91":
+            throw new Error("Transfer failed - Request timeout.");
+            break;
+          default:
+            throw new Error(
+              "Transfer error - We were unable to process your transaction, please try again."
+            );
+        }
+      }
+
+      const newTransaction = await walletModel.create({
+        fundOriginatorAccount: userId,
+        amount,
+        transactionType: "withdrawal",
+        status: "pending",
+        referenceId:
+          process.env.NODE_ENV == "development"
+            ? "test-withdrawal" + v4()
+            : data.transactionReference,
+        processingFees: 30,
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        nameEnquiryId,
+        beneficiaryAccount,
+        responseCode: data.responseCode,
+        currency: "NGN",
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId,
+      });
+
+      logger(newTransaction);
+      // if transfer is successful, charge transaction fee
+      // this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
+
+      return {
+        amount,
+        transactionId: data.transactionReference,
+        beneficiaryName,
+        beneficiaryBank,
+        beneficiaryAccount,
+        transactionType: "Withdrawal",
+        createdAt: newTransaction?.createdAt,
+      };
+    } catch (error) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw funds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
+  private async initialize_NGN_X_payment(): Promise<any> {
+    /** Method processes ngn-x payments */
+    try {
+    } catch (error: any) {}
+  }
+
+  private async initialize_Mobile_Money_payment(): Promise<any> {
+    /** Method processes all mobile money currency payments */
+    try {
+    } catch (error: any) {}
+  }
+
+  private async initialize_USD_Payment(
+    userId: string,
+    accountNumber: string,
+    bankCode: string,
+    amount: number,
+    reason: string,
+    currency: string,
+    firstname: string,
+    lastname: string,
+    phoneNumber: string,
+    address: string,
+    countryCode: string,
+    recipientInfo: usdRecipientInfo
+  ): Promise<any> {
+    try {
+      const fundSender = await userModel.findById(userId).select("firstname lastname")
+
+      if(!fundSender) throw new Error("Transfer failed - Unable process transfer")
+
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+          requestRef: v4(),
+          data: {
+            account_number: accountNumber,
+            bank_code: bankCode,
+            amount,
+            reason: "retro-trf: " + reason,
+            currency,
+            reference:
+              process.env.NODE_ENV == "development"
+                ? "test-withdrawal" + v4()
+                : "retro-" + v4(),
+            meta: {
+              scheme: "DOM",
+              sender: {
+                first_name: firstname,
+                last_name: lastname,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode
+              },
+              counterparty: {
+                first_name: recipientInfo.first_name,
+                last_name: recipientInfo.last_name,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode
+              }
+            }
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+        },
+      });
+
+      const data = response.data;
+
+      // TO BE CONTINUED....
+
+    } catch (error: any) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw USDfunds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
   public async getTransactionStatus(
     userId: string,
     k_token: string,
@@ -811,7 +1174,7 @@ class WalletService {
       if (!response) throw new Error("Unable to retrieve list of banks.");
 
       const kudaBankObject = response.data.data.banks.find((obj: any) => {
-        return obj.bankName.includes("Kuda." || "Kudimoney(Kudabank)");
+        return (obj.bankName = "Kuda." || "Kudimoney(Kudabank)");
       });
 
       // Store current Kuda bank code

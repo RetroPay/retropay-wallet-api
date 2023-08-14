@@ -638,7 +638,7 @@ class BudgetService {
           "Transfer failed - Insufficient funds on this budget category."
         );
 
-      switch (currency.toLocaleLowerCase()) {
+      switch (currency.toLowerCase()) {
         case "ngn":
           {
             const response = await this.withdrawFromNairaBudget(

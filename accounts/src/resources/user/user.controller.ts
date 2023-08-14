@@ -416,9 +416,9 @@ class UserController implements IController {
             const result: {
                 otp: string;
                 firstname: string;
-            } | null = await this.UserService.forgotPassword(req.body);
+            } | undefined = await this.UserService.forgotPassword(req.body);
 
-            if (result.otp) {
+            if (result) {
                 const emailTemplate = passwordResetEmail(result.firstname, result.otp);
                 const mailService = MailService.getInstance();
                 mailService.sendMail({
@@ -428,6 +428,8 @@ class UserController implements IController {
                     html: emailTemplate.html,
                 });
             }
+
+            // even if email doesn't exist, this is still the response
             res.status(200).json({
                 success: true,
                 message: "Reset password email sent",

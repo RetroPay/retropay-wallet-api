@@ -32,6 +32,25 @@ const withdrawFunds = Joi.object({
   beneficiaryBank: Joi.string().required(),
 });
 
+const withdrawFundsV2 = Joi.object({
+  currency: Joi.string().required().valid("NGN", "XAF", "USD", "KSH", "GHC"),
+  pin: Joi.string().required().min(4).max(4),
+  amount: Joi.number().required(),
+  beneficiaryAccount: Joi.string().required(),
+  comment: Joi.string().required(),
+  beneficiaryBankCode: Joi.string().required(),
+  beneficiaryName: Joi.string().required(),
+  nameEnquiryId: Joi.string(),
+  beneficiaryBank: Joi.string().required(),
+  recipientInfo: Joi.object({
+    first_name: Joi.string(),
+    last_name: Joi.string(),
+    address: Joi.string(),
+    phone_number: Joi.string(),
+    country: "NG",
+  }),
+});
+
 const createCurrencyAccount = Joi.object({
   currency: Joi.string().required().valid("NGN", "USD", "GHC", "KSH", "XAF"),
   meta: Joi.object({
@@ -39,11 +58,11 @@ const createCurrencyAccount = Joi.object({
     utility_bill: Joi.string(), //image url or file
     bank_statement: Joi.string(), //pdf url or file
     identity_type: Joi.string(), // only passport can be used right now
-    identity_image: Joi.string(),// passport photo url or file
+    identity_image: Joi.string(), // passport photo url or file
     identity_number: Joi.string(), //passport number
     identity_issued_date: Joi.date(), //passport issuance date. Format: YYYY-MM-DD,
     identity_expiration: Joi.date(),
-  })
+  }),
 });
 
 export default {
@@ -53,4 +72,5 @@ export default {
   withdrawFunds,
   resolveAccountTag,
   createCurrencyAccount,
+  withdrawFundsV2,
 };
