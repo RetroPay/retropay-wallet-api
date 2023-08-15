@@ -12,7 +12,7 @@ export default interface IUser {
     profilePhoto?: {
         url: string
     }
-    phoneNumber?: string
+    phoneNumber: string
     bankAccounts?: object
     pin?: number
     username?: string
@@ -33,6 +33,14 @@ export default interface IUser {
     favoritedRecipients?: string[]
     isAccountActive: boolean
     oneSignalDeviceId: string
+    verificationInformation: {
+        country: string
+        documentType: string
+        documentNumber: string
+        documentFrontPicture: string
+        documentBackPicture: string
+        address: string
+    }
     currencyAccounts: 
         {
             bankName: string

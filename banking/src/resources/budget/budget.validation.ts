@@ -10,8 +10,8 @@ export const createBudget = joi.object({
     currency: joi.string().valid(
         "NGN", 
         "USD", 
-        "GHC", 
-        "KSH", 
+        "GHS", 
+        "KES", 
         "XAF"
     ).required()
 })

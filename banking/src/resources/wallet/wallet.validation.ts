@@ -15,6 +15,7 @@ const transferFunds = Joi.object({
 const resolveAccount = Joi.object({
   bankCode: Joi.string().required(),
   accountNumber: Joi.string().required(),
+  currency: Joi.string()
 });
 
 const resolveAccountTag = Joi.object({
@@ -33,7 +34,7 @@ const withdrawFunds = Joi.object({
 });
 
 const withdrawFundsV2 = Joi.object({
-  currency: Joi.string().required().valid("NGN", "XAF", "USD", "KSH", "GHC"),
+  currency: Joi.string().required().valid("NGN", "XAF", "USD", "KES", "GHS"),
   pin: Joi.string().required().min(4).max(4),
   amount: Joi.number().required(),
   beneficiaryAccount: Joi.string().required(),
@@ -47,12 +48,13 @@ const withdrawFundsV2 = Joi.object({
     last_name: Joi.string(),
     address: Joi.string(),
     phone_number: Joi.string(),
-    country: "NG",
-  }),
+    country: Joi.string(),
+    name: Joi.string()
+  })
 });
 
 const createCurrencyAccount = Joi.object({
-  currency: Joi.string().required().valid("NGN", "USD", "GHC", "KSH", "XAF"),
+  currency: Joi.string().required().valid("NGN", "USD", "GHS", "KES", "XAF"),
   meta: Joi.object({
     occupation: Joi.string(),
     utility_bill: Joi.string(), //image url or file

@@ -11,7 +11,7 @@ const WalletSchema = new Schema(
       enum: ['funding', 'withdrawal', 'transfer'],
       required: true
     },
-    currency: {type: String, enum: ['NGN', 'USD', 'GHC', 'KSH', 'XAF']},
+    currency: {type: String, enum: ['NGN', 'USD', 'GHS', 'KES', 'XAF']},
     fundRecipientAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     fundOriginatorAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     status: {
@@ -26,6 +26,7 @@ const WalletSchema = new Schema(
       type: Number,
       required: true
     },
+    scheme: { type: String, enum: ["DOM", "MOBILEMONEY", "BANK"] },
     referenceId: { type: String, unique: true, required: true },
     comment: { type: String },
     recepientTag: { type: String },

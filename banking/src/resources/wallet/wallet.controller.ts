@@ -38,7 +38,11 @@ class WalletController implements IController {
 
         //wallet withdrawals
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
+        this.router.post("/wallet/bank/resolve-account/v2", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccountV2)
+
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
+        this.router.get("/wallet/banks/list/v2", authenticatedMiddleware, kudaTokenHandler, this.getBankListV2)
+
         this.router.post("/wallet/withdraw", authenticatedMiddleware, validationMiddleware(validate.withdrawFunds), kudaTokenHandler, this.withdrawFunds)
         this.router.post("/wallet/withdraw/v2", authenticatedMiddleware, validationMiddleware(validate.withdrawFundsV2), kudaTokenHandler,this.withdrawFundsV2)
     }
@@ -206,6 +210,21 @@ class WalletController implements IController {
         }
     }
 
+    private resolveBankAccountV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const accountDetails = await this.walletService.resolveAccountNumber(req.body.currency, req.body.accountNumber, req.body.bankCode, req.referenceId, req.k_token)
+            res.status(200).json({
+                success: true,
+                message: "Bank account resolved successfully.",
+                data: {
+                    accountDetails
+                }
+            })
+        } catch (error :any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
     private resolveAccountTag = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const accountDetails = await this.walletService.confirmTransferRecipientByAccountTag(req.body.accountTag, req.k_token, req.referenceId)
@@ -224,6 +243,28 @@ class WalletController implements IController {
     private getBankList = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const banks = await this.walletService.getBankList(req.k_token)
+            res.status(200).json({
+                success: true,
+                message: "Bank list retrieved successfully",
+                data: {
+                    banks,
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private getBankListV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const { currency, countryCode } = req.query;
+            logger(currency + countryCode)
+
+            if(currency === undefined) throw new Error("Currency not supported.")
+
+            if(currency.toUpperCase() === "XAF" && countryCode === undefined) throw new Error("Include valid country code.")
+
+            const banks = await this.walletService.getBankListV2(req.k_token, currency, countryCode)
             res.status(200).json({
                 success: true,
                 message: "Bank list retrieved successfully",

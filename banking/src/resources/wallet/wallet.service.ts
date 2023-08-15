@@ -12,6 +12,8 @@ import BillService from "../bills/bill.service";
 import logger from "@/utils/logger";
 import { usdAccountMeta, usdRecipientInfo } from "./wallet.type";
 import IUser from "../user/user.interface";
+import { calculateFees } from "@/utils/feeCalculator";
+import { checkCurrenciesAvailability } from "@/utils/checkCurrency";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -647,7 +649,7 @@ class WalletService {
   ): Promise<IWallet | any> {
     try {
       logger(currency);
-      const currencies = ["XAF", "NGN", "USD", "GHC", "KES", "NGN-X"];
+      const currencies = ["XAF", "NGN", "USD", "GHS", "KES", "NGN_X"];
 
       currency = currency.toUpperCase();
 
@@ -655,9 +657,23 @@ class WalletService {
         throw new Error("Currency not supported.");
 
       const foundUser = await userModel
-        .findById(userId)
-        .select("firstname lastname");
-      if (!foundUser) throw new Error("Unable to process transaction.");
+        .findOne({
+          id: userId,
+          "currencyAccounts.currency": currency,
+          "currencyAccounts.status": "approved",
+          "currencyAccounts.isActive": true,
+        })
+        .select(
+          "firstname lastname phoneNumber verificationInformation isIdentityVerified currencyAccounts"
+        );
+
+      if (!foundUser)
+        throw new Error(
+          `Create an active ${currency} account to make payments.`
+        );
+
+      if (!foundUser.isIdentityVerified)
+        throw new Error(`Verify your identity to proceed.`);
 
       if ((await this.validatePin(formPin, userId)) == false)
         throw new Error("Transfer failed - Incorrect transaction pin");
@@ -691,12 +707,6 @@ class WalletService {
               "beneficiaryName",
               "nameEnquiryId",
             ];
-
-            // const hasAllRequiredKeys: boolean = ngnRequiredProperties.every(
-            //   (key, index) =>
-            //     args.hasOwnProperty(key) && args[key] !== undefined
-            // );
-            // if(!hasAllRequiredKeys) throw new Error(`Incomplete request, provide the required properties for this currency.`)
 
             // check that required parameters for ngn currency payments are passed to method
             const errors: string[] = [];
@@ -751,9 +761,99 @@ class WalletService {
             logger(errors);
             if (errors.length > 0) throw new Error(errors.toString());
 
-            return "Vibesssssssss";
+            const initializationResponse = await this.initialize_USD_Payment(
+              userId,
+              beneficiaryAccount,
+              beneficiaryBankCode,
+              beneficiaryBank,
+              beneficiaryName,
+              amount,
+              comment,
+              foundUser.firstname,
+              foundUser.lastname,
+              foundUser?.phoneNumber,
+              foundUser?.verificationInformation.address,
+              foundUser?.verificationInformation.country,
+              recipientInfo
+            );
+
+            logger(initializationResponse);
+
+            return initializationResponse;
           }
           break;
+        case "XAF":
+        case "GHS":
+        case "KES":
+          {
+            const mobileMoneyRequiredProperties: (keyof Args)[] = [
+              "amount",
+              "beneficiaryAccount",
+              "comment",
+              "beneficiaryBankCode",
+              "beneficiaryBank",
+              "beneficiaryName",
+              "recipientInfo",
+            ];
+
+            // check that required parameters for ngn currency payments are passed to method
+            const errors: string[] = [];
+
+            for (const key of mobileMoneyRequiredProperties) {
+              if (!args.hasOwnProperty(key) || args[key] === undefined)
+                errors.push(`${key} is required for this currency.`);
+            }
+            logger(errors);
+            if (errors.length > 0) throw new Error(errors.toString());
+
+            const response = await this.initialize_mobile_money_payment(
+              currency,
+              userId,
+              beneficiaryAccount,
+              beneficiaryBankCode,
+              beneficiaryBank,
+              beneficiaryName,
+              amount,
+              comment,
+              recipientInfo
+            );
+          }
+          break;
+        case "NGN_X": {
+          const ngn_xRequiredProperties: (keyof Args)[] = [
+            "amount",
+            "beneficiaryAccount",
+            "comment",
+            "beneficiaryBankCode",
+            "beneficiaryBank",
+            "beneficiaryName",
+          ];
+
+          // check that required parameters for ngn currency payments are passed to method
+          const errors: string[] = [];
+
+          for (const key of ngn_xRequiredProperties) {
+            if (!args.hasOwnProperty(key) || args[key] === undefined)
+              errors.push(`${key} is required for this currency.`);
+          }
+          logger(errors);
+          if (errors.length > 0) throw new Error(errors.toString());
+
+          const initializationResponse = await this.initialize_NGN_X_payment(
+            currency,
+            userId,
+            beneficiaryAccount,
+            beneficiaryBankCode,
+            beneficiaryBank,
+            beneficiaryName,
+            amount,
+            comment
+          );
+
+          logger(initializationResponse);
+
+          return initializationResponse;
+        }
         default:
           break;
       }
@@ -868,8 +968,6 @@ class WalletService {
       });
 
       logger(newTransaction);
-      // if transfer is successful, charge transaction fee
-      // this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
 
       return {
         amount,
@@ -896,73 +994,145 @@ class WalletService {
     }
   }
 
-  private async initialize_NGN_X_payment(): Promise<any> {
-    /** Method processes ngn-x payments */
-    try {
-    } catch (error: any) {}
-  }
-
-  private async initialize_Mobile_Money_payment(): Promise<any> {
-    /** Method processes all mobile money currency payments */
-    try {
-    } catch (error: any) {}
-  }
-
-  private async initialize_USD_Payment(
-    userId: string,
-    accountNumber: string,
-    bankCode: string,
-    amount: number,
-    reason: string,
+  private async initialize_NGN_X_payment(
     currency: string,
-    firstname: string,
-    lastname: string,
-    phoneNumber: string,
-    address: string,
-    countryCode: string,
-    recipientInfo: usdRecipientInfo
+    userId: string,
+    beneficiaryAccountNumber: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    beneficiaryName: string,
+    amount: number,
+    comment: string
   ): Promise<any> {
-    try {
-      const fundSender = await userModel.findById(userId).select("firstname lastname")
+    /** Method processes ngn-x payments */
 
-      if(!fundSender) throw new Error("Transfer failed - Unable process transfer")
+    try {
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://api.maplerad.com/v1/transfers"
+            : "https://sandbox.api.maplerad.com/v1/transfers",
+        data: {
+          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+          requestRef: v4(),
+          data: {
+            account_number: beneficiaryAccountNumber,
+            bank_code: beneficiaryBankCode,
+            amount,
+            reason: "retro-trf: " + comment,
+            currency: "NGN",
+            reference:
+              process.env.NODE_ENV == "development"
+                ? "test-withdrawal" + v4()
+                : "retro-trf" + v4(),
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+        },
+      });
+
+      const data = response.data;
+      logger(data);
+
+      if (!data.status) throw new Error("Transfer failed");
+
+      const newTransaction = await walletModel.create({
+        fundOriginatorAccount: userId,
+        amount,
+        transactionType: "withdrawal",
+        status: "pending",
+        referenceId:
+          process.env.NODE_ENV == "development"
+            ? "test-withdrawal" + v4()
+            : data.transactionReference,
+        processingFees: await calculateFees("USD", amount),
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        beneficiaryAccountNumber,
+        currency,
+        scheme: "BANK",
+      });
+
+      logger(newTransaction);
+
+      return {
+        amount,
+        transactionId: data.reference,
+        beneficiaryName,
+        beneficiaryBank,
+        beneficiaryAccountNumber,
+        transactionType: "Withdrawal",
+        createdAt: newTransaction?.createdAt,
+      };
+    } catch (error: any) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw USDfunds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
+  private async initialize_mobile_money_payment(
+    currency: string,
+    userId: string,
+    beneficiaryAccountNumber: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    beneficiaryName: string,
+    amount: number,
+    comment: string,
+    recipientInfo: usdRecipientInfo | undefined,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
+  ): Promise<any> {
+    /** Method initializes transfer for all mobile money currencies. */
+
+    try {
+      const fundSender = await userModel
+        .findById(userId)
+        .select("firstname lastname");
+
+      if (!fundSender)
+        throw new Error("Transfer failed - Unable process transfer");
 
       const response = await axios({
         method: "post",
         url:
           process.env.NODE_ENV == "production"
-            ? "https://kuda-openapi.kuda.com/v2.1"
-            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+            ? "https://api.maplerad.com/v1/transfers"
+            : "https://sandbox.api.maplerad.com/v1/transfers",
         data: {
           serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
           requestRef: v4(),
           data: {
-            account_number: accountNumber,
-            bank_code: bankCode,
+            account_number: beneficiaryAccountNumber,
+            bank_code: beneficiaryBankCode,
             amount,
-            reason: "retro-trf: " + reason,
+            reason: "retro-trf: " + comment,
             currency,
             reference:
               process.env.NODE_ENV == "development"
                 ? "test-withdrawal" + v4()
-                : "retro-" + v4(),
+                : "retro-trf" + v4(),
             meta: {
-              scheme: "DOM",
-              sender: {
-                first_name: firstname,
-                last_name: lastname,
-                address,
-                phone_number: phoneNumber,
-                country: countryCode
-              },
+              scheme: "MOBILEMONEY",
               counterparty: {
-                first_name: recipientInfo.first_name,
-                last_name: recipientInfo.last_name,
-                address,
-                phone_number: phoneNumber,
-                country: countryCode
-              }
-            }
+                name: `${recipientInfo?.first_name} ${recipientInfo?.last_name}`,
+              },
+            },
           },
         },
         headers: {
@@ -972,8 +1142,158 @@ class WalletService {
 
       const data = response.data;
 
-      // TO BE CONTINUED....
+      if (!data.status) throw new Error("Transfer failed");
+      logger(data);
 
+      const newTransaction = await walletModel.create({
+        fundOriginatorAccount: userId,
+        amount,
+        transactionType: "withdrawal",
+        status: "pending",
+        referenceId:
+          process.env.NODE_ENV == "development"
+            ? "test-withdrawal" + v4()
+            : data.transactionReference,
+        processingFees: await calculateFees(currency, amount),
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        beneficiaryAccountNumber,
+        currency,
+        scheme: "MOBILEMONEY",
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId,
+      });
+
+      logger(newTransaction);
+
+      return {
+        amount,
+        transactionId: data.reference,
+        beneficiaryName,
+        beneficiaryBank,
+        beneficiaryAccountNumber,
+        transactionType: "Withdrawal",
+        createdAt: newTransaction?.createdAt,
+      };
+    } catch (error: any) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw USDfunds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
+  private async initialize_USD_Payment(
+    userId: string,
+    beneficiaryAccountNumber: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    beneficiaryName: string,
+    amount: number,
+    comment: string,
+    firstname: string,
+    lastname: string,
+    phoneNumber: string,
+    address: string,
+    countryCode: string,
+    recipientInfo: usdRecipientInfo | undefined,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
+  ): Promise<any> {
+    try {
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://api.maplerad.com/v1/transfers"
+            : "https://sandbox.api.maplerad.com/v1/transfers",
+        data: {
+          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+          requestRef: v4(),
+          data: {
+            account_number: beneficiaryAccountNumber,
+            bank_code: beneficiaryBankCode,
+            amount,
+            reason: "retro-trf: " + comment,
+            currency: "USD",
+            reference:
+              process.env.NODE_ENV == "development"
+                ? "test-withdrawal" + v4()
+                : "retro-trf" + v4(),
+            meta: {
+              scheme: "DOM",
+              sender: {
+                first_name: firstname,
+                last_name: lastname,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode,
+              },
+              counterparty: {
+                first_name: recipientInfo?.first_name,
+                last_name: recipientInfo?.last_name,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode,
+              },
+            },
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+        },
+      });
+
+      const data = response.data;
+      logger(data);
+
+      if (!data.status) throw new Error("Transfer failed");
+
+      const newTransaction = await walletModel.create({
+        fundOriginatorAccount: userId,
+        amount,
+        transactionType: "withdrawal",
+        status: "pending",
+        referenceId:
+          process.env.NODE_ENV == "development"
+            ? "test-withdrawal" + v4()
+            : data.transactionReference,
+        processingFees: await calculateFees("USD", amount),
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        beneficiaryAccountNumber,
+        currency: "USD",
+        scheme: "DOM",
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId,
+      });
+
+      logger(newTransaction);
+
+      return {
+        amount,
+        transactionId: data.reference,
+        beneficiaryName,
+        beneficiaryBank,
+        beneficiaryAccountNumber,
+        transactionType: "Withdrawal",
+        createdAt: newTransaction?.createdAt,
+      };
     } catch (error: any) {
       await logsnag.publish({
         channel: "failed-requests",
@@ -1081,6 +1401,102 @@ class WalletService {
       return data.data;
     } catch (error: any) {
       throw new Error("Unable to resolve bank account. Try again.");
+    }
+  }
+
+  public async resolveAccountNumber(
+    currency: string,
+    accountNumber: string,
+    bankCode: string,
+    referenceId: string,
+    k_token: string
+  ): Promise<any> {
+    try {
+      await checkCurrenciesAvailability(currency);
+
+      switch (currency) {
+        case "NGN":
+          {
+            const response = await axios({
+              method: "POST",
+              url:
+                process.env.NODE_ENV == "production"
+                  ? "https://kuda-openapi.kuda.com/v2.1"
+                  : "https://kuda-openapi-uat.kudabank.com/v2.1",
+              data: {
+                ServiceType: "NAME_ENQUIRY",
+                RequestRef: v4(),
+                data: {
+                  beneficiaryAccountNumber: accountNumber,
+                  beneficiaryBankCode: bankCode,
+                  SenderTrackingReference: referenceId,
+                  isRequestFromVirtualAccount: true,
+                },
+              },
+              headers: {
+                Authorization: `Bearer ${k_token}`,
+              },
+            });
+            const data = response.data;
+
+            //if axios call is successful but kuda status returns failed e'g 400 errors
+            if (!data.status) throw new Error(data.message);
+
+            return data.data;
+          }
+          break;
+        case "USD":
+        case "XAF":
+        case "GHS":
+        case "KES":
+        case "NGN_X":
+          {
+            return await this.mapleradAccountResolution(
+              accountNumber,
+              bankCode
+            );
+          }
+          break;
+        default: throw new Error("Currency not supported.")
+          break;
+      }
+    } catch (error: any) {
+      throw new Error(
+        translateError(error)[0] || "Unable to resolve account details."
+      );
+    }
+
+  }
+
+  private async mapleradAccountResolution(
+    accountNumber: string,
+    bankCode: string
+  ): Promise<any> {
+    try {
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://api.maplerad.com/v1/institutions/resolve"
+            : "https://sandbox.api.maplerad.com/v1/institutions/resolve",
+        data: {
+          account_number: accountNumber,
+          bank_code: bankCode,
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+        },
+      });
+
+      logger(response)
+
+      if (!response.data.status) throw new Error(response.data.message);
+
+      return response.data.data;
+    } catch (error: any) {
+      throw new Error(
+        translateError(error)[0] || "Unable to resolve account details."
+      );
     }
   }
 
@@ -1193,6 +1609,119 @@ class WalletService {
     }
   }
 
+  public async getBankListV2(
+    kuda_token: string,
+    currency: string,
+    countryCode?: string
+  ): Promise<any> {
+    try {
+      await checkCurrenciesAvailability(currency);
+
+      switch (currency) {
+        case "NGN":
+          {
+            const response = await axios({
+              method: "post",
+              url:
+                process.env.NODE_ENV == "production"
+                  ? "https://kuda-openapi.kuda.com/v2.1"
+                  : "https://kuda-openapi-uat.kudabank.com/v2.1",
+              data: {
+                serviceType: "BANK_LIST",
+                requestRef: v4(),
+              },
+              headers: {
+                Authorization: `Bearer ${kuda_token}`,
+              },
+            });
+
+            if (!response) throw new Error("Unable to retrieve list of banks.");
+
+            const kudaBankObject = response.data.data.banks.find((obj: any) => {
+              return (obj.bankName = "Kuda." || "Kudimoney(Kudabank)");
+            });
+
+            // Store current Kuda bank code
+            await redisClient.set("kudaBankCode", kudaBankObject.bankCode);
+
+            return response.data.data.banks;
+          }
+
+          break;
+        case "GHS":
+          {
+            return await this.getMapleradInstitutionList("GH", "MOMO");
+          }
+          break;
+        case "KES":
+          {
+            return await this.getMapleradInstitutionList("KE", "MOMO");
+          }
+          break;
+        case "XAF":
+          {
+            return await this.getMapleradInstitutionList(
+              countryCode || "CM",
+              "MOMO"
+            );
+          }
+          break;
+        case "USD":
+          {
+            return await this.getMapleradInstitutionList("NG", "DOM");
+          }
+          break;
+        case "NGN_X":
+          {
+            return await this.getMapleradInstitutionList("NG", "nuban");
+          }
+          break;
+
+        default:
+          break;
+      }
+    } catch (error: any) {
+      logger(error);
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Bank list failed",
+        description: `Unable to retrieve bank list from Kuda. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+      throw new Error(error.message);
+    }
+  }
+
+  private async getMapleradInstitutionList(
+    countryCode: string,
+    type: string
+  ): Promise<[]> {
+    try {
+      const response = await axios({
+        method: "get",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://api.maplerad.com/v1/institutions"
+            : "https://sandbox.api.maplerad.com/v1/institutions",
+        params: {
+          country: countryCode,
+          type,
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+        },
+      });
+
+      if (!response) throw new Error("Unable to retrieve list of operators.");
+
+      return response.data.data;
+    } catch (error: any) {
+      logger(error);
+      throw new Error("Unable to retrieve list of operators.");
+    }
+  }
+
   public async createCurrencyAccount(
     userId: string,
     maplerad_customer_id: string,
@@ -1202,7 +1731,7 @@ class WalletService {
   ): Promise<any> {
     try {
       logger(currency);
-      const currencies = ["XAF", "NGN", "USD", "GHC", "KES", "NGN-X"];
+      const currencies = ["XAF", "NGN", "USD", "GHS", "KES", "NGN_X"];
 
       currency = currency.toUpperCase();
 
@@ -1220,7 +1749,7 @@ class WalletService {
         meta?: usdAccountMeta;
       } = {
         customer_id: maplerad_customer_id,
-        currency,
+        currency: currency == "NGN_X" ? "NGN" : currency,
       };
 
       const foundUser = await userModel
@@ -1242,14 +1771,14 @@ class WalletService {
 
       switch (currency.toUpperCase()) {
         case "USD":
-        case "NGN-X":
+        case "NGN_X":
           {
             const response = await axios({
               method: "post",
               url:
                 process.env.NODE_ENV == "production"
-                  ? "https://api.maplerad.com"
-                  : "https://sandbox.api.maplerad.com/v1",
+                  ? "https://api.maplerad.com/v1/collections/virtual-account"
+                  : "https://sandbox.api.maplerad.com/v1/collections/virtual-account",
               data: payload,
               headers: {
                 Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
@@ -1434,7 +1963,7 @@ class WalletService {
             return data.data;
           }
           break;
-        case "GHC":
+        case "GHS":
         case "KES":
         case "XAF":
           {

@@ -33,6 +33,14 @@ export default interface IUser {
         name: string,
         icon: string
     }[]
+    verificationInformation: {
+        country: string
+        documentType: string
+        documentNumber: string
+        documentFrontPicture: string
+        documentBackPicture: string
+        address: string
+    }
 
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>
