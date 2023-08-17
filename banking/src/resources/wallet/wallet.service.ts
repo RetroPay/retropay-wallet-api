@@ -10,6 +10,8 @@ import billModel from "../bills/bill.model";
 import IBill from "../bills/bill.interface";
 import BillService from "../bills/bill.service";
 import logger from "@/utils/logger";
+import { usdAccountMeta, usdRecipientInfo } from "./wallet.type";
+import IUser from "../user/user.interface";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -189,7 +191,7 @@ class WalletService {
     reference: string
   ): Promise<IWallet | any> {
     try {
-      const transaction = await walletModel.aggregate([
+      const transaction: IWallet[] = await walletModel.aggregate([
         {
           $match: {
             referenceId: reference,
@@ -200,8 +202,8 @@ class WalletService {
       if (!transaction) throw new Error("Transaction not found.");
 
       if (
-        transaction[0].fundRecipientAccount != userId &&
-        transaction[0].fundOriginatorAccount != userId
+        transaction[0]?.fundRecipientAccount != userId &&
+        transaction[0]?.fundOriginatorAccount != userId
       )
         throw new Error("Unauthorized");
       return transaction[0];
@@ -336,7 +338,7 @@ class WalletService {
       });
 
       const data = response.data;
-      logger(data)
+      logger(data);
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) {
@@ -394,7 +396,7 @@ class WalletService {
         recipientProfile: foundRecipient.profilePhoto?.url,
         isBudgetTransaction,
         budgetUniqueId,
-        budgetItemId
+        budgetItemId,
       });
 
       // if transfer is successful, charge transaction fee
@@ -408,7 +410,7 @@ class WalletService {
         createdAt: newTransaction?.createdAt,
       };
     } catch (error) {
-      logger(error)
+      logger(error);
       await logsnag.publish({
         channel: "failed-requests",
         event: "Transfer failed",
@@ -593,10 +595,10 @@ class WalletService {
         currency: "NGN",
         isBudgetTransaction,
         budgetUniqueId,
-        budgetItemId
+        budgetItemId,
       });
 
-      logger(newTransaction)
+      logger(newTransaction);
       // if transfer is successful, charge transaction fee
       this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
 
@@ -614,6 +616,369 @@ class WalletService {
         channel: "failed-requests",
         event: "Withdrawal failed",
         description: `An attempt to withdraw funds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
+  public async withdrawFunds_v2(
+    currency: string,
+    formPin: string,
+    referenceId: string,
+    userId: string,
+    amount: number,
+    beneficiaryAccount: string,
+    comment: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    k_token: string,
+    beneficiaryName: string,
+    nameEnquiryId?: string,
+    recipientInfo?: usdRecipientInfo,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
+  ): Promise<IWallet | any> {
+    try {
+      logger(currency);
+      const currencies = ["XAF", "NGN", "USD", "GHC", "KES", "NGN-X"];
+
+      currency = currency.toUpperCase();
+
+      if (!currencies.includes(currency))
+        throw new Error("Currency not supported.");
+
+      const foundUser = await userModel
+        .findById(userId)
+        .select("firstname lastname");
+      if (!foundUser) throw new Error("Unable to process transaction.");
+
+      if ((await this.validatePin(formPin, userId)) == false)
+        throw new Error("Transfer failed - Incorrect transaction pin");
+
+      interface Args {
+        [key: string]: any;
+      }
+
+      const args: Args = {
+        currency,
+        formPin,
+        amount,
+        beneficiaryAccount,
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        nameEnquiryId,
+        recipientInfo,
+      };
+
+      switch (currency) {
+        case "NGN":
+          {
+            const ngnRequiredProperties: (keyof Args)[] = [
+              "amount",
+              "beneficiaryAccount",
+              "comment",
+              "beneficiaryBankCode",
+              "beneficiaryBank",
+              "beneficiaryName",
+              "nameEnquiryId",
+            ];
+
+            // const hasAllRequiredKeys: boolean = ngnRequiredProperties.every(
+            //   (key, index) =>
+            //     args.hasOwnProperty(key) && args[key] !== undefined
+            // );
+            // if(!hasAllRequiredKeys) throw new Error(`Incomplete request, provide the required properties for this currency.`)
+
+            // check that required parameters for ngn currency payments are passed to method
+            const errors: string[] = [];
+
+            for (const key of ngnRequiredProperties) {
+              if (!args.hasOwnProperty(key) || args[key] === undefined)
+                errors.push(`${key} is required for this currency.`);
+            }
+
+            if (errors.length > 0) throw new Error(errors.toString());
+
+            const response = await this.initialize_ngn_payment(
+              referenceId,
+              userId,
+              amount,
+              beneficiaryAccount,
+              comment,
+              beneficiaryBankCode,
+              beneficiaryBank,
+              beneficiaryName,
+              k_token,
+              foundUser.firstname,
+              foundUser.lastname,
+              nameEnquiryId,
+              isBudgetTransaction,
+              budgetUniqueId,
+              budgetItemId
+            );
+
+            return response;
+          }
+          break;
+        case "USD":
+          {
+            const usdRequiredProperties: (keyof Args)[] = [
+              "amount",
+              "beneficiaryAccount",
+              "comment",
+              "beneficiaryBankCode",
+              "beneficiaryBank",
+              "beneficiaryName",
+              "recipientInfo",
+            ];
+
+            // check that required parameters for ngn currency payments are passed to method
+            const errors: string[] = [];
+
+            for (const key of usdRequiredProperties) {
+              if (!args.hasOwnProperty(key) || args[key] === undefined)
+                errors.push(`${key} is required for this currency.`);
+            }
+            logger(errors);
+            if (errors.length > 0) throw new Error(errors.toString());
+
+            return "Vibesssssssss";
+          }
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw funds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
+  private async initialize_ngn_payment(
+    referenceId: string,
+    userId: string,
+    amount: number,
+    beneficiaryAccount: string,
+    comment: string,
+    beneficiaryBankCode: string,
+    beneficiaryBank: string,
+    beneficiaryName: string,
+    k_token: string,
+    firstname: string,
+    lastname: string,
+    nameEnquiryId?: string,
+    isBudgetTransaction?: boolean,
+    budgetUniqueId?: string,
+    budgetItemId?: string
+  ): Promise<IWallet | any> {
+    try {
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+          requestRef: v4(),
+          data: {
+            trackingReference: referenceId, //Unique identifier of user with Kuda
+            beneficiaryAccount,
+            amount: amount * 100, //amount in Kobo
+            narration: "retro-trf: " + comment,
+            beneficiaryBankCode,
+            beneficiaryName,
+            senderName: lastname + " " + firstname,
+            nameEnquiryId,
+            clientFeeCharge: 10 * 100,
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${k_token}`,
+        },
+      });
+
+      const data = response.data;
+
+      //if axios call is successful but kuda status returns failed e'g 400 errors
+      if (!data.status) {
+        const { responseCode } = data;
+
+        switch (responseCode) {
+          case "-1":
+            throw new Error("Transfer failed - Transaction cancelled.");
+            break;
+          case "-2":
+          case "51":
+            throw new Error("Transfer failed. Insufficient funds");
+            break;
+          case "-3":
+            throw new Error("Transfer failed - Unable to process transaction");
+            break;
+          case "91":
+            throw new Error("Transfer failed - Request timeout.");
+            break;
+          default:
+            throw new Error(
+              "Transfer error - We were unable to process your transaction, please try again."
+            );
+        }
+      }
+
+      const newTransaction = await walletModel.create({
+        fundOriginatorAccount: userId,
+        amount,
+        transactionType: "withdrawal",
+        status: "pending",
+        referenceId:
+          process.env.NODE_ENV == "development"
+            ? "test-withdrawal" + v4()
+            : data.transactionReference,
+        processingFees: 30,
+        comment,
+        beneficiaryBankCode,
+        beneficiaryBank,
+        beneficiaryName,
+        nameEnquiryId,
+        beneficiaryAccount,
+        responseCode: data.responseCode,
+        currency: "NGN",
+        isBudgetTransaction,
+        budgetUniqueId,
+        budgetItemId,
+      });
+
+      logger(newTransaction);
+      // if transfer is successful, charge transaction fee
+      // this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
+
+      return {
+        amount,
+        transactionId: data.transactionReference,
+        beneficiaryName,
+        beneficiaryBank,
+        beneficiaryAccount,
+        transactionType: "Withdrawal",
+        createdAt: newTransaction?.createdAt,
+      };
+    } catch (error) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw funds to a bank account has failed. err: ${error}`,
+        icon: "😭",
+        notify: true,
+      });
+
+      throw new Error(
+        translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+    }
+  }
+
+  private async initialize_NGN_X_payment(): Promise<any> {
+    /** Method processes ngn-x payments */
+    try {
+    } catch (error: any) {}
+  }
+
+  private async initialize_Mobile_Money_payment(): Promise<any> {
+    /** Method processes all mobile money currency payments */
+    try {
+    } catch (error: any) {}
+  }
+
+  private async initialize_USD_Payment(
+    userId: string,
+    accountNumber: string,
+    bankCode: string,
+    amount: number,
+    reason: string,
+    currency: string,
+    firstname: string,
+    lastname: string,
+    phoneNumber: string,
+    address: string,
+    countryCode: string,
+    recipientInfo: usdRecipientInfo
+  ): Promise<any> {
+    try {
+      const fundSender = await userModel.findById(userId).select("firstname lastname")
+
+      if(!fundSender) throw new Error("Transfer failed - Unable process transfer")
+
+      const response = await axios({
+        method: "post",
+        url:
+          process.env.NODE_ENV == "production"
+            ? "https://kuda-openapi.kuda.com/v2.1"
+            : "https://kuda-openapi-uat.kudabank.com/v2.1",
+        data: {
+          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
+          requestRef: v4(),
+          data: {
+            account_number: accountNumber,
+            bank_code: bankCode,
+            amount,
+            reason: "retro-trf: " + reason,
+            currency,
+            reference:
+              process.env.NODE_ENV == "development"
+                ? "test-withdrawal" + v4()
+                : "retro-" + v4(),
+            meta: {
+              scheme: "DOM",
+              sender: {
+                first_name: firstname,
+                last_name: lastname,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode
+              },
+              counterparty: {
+                first_name: recipientInfo.first_name,
+                last_name: recipientInfo.last_name,
+                address,
+                phone_number: phoneNumber,
+                country: countryCode
+              }
+            }
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+        },
+      });
+
+      const data = response.data;
+
+      // TO BE CONTINUED....
+
+    } catch (error: any) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Withdrawal failed",
+        description: `An attempt to withdraw USDfunds to a bank account has failed. err: ${error}`,
         icon: "😭",
         notify: true,
       });
@@ -809,7 +1174,7 @@ class WalletService {
       if (!response) throw new Error("Unable to retrieve list of banks.");
 
       const kudaBankObject = response.data.data.banks.find((obj: any) => {
-        return obj.bankName.includes("Kuda." || "Kudimoney(Kudabank)");
+        return (obj.bankName = "Kuda." || "Kudimoney(Kudabank)");
       });
 
       // Store current Kuda bank code
@@ -825,6 +1190,292 @@ class WalletService {
         notify: true,
       });
       throw new Error("Unable to retrieve list of banks.");
+    }
+  }
+
+  public async createCurrencyAccount(
+    userId: string,
+    maplerad_customer_id: string,
+    k_token: string,
+    currency: string,
+    meta?: usdAccountMeta
+  ): Promise<any> {
+    try {
+      logger(currency);
+      const currencies = ["XAF", "NGN", "USD", "GHC", "KES", "NGN-X"];
+
+      currency = currency.toUpperCase();
+
+      if (!currencies.includes(currency))
+        throw new Error("Currency not supported.");
+
+      if (currency === "USD" && meta === undefined)
+        throw new Error(
+          "Provide all required documents to create a USD account."
+        );
+
+      const payload: {
+        customer_id: string;
+        currency: string;
+        meta?: usdAccountMeta;
+      } = {
+        customer_id: maplerad_customer_id,
+        currency,
+      };
+
+      const foundUser = await userModel
+        .findById(userId)
+        .select(
+          "email firstname referenceId lastname phoneNumber nubanAccountDetails isIdentityVerified"
+        );
+      logger(foundUser);
+
+      if (!foundUser)
+        throw new Error(
+          "We were unable to create your account, please try again."
+        );
+
+      if (!foundUser.isIdentityVerified)
+        throw new Error("Complete your KYC to proceed.");
+
+      currency === "USD" ? (payload.meta = meta) : "";
+
+      switch (currency.toUpperCase()) {
+        case "USD":
+        case "NGN-X":
+          {
+            const response = await axios({
+              method: "post",
+              url:
+                process.env.NODE_ENV == "production"
+                  ? "https://api.maplerad.com"
+                  : "https://sandbox.api.maplerad.com/v1",
+              data: payload,
+              headers: {
+                Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+              },
+            });
+
+            const responseData = response.data;
+            logger(responseData);
+            if (!responseData.status)
+              throw new Error(
+                "We were unable to create your account, please try again."
+              );
+
+            const {
+              id,
+              bank_name,
+              account_number,
+              account_name,
+              currency,
+              created_at,
+            } = responseData.data;
+
+            const updateUser = await userModel.findOneAndUpdate(
+              {
+                _id: userId,
+                $or: [
+                  {
+                    "currencyAccounts.currency": {
+                      $ne: currency,
+                    },
+                  }, // Currency doesn't exist
+                  {
+                    "currencyAccounts.currency": currency,
+                    "currencyAccounts.status": "declined",
+                  }, // Currency exists, but status is declined. (user tried requesting account but was denied, hence they can try again)
+                ],
+              },
+              {
+                $addToSet: {
+                  currencyAccounts: {
+                    bankName: bank_name,
+                    accountNumber: account_number,
+                    accountName: account_name,
+                    referenceId: id,
+                    creationDate: created_at,
+                    currency,
+                    status: "pending",
+                    isActive: false,
+                  },
+                },
+              }
+            );
+
+            logger(updateUser?.isModified("currencyAccount"));
+
+            if (!updateUser) throw new Error("Account already exists.");
+
+            logger(updateUser);
+
+            return;
+          }
+          break;
+        case "NGN":
+          /*
+           * create Kuda NGN virtual account, account creation is synchronous/instant
+           */
+          {
+            if (foundUser.nubanAccountDetails) {
+              /**
+               * if user already has a nuban (an ngn virtual account), update currencyAccounts array with already created nuban.
+               * */
+              const updatedUser = await userModel.findOneAndUpdate(
+                {
+                  _id: userId,
+                  $or: [
+                    {
+                      "currencyAccounts.currency": {
+                        $ne: currency,
+                      },
+                    },
+                    {
+                      "currencyAccounts.currency": currency,
+                      "currencyAccounts.status": "declined",
+                    },
+                  ],
+                },
+                {
+                  $addToSet: {
+                    currencyAccounts: {
+                      bankName: "Kuda Bank",
+                      accountNumber: foundUser.nubanAccountDetails.nuban,
+                      currency,
+                      isActive: true,
+                      status: "approved",
+                    },
+                  },
+                  $set: { transferPermission: true },
+                },
+                { new: true }
+              );
+
+              logger(updatedUser);
+
+              throw new Error("NGN account already exists.");
+            }
+
+            const {
+              email,
+              firstname,
+              lastname,
+              middlename,
+              phoneNumber,
+              referenceId,
+            } = foundUser;
+
+            /* Phone numbers are stored with their respective country codes e.g +234, 
+              strip away the country code which is the first 4 characters */
+            const formatPhoneNumber = "0" + phoneNumber?.substring(4);
+
+            const response = await axios({
+              method: "POST",
+              url:
+                process.env.NODE_ENV == "production"
+                  ? "https://kuda-openapi.kuda.com/v2.1"
+                  : "https://kuda-openapi-uat.kudabank.com/v2.1",
+              data: {
+                ServiceType: "ADMIN_CREATE_VIRTUAL_ACCOUNT",
+                RequestRef: v4(),
+                data: {
+                  email,
+                  phoneNumber: formatPhoneNumber,
+                  lastName: lastname.replace(" ", "-"),
+                  firstName: firstname.replace(" ", "-"),
+                  middleName: middlename?.replace(" ", "-") || "",
+                  trackingReference: referenceId,
+                },
+              },
+              headers: {
+                Authorization: `Bearer ${k_token}`,
+              },
+            });
+
+            const data = response.data;
+
+            // if axios call is successful but kuda status returns failed e'g 400 errors
+            if (!data.status) throw new Error(data.message);
+
+            const updatedUser = await userModel.findOneAndUpdate(
+              {
+                _id: userId,
+                $or: [
+                  {
+                    "currencyAccounts.currency": {
+                      $ne: currency,
+                    },
+                  },
+                  {
+                    "currencyAccounts.currency": currency,
+                    "currencyAccounts.status": "declined",
+                  },
+                ],
+              },
+              {
+                nubanAccountDetails: { nuban: data.data.accountNumber },
+                $addToSet: {
+                  currencyAccounts: {
+                    bankName: "Kuda Bank",
+                    accountNumber: data.data.accountNumber,
+                    currency,
+                    isActive: true,
+                    status: "approved",
+                  },
+                },
+                $set: { transferPermission: true },
+              },
+              { new: true }
+            );
+            logger(updatedUser);
+
+            if (!updatedUser) throw new Error("");
+
+            return data.data;
+          }
+          break;
+        case "GHC":
+        case "KES":
+        case "XAF":
+          {
+            // enable mobile money currency
+            const updateUser = await userModel.findOneAndUpdate(
+              {
+                _id: userId,
+                $or: [
+                  {
+                    "currencyAccounts.currency": {
+                      $ne: currency,
+                    },
+                  },
+                  {
+                    "currencyAccounts.currency": currency,
+                    "currencyAccounts.status": "declined",
+                  },
+                ],
+              },
+              {
+                $addToSet: {
+                  currencyAccounts: {
+                    currency,
+                    isActive: true,
+                    status: "approved",
+                  },
+                },
+              },
+              { new: true }
+            );
+
+            return;
+          }
+          break;
+        default:
+          throw new Error("Currency not supported.");
+          break;
+      }
+    } catch (error: any) {
+      console.error(error);
+      throw new Error(error);
     }
   }
 
@@ -941,27 +1592,35 @@ class WalletService {
         { $set: { senderWebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
-      
+
       // Check transaction is a bill payment
       const billTransaction: IBill | null = await billModel.findOne({
         transactionReference,
-      })
+      });
 
-      
       // If incoming transaction is not payment or bill purchase, kill webhook processing
-      if (!transaction  && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");
+      if (!transaction && !billTransaction)
+        throw new Error(
+          "Invalid Transaction: Payment and Bill transaction not found"
+        );
 
       // if incoming transaction is a bill transaction not payment
-      if(billTransaction && !transaction) {
+      if (billTransaction && !transaction) {
         // process bill purchase transaction
-        const billService = new BillService;
-        const processedTransaction = await billService.updateBillPurchase(k_token, payingBank, transactionReference, narrations, instrumentNumber)
+        const billService = new BillService();
+        const processedTransaction = await billService.updateBillPurchase(
+          k_token,
+          payingBank,
+          transactionReference,
+          narrations,
+          instrumentNumber
+        );
 
         return processedTransaction;
       }
 
-      if(!transaction) throw new Error("Invalid transaction: Payment record not found")
-
+      if (!transaction)
+        throw new Error("Invalid transaction: Payment record not found");
 
       // continue processing webhook if incoming transaction is payment and not bill transaction
 
@@ -983,7 +1642,7 @@ class WalletService {
           senderEmail: foundSender?.email,
           senderPhoneNumber: foundSender?.phoneNumber,
           transactionType: "Withdrawal",
-          oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
+          oneSignalPlayerId: foundSender?.oneSignalDeviceId || null,
         };
       }
 
@@ -997,9 +1656,8 @@ class WalletService {
         transactionId: transaction.referenceId,
         senderEmail: foundSender?.email,
         senderPhoneNumber: foundSender?.phoneNumber,
-        oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
+        oneSignalPlayerId: foundSender?.oneSignalDeviceId || null,
       };
-      
     } catch (error) {
       await logsnag.publish({
         channel: "failed-requests",

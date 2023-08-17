@@ -7,6 +7,8 @@ import authenticatedMiddleware from "@/middlewares/authenticate.middleware"
 import validationMiddleware from "@/middlewares/validation.middleware"
 import validate from "./wallet.validation"
 import kudaTokenHandler from "@/middlewares/kudaToken.middleware"
+import { usdAccountMeta } from "./wallet.type"
+import logger from "@/utils/logger"
 
 class WalletController implements IController {
     public path = '/wallet'
@@ -22,8 +24,10 @@ class WalletController implements IController {
         this.router.get("/wallet/transactions/:reference/status", authenticatedMiddleware, kudaTokenHandler, this.queryTransactionStatus)
         this.router.get("/wallet/transactions/:year/:month", authenticatedMiddleware, this.getTransactionByMonth)
         this.router.get("/wallet/transactions/:reference", authenticatedMiddleware, this.getTransactionDetails)
-
         this.router.get("/wallet/transactions-summary/:year", authenticatedMiddleware, this.getYearTransactionSummary)
+
+        // virtual accounts
+        this.router.post("/wallet/accounts/create", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.createCurrencyAccount), this.createCurrencyAccount)
 
         //wallet balance
         this.router.get("/wallet/balance", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalance)
@@ -36,6 +40,7 @@ class WalletController implements IController {
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
         this.router.post("/wallet/withdraw", authenticatedMiddleware, validationMiddleware(validate.withdrawFunds), kudaTokenHandler, this.withdrawFunds)
+        this.router.post("/wallet/withdraw/v2", authenticatedMiddleware, validationMiddleware(validate.withdrawFundsV2), kudaTokenHandler,this.withdrawFundsV2)
     }
 
     private getTransactionByMonth = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
@@ -167,6 +172,25 @@ class WalletController implements IController {
         }
     }
 
+    
+    private withdrawFundsV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const { currency, pin, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryName, beneficiaryBank, nameEnquiryId, recipientInfo } = req.body
+
+            const transaction = await this.walletService.withdrawFunds_v2(currency, pin, req.referenceId, req.user, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryBank, req.k_token, beneficiaryName, nameEnquiryId, recipientInfo)
+            
+            res.status(201).json({
+                success: true,
+                message: "Transaction successful",
+                data: {
+                    transaction
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
     private resolveBankAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const accountDetails = await this.walletService.confirmTransferRecipient(req.body.accountNumber, req.body.bankCode, req.referenceId, req.k_token)
@@ -206,6 +230,22 @@ class WalletController implements IController {
                 data: {
                     banks,
                 }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private createCurrencyAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<any> => {
+        try {
+            logger("called")
+            const { currency, meta }: { currency: string, meta: usdAccountMeta | undefined} = req.body;
+            logger(currency)
+            logger(meta)
+            const account = await this.walletService.createCurrencyAccount(req.user, "req.map_customer_id", req.k_token, currency, meta)
+            res.status(200).json({
+                success: true,
+                message: "Account created successfully"
             })
         } catch (error: any) {
             return next(new HttpException(400, error.message))

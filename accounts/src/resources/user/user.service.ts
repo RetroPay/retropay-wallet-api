@@ -361,27 +361,26 @@ class UserService {
 
   public async forgotPassword(reqData: {
     email: string;
-  }): Promise<{ otp: string; firstname: string }> {
+  }): Promise<{ otp: string; firstname: string } | undefined> {
     try {
       const foundUser: any = await userModel.findOne({ email: reqData.email });
-      if (foundUser) {
-        const passwordReset = {
-          token: generateOtp(5),
-          expires: moment(new Date()).add(5, "m").toDate(),
-        };
 
-        const updatedUser = await userModel.findOneAndUpdate(
-          { email: foundUser.email },
-          { $push: { passwordReset } },
-          { new: true }
-        );
+      if (!foundUser) return; // Email doesn't exist, but don't throw error.
 
-        if (!updatedUser) throw new Error("Unable to send reset password mail");
+      const passwordReset = {
+        token: generateOtp(5),
+        expires: moment(new Date()).add(5, "m").toDate(),
+      };
 
-        return { otp: passwordReset.token, firstname: updatedUser.firstname };
-      } else {
-        throw new Error("Unable to send reset password mail");
-      }
+      const updatedUser = await userModel.findOneAndUpdate(
+        { email: foundUser.email },
+        { $push: { passwordReset } },
+        { new: true }
+      );
+
+      if (!updatedUser) throw new Error("Unable to send reset password mail");
+
+      return { otp: passwordReset.token, firstname: updatedUser.firstname };
     } catch (error) {
       throw new Error(
         translateError(error)[0] || "Unable to send reset password mail."
@@ -1067,55 +1066,6 @@ class UserService {
               documentNumber,
               documentFrontPicture,
               documentBackPicture,
-            },
-          },
-          verificationStatus: "pending",
-          isIdentityVerified: false,
-        },
-        { new: true }
-      );
-
-      if (!updatedUser)
-        throw new Error(
-          "Verification document upload failed. Please try again"
-        );
-
-      logger(updatedUser);
-    } catch (error) {
-      throw new Error(
-        translateError(error)[0] ||
-          "Verification document upload failed. Please try again."
-      );
-    }
-  }
-
-  public async uploadVerificationDocumentV2(
-    userId: string,
-    identificationNumber: string,
-    dateOfBirth: string,
-    country: string,
-    documentType: string,
-    documentNumber: string,
-    address: any,
-    documentFrontPicture: any,
-    documentBackPicture: any,
-    selfiePicture: any
-  ): Promise<void> {
-    try {
-      const updatedUser = await userModel.findByIdAndUpdate(
-        userId,
-        {
-          $set: {
-            verificationInformation: {
-              identificationNumber,
-              dateOfBirth,
-              country,
-              documentType,
-              documentNumber,
-              address,
-              documentFrontPicture,
-              documentBackPicture,
-              selfiePicture,
             },
           },
           verificationStatus: "pending",
