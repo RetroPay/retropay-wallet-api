@@ -12,7 +12,7 @@ export default interface IUser {
     profilePhoto?: {
         url: string
     }
-    phoneNumber?: string
+    phoneNumber: string
     bankAccounts?: object
     pin?: number
     username?: string
@@ -33,6 +33,34 @@ export default interface IUser {
     favoritedRecipients?: string[]
     isAccountActive: boolean
     oneSignalDeviceId: string
+    verificationInformation: {
+        country: string
+        documentType: string
+        documentNumber: string
+        documentFrontPicture: string
+        documentBackPicture: string
+        address: string
+    }
+    currencyAccounts: 
+        {
+            bankName: string
+            accountNumber: string
+            accountName: string
+            currency:  string
+            isActive: Boolean
+            status: string
+            address: string,
+            bankShortCode: string,
+            bankSwiftCode: string,
+            checkNumber: string,
+            iBan: string,
+            reference: string,
+            sortCode: string,
+            creationDate: Date,
+            referenceId: string,
+            reason: string
+        }[]
+    mapleradCustomerId: string
     
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>

@@ -44,10 +44,10 @@ class BudgetController implements IController {
       this.getAllBudgets
     );
     this.router.get(
-      `${this.path}/transactions/:year/:month`,
+      `${this.path}/transactions/:budgetUniqueId/:year/:month`,
       authenticatedMiddleware,
       this.budgetTransactionHistory
-    )
+    );
     this.router.post(
       `${this.path}/transfer`,
       validationMiddleware(validate.transferFromBudget),
@@ -61,6 +61,12 @@ class BudgetController implements IController {
       authenticatedMiddleware,
       kudaTokenHandler,
       this.withdrawFundsFromBudget
+    );
+    this.router.put(
+      `${this.path}/edit`,
+      validationMiddleware(validate.editBudget),
+      authenticatedMiddleware,
+      this.editBudget
     );
   }
 
@@ -284,12 +290,13 @@ class BudgetController implements IController {
     next: NextFunction
   ): Promise<IBudget | void> => {
     try {
-      const { month, year } = req.params;
+      const { month, year, budgetUniqueId } = req.params;
 
-      logger(req.params)
+      logger(req.params);
 
-      if (month == "" || year == "") throw new Error("Invalid request. Include month or year.");
-
+      if (month == "" || year == "")
+        throw new Error("Invalid request. Include month or year.");
+      
       const months: string[] = [
         "january",
         "february",
@@ -313,12 +320,44 @@ class BudgetController implements IController {
         await this.budgetService.getBudgetTransactionsByMonthAndYear(
           monthNumber + 1,
           year,
-          req.user
+          req.user,
+          budgetUniqueId
         );
       res.status(200).json({
         success: true,
         message: "Budget transactions retrieved successfully",
         data: result,
+      });
+    } catch (error: any) {
+      return next(new HttpException(400, error.message));
+    }
+  };
+
+  private editBudget = async (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ): Promise<IBudget | void> => {
+    try {
+      const { budgetName, budgetIcon } = req.body;
+
+      logger(req.body);
+
+      const budget: IBudget = await this.budgetService.editBudget(
+        req.query.budgetId,
+        budgetName,
+        budgetIcon
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Budget edited successfully",
+        data: {
+          budget: {
+            budgetName,
+            budgetIcon,
+          },
+        },
       });
     } catch (error: any) {
       return next(new HttpException(400, error.message));

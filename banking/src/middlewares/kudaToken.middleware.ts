@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { redisClient, logsnag } from '../server'
 import axios from 'axios'
 import HttpException from '@/utils/exceptions/http.exception'
+import logger from '@/utils/logger'
 
 async function kudaTokenHandler(
     req: Request | any,

@@ -60,13 +60,59 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false
     },
+    verificationInformation: {
+        country: {
+            type: String,
+            enum: ["NG", "US", "GH", "TZ", "CM", "KE"]
+        },
+        documentType: {
+            type: String,
+            enum: ["NIN", "PASSPORT", "VOTERS_CARD", "DRIVERS_LICENSE"]
+        },
+        documentNumber: String,
+        documentFrontPicture: String,
+        documentBackPicture: String,
+        address: String
+    },
     oneSignalDeviceId: String,
     customCategories: [
         {
             name: String,
             icon: String
         }
-    ]
+    ],    
+    currencyAccounts: [
+        {
+            bankName: String,
+            accountNumber: String,
+            accountName: String,
+            currency: { 
+                type: String, 
+                enum: ["USD", "NGN", "NGN_X", "GHS", "KES", "XAF"]
+            },
+            isActive: {
+                type: Boolean,
+                default: false,
+            },
+            status: {
+                type: String,
+                enum: ["pending", "approved", "declined"]
+            },
+            address: String,
+            bankShortCode: String,
+            bankSwiftCode: String,
+            checkNumber: String,
+            iBan: String,
+            reference: String,
+            sortCode: String,
+            creationDate: Date,
+            referenceId: String,
+            reason: String
+        }
+    ],
+    mapleradCustomerId: {
+        type: String
+    }
 }, { timestamps: true})
 
 UserSchema.pre('save', async function (next) {

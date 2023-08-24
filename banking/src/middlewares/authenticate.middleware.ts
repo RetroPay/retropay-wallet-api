@@ -4,6 +4,7 @@ import UserModel from '@/resources/user/user.model'
 import Token from '@/utils/interfaces/token.interface'
 import HttpException from '@/utils/exceptions/http.exception'
 import jwt from 'jsonwebtoken'
+import logger from '@/utils/logger'
 
 async function authenticatedMiddleware(
     req: Request | any,

@@ -26,7 +26,7 @@ class BudgetService {
     budgetIcon?: string
   ): Promise<IBudget> {
     try {
-      switch (currency.toLocaleLowerCase()) {
+      switch (currency.toLowerCase()) {
         case "ngn":
           {
             const newBudget = this.createNairaBudgetAccount(
@@ -149,7 +149,7 @@ class BudgetService {
         endDate,
         budgetUniqueId: data.data.savingsId,
         budgetType: "monthly",
-        budgetIcon
+        budgetIcon,
       });
 
       return newBudget;
@@ -168,12 +168,13 @@ class BudgetService {
   ): Promise<any> {
     try {
       const budget: IBudget | null = await budgetModel
-        .findOne({ budgetUniqueId, "budgetItems._id": budgetItemId })
-        .select("currency budgetOwnerId");
+        .findOne({ budgetUniqueId, "budgetItems._id": budgetItemId }).select("currency budgetItems")
+
+      logger(budget)
 
       if (!budget) throw new Error("Budget not found.");
 
-      const { currency, budgetOwnerId } = budget;
+      const { currency } = budget;
 
       switch (currency.toLocaleLowerCase()) {
         case "ngn":
@@ -182,7 +183,7 @@ class BudgetService {
               k_token,
               amount,
               budgetUniqueId,
-              budgetItemId
+              budgetItemId,
             );
 
             return updatedBudget;
@@ -206,7 +207,7 @@ class BudgetService {
     k_token: string,
     amount: number,
     budgetUniqueId: string,
-    budgetItemId: string
+    budgetItemId: string,
   ): Promise<any> {
     try {
       const response = await axios({
@@ -256,7 +257,6 @@ class BudgetService {
         )
         .select("-budgetOwnerId");
 
-      logger(updatedBudget);
       if (!updatedBudget) throw new Error("Unable to update this budget.");
 
       return updatedBudget;
@@ -293,23 +293,28 @@ class BudgetService {
 
   public async getAllBudgets(userId: string): Promise<any> {
     try {
-      const budgets: IBudget[] | null = await budgetModel.find({
-        budgetOwnerId: userId,
-      }, 
-      { 
-        budgetName: 1,
-        initialBudgetAmount: 1,
-        totalBudgetAmount: 1,
-        budgetAmountSpent: 1,
-        budgetItems: 1,
-        endDate: 1,
-        startDate: 1,
-        budgetUniqueId: 1,
-        createdAt: 1,
-        budgetBalance: {
-          $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"],
-        },
-      }).select("-budgetOwnerId").sort({ createdAt: -1 });
+      const budgets: IBudget[] | null = await budgetModel
+        .find(
+          {
+            budgetOwnerId: userId,
+          },
+          {
+            budgetName: 1,
+            initialBudgetAmount: 1,
+            totalBudgetAmount: 1,
+            budgetAmountSpent: 1,
+            budgetItems: 1,
+            endDate: 1,
+            startDate: 1,
+            budgetUniqueId: 1,
+            createdAt: 1,
+            budgetBalance: {
+              $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"],
+            },
+          }
+        )
+        .select("-budgetOwnerId")
+        .sort({ createdAt: -1 });
 
       if (!budgets) throw new Error("No Budgets found.");
 
@@ -438,9 +443,7 @@ class BudgetService {
         throw new Error("Insufficient funds on this budget.");
 
       if (budgetItemBalance < amount)
-        throw new Error(
-          "Insufficient funds on this budget category."
-        );
+        throw new Error("Insufficient funds on this budget category.");
 
       const response = await axios({
         method: "POST",
@@ -635,7 +638,7 @@ class BudgetService {
           "Transfer failed - Insufficient funds on this budget category."
         );
 
-      switch (currency.toLocaleLowerCase()) {
+      switch (currency.toLowerCase()) {
         case "ngn":
           {
             const response = await this.withdrawFromNairaBudget(
@@ -767,7 +770,8 @@ class BudgetService {
   public async getBudgetTransactionsByMonthAndYear(
     month: number,
     year: number,
-    userId: string
+    userId: string,
+    budgetUniqueId: string
   ): Promise<any | null> {
     try {
       const creditTransactions: any = await walletModel
@@ -775,6 +779,7 @@ class BudgetService {
           {
             fundRecipientAccount: userId,
             isBudgetTransaction: true,
+            budgetUniqueId,
             // status: "success",
             $and: [
               { $expr: { $eq: [{ $month: "$createdAt" }, Number(month)] } },
@@ -787,6 +792,9 @@ class BudgetService {
             WebhookAcknowledgement: 0,
             senderWebhookAcknowledgement: 0,
             fundsReceivedbyRecipient: 0,
+            responseCode: 0,
+            isBudgetTransaction: 0,
+            __v: 0
           }
         )
         .sort({ createdAt: -1 });
@@ -796,6 +804,7 @@ class BudgetService {
           {
             fundOriginatorAccount: userId,
             isBudgetTransaction: true,
+            budgetUniqueId,
             // status: "success",
             $and: [
               { $expr: { $eq: [{ $month: "$createdAt" }, Number(month)] } },
@@ -808,6 +817,9 @@ class BudgetService {
             WebhookAcknowledgement: 0,
             senderWebhookAcknowledgement: 0,
             fundsReceivedbyRecipient: 0,
+            responseCode: 0,
+            isBudgetTransaction: 0,
+            __v: 0
           }
         )
         .sort({ createdAt: -1 });
@@ -817,6 +829,54 @@ class BudgetService {
       throw new Error(
         translateError(error)[0] || "Unable to retrieve transactions"
       );
+    }
+  }
+
+  public async editBudget(
+    budgetId: string,
+    budgetName?: string,
+    budgetIcon?: string
+  ): Promise<any> {
+    try {
+      const budget = await budgetModel.findOne({ _id: budgetId }).exec();
+
+      if (!budget) {
+        throw new Error("This budget does not exist");
+      }
+
+      let newBudgetName: string = budget.budgetName;
+      let newBudgetIcon: string | undefined = budget.budgetIcon;
+
+      if (budgetName !== undefined && budgetName?.length > 0) {
+        newBudgetName = budgetName;
+      }
+
+      if (budgetIcon !== undefined && budgetIcon?.length > 0) {
+        newBudgetIcon = budgetIcon;
+      }
+
+      return await budgetModel
+        .findOneAndUpdate(
+          { _id: budgetId },
+          {
+            $set: {
+              budgetName: newBudgetName,
+              budgetIcon: newBudgetIcon,
+            },
+          },
+          { new: true }
+        )
+        .then((doc) => {
+          return doc;
+        })
+        .catch((err) => {
+          throw new Error(
+            translateError(err)[0] || "Unable to edit budget. Please try again."
+          );
+        });
+    } catch (error) {
+      console.error(error, "error");
+      throw new Error("We were unable to edit this budget, please try again");
     }
   }
 }
