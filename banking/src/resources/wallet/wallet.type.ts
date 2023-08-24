@@ -15,4 +15,5 @@ export type usdRecipientInfo = {
   address: string;
   phone_number: string;
   country: string;
+  name?: string
 };

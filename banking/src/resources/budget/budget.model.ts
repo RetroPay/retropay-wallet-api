@@ -38,7 +38,7 @@ const budgetModel = new Schema(
     },
     currency: {
       type: String,
-      enum: ["NGN", "USD", "GHC", "KSH", "XAF"],
+      enum: ["NGN", "USD", "GHS", "KES", "XAF"],
       required: true
     },
     budgetItems: [

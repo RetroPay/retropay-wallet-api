@@ -28,9 +28,12 @@ class WalletController implements IController {
 
         // virtual accounts
         this.router.post("/wallet/accounts/create", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.createCurrencyAccount), this.createCurrencyAccount)
+        this.router.get("/wallet/accounts", authenticatedMiddleware, this.getCurrencyAccounts)
+
 
         //wallet balance
         this.router.get("/wallet/balance", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalance)
+        this.router.get("/wallet/balance/v2", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalanceV2)
 
         //wallet transfers
         this.router.post("/wallet/transfer", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.transferFunds), this.transferFunds)
@@ -38,7 +41,11 @@ class WalletController implements IController {
 
         //wallet withdrawals
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
+        this.router.post("/wallet/bank/resolve-account/v2", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccountV2)
+
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
+        this.router.get("/wallet/banks/list/v2", authenticatedMiddleware, kudaTokenHandler, this.getBankListV2)
+
         this.router.post("/wallet/withdraw", authenticatedMiddleware, validationMiddleware(validate.withdrawFunds), kudaTokenHandler, this.withdrawFunds)
         this.router.post("/wallet/withdraw/v2", authenticatedMiddleware, validationMiddleware(validate.withdrawFundsV2), kudaTokenHandler,this.withdrawFundsV2)
     }
@@ -136,6 +143,23 @@ class WalletController implements IController {
         }
     }
 
+    private getWalletBalanceV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+         
+            const balance = await this.walletService.getAccountBalanceV2(req.referenceId, req.k_token, req.user)
+            
+            res.status(200).json({
+                success: true,
+                message: "Balance retrieved successfully",
+                data: {
+                    balance
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
     private transferFunds = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const { pin, amount, recipientTag, comment, beneficiaryName } = req.body
@@ -206,6 +230,21 @@ class WalletController implements IController {
         }
     }
 
+    private resolveBankAccountV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const accountDetails = await this.walletService.resolveAccountNumber(req.body.currency, req.body.accountNumber, req.body.bankCode, req.referenceId, req.k_token)
+            res.status(200).json({
+                success: true,
+                message: "Bank account resolved successfully.",
+                data: {
+                    accountDetails
+                }
+            })
+        } catch (error :any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
     private resolveAccountTag = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const accountDetails = await this.walletService.confirmTransferRecipientByAccountTag(req.body.accountTag, req.k_token, req.referenceId)
@@ -236,16 +275,50 @@ class WalletController implements IController {
         }
     }
 
-    private createCurrencyAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<any> => {
+    private getBankListV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
-            logger("called")
-            const { currency, meta }: { currency: string, meta: usdAccountMeta | undefined} = req.body;
-            logger(currency)
-            logger(meta)
-            const account = await this.walletService.createCurrencyAccount(req.user, "req.map_customer_id", req.k_token, currency, meta)
+            const { currency, countryCode } = req.query;
+            logger(currency + countryCode)
+
+            if(currency === undefined) throw new Error("Currency not supported.")
+
+            if(currency.toUpperCase() === "XAF" && countryCode === undefined) throw new Error("Include valid country code for XAF transaction.")
+
+            const banks = await this.walletService.getBankListV2(req.k_token, currency, countryCode)
             res.status(200).json({
                 success: true,
-                message: "Account created successfully"
+                message: "Bank list retrieved successfully",
+                data: {
+                    banks,
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private createCurrencyAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<any> => {
+        try {
+            const { currency, meta }: { currency: string, meta: usdAccountMeta | undefined} = req.body;
+
+            const account = await this.walletService.createCurrencyAccount(req.user, req.k_token, currency, meta)
+            res.status(200).json({
+                success: true,
+                message: currency.toUpperCase() == 'USD' ? "Account creation requested. You will be notified when your account is approved" : "Account created successfully.",
+                account,
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private getCurrencyAccounts = async (req: Request | any, res: Response, next: NextFunction): Promise<any> => {
+        try {
+            const accounts = await this.walletService.getCurrencyAccounts(req.user)
+            res.status(200).json({
+                success: true,
+                message: "Accounts retrieved successfully",
+                accounts: accounts,
             })
         } catch (error: any) {
             return next(new HttpException(400, error.message))
