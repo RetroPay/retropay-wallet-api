@@ -28,9 +28,12 @@ class WalletController implements IController {
 
         // virtual accounts
         this.router.post("/wallet/accounts/create", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.createCurrencyAccount), this.createCurrencyAccount)
+        this.router.get("/wallet/accounts", authenticatedMiddleware, this.getCurrencyAccounts)
+
 
         //wallet balance
         this.router.get("/wallet/balance", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalance)
+        this.router.get("/wallet/balance/v2", authenticatedMiddleware, kudaTokenHandler, this.getWalletBalanceV2)
 
         //wallet transfers
         this.router.post("/wallet/transfer", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.transferFunds), this.transferFunds)
@@ -127,6 +130,23 @@ class WalletController implements IController {
         try {
          
             const balance = await this.walletService.getAccountBalance(req.referenceId, req.k_token, req.user)
+            
+            res.status(200).json({
+                success: true,
+                message: "Balance retrieved successfully",
+                data: {
+                    balance
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private getWalletBalanceV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+         
+            const balance = await this.walletService.getAccountBalanceV2(req.referenceId, req.k_token, req.user)
             
             res.status(200).json({
                 success: true,
@@ -262,7 +282,7 @@ class WalletController implements IController {
 
             if(currency === undefined) throw new Error("Currency not supported.")
 
-            if(currency.toUpperCase() === "XAF" && countryCode === undefined) throw new Error("Include valid country code.")
+            if(currency.toUpperCase() === "XAF" && countryCode === undefined) throw new Error("Include valid country code for XAF transaction.")
 
             const banks = await this.walletService.getBankListV2(req.k_token, currency, countryCode)
             res.status(200).json({
@@ -279,14 +299,26 @@ class WalletController implements IController {
 
     private createCurrencyAccount = async (req: Request | any, res: Response, next: NextFunction): Promise<any> => {
         try {
-            logger("called")
             const { currency, meta }: { currency: string, meta: usdAccountMeta | undefined} = req.body;
-            logger(currency)
-            logger(meta)
-            const account = await this.walletService.createCurrencyAccount(req.user, "req.map_customer_id", req.k_token, currency, meta)
+
+            const account = await this.walletService.createCurrencyAccount(req.user, req.k_token, currency, meta)
             res.status(200).json({
                 success: true,
-                message: "Account created successfully"
+                message: currency.toUpperCase() == 'USD' ? "Account creation requested. You will be notified when your account is approved" : "Account created successfully.",
+                account,
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private getCurrencyAccounts = async (req: Request | any, res: Response, next: NextFunction): Promise<any> => {
+        try {
+            const accounts = await this.walletService.getCurrencyAccounts(req.user)
+            res.status(200).json({
+                success: true,
+                message: "Accounts retrieved successfully",
+                accounts: accounts,
             })
         } catch (error: any) {
             return next(new HttpException(400, error.message))

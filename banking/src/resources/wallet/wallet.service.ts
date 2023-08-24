@@ -14,6 +14,7 @@ import { usdAccountMeta, usdRecipientInfo } from "./wallet.type";
 import IUser from "../user/user.interface";
 import { calculateFees } from "@/utils/feeCalculator";
 import { checkCurrenciesAvailability } from "@/utils/checkCurrency";
+import generateOtp from "@/services/otp";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -216,6 +217,74 @@ class WalletService {
     }
   }
 
+  public async getAccountBalanceV2(
+    referenceId: string,
+    k_token: string,
+    userId: string
+  ): Promise<any> {
+    try {
+      const balance = await walletModel.aggregate([
+        {
+          $match: {
+            $or: [
+              { fundOriginatorAccount: new mongoose.Types.ObjectId(userId), status: process.env.NODE_ENV === "production" ? "success" : "pending" },
+              { fundRecipientAccount: new mongoose.Types.ObjectId(userId), status: process.env.NODE_ENV === "production" ? "success" : "pending" },
+            ],
+          },
+        },
+        {
+          $group: {
+            _id: {
+              currency: "$currency",
+            },
+            totalDebits: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: [
+                      "$fundOriginatorAccount",
+                      new mongoose.Types.ObjectId(userId),
+                    ],
+                  },
+                  "$amount",
+                  0,
+                ],
+              },
+            },
+            totalCredits: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: [
+                      "$fundRecipientAccount",
+                      new mongoose.Types.ObjectId(userId),
+                    ],
+                  },
+                  "$amount",
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            currency: "$_id.currency",
+            balance: { $subtract: ["$totalCredits", "$totalDebits"] },
+          },
+        },
+      ]);
+
+      return balance;
+    } catch (error) {
+      throw new Error(
+        translateError(error)[0] ||
+          "Unable to retrieve your balance, please try again."
+      );
+    }
+  }
+
   public async getAccountBalance(
     referenceId: string, // tracking reference
     k_token: string,
@@ -251,12 +320,10 @@ class WalletService {
       if (!data.status) throw new Error(data.message);
 
       return data.data.availableBalance;
-
-      // return this.calculateWalletBalance(userId)
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-          "Sorry. We were unable to retrieve your balance, please try again."
+          "Unable to retrieve your balance, please try again."
       );
     }
   }
@@ -658,7 +725,7 @@ class WalletService {
 
       const foundUser = await userModel
         .findOne({
-          id: userId,
+          _id: userId,
           "currencyAccounts.currency": currency,
           "currencyAccounts.status": "approved",
           "currencyAccounts.isActive": true,
@@ -817,6 +884,8 @@ class WalletService {
               comment,
               recipientInfo
             );
+
+            return response;
           }
           break;
         case "NGN_X": {
@@ -1014,19 +1083,15 @@ class WalletService {
             ? "https://api.maplerad.com/v1/transfers"
             : "https://sandbox.api.maplerad.com/v1/transfers",
         data: {
-          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
-          requestRef: v4(),
-          data: {
-            account_number: beneficiaryAccountNumber,
-            bank_code: beneficiaryBankCode,
-            amount,
-            reason: "retro-trf: " + comment,
-            currency: "NGN",
-            reference:
-              process.env.NODE_ENV == "development"
-                ? "test-withdrawal" + v4()
-                : "retro-trf" + v4(),
-          },
+          account_number: beneficiaryAccountNumber,
+          bank_code: beneficiaryBankCode,
+          amount: amount * 100,
+          reason: "retro-trf: " + comment,
+          currency: "NGN",
+          reference:
+            process.env.NODE_ENV == "development"
+              ? "test-withdrawal" + v4()
+              : "retro-trf" + v4(),
         },
         headers: {
           Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
@@ -1099,14 +1164,7 @@ class WalletService {
     budgetItemId?: string
   ): Promise<any> {
     /** Method initializes transfer for all mobile money currencies. */
-
     try {
-      const fundSender = await userModel
-        .findById(userId)
-        .select("firstname lastname");
-
-      if (!fundSender)
-        throw new Error("Transfer failed - Unable process transfer");
 
       const response = await axios({
         method: "post",
@@ -1115,23 +1173,19 @@ class WalletService {
             ? "https://api.maplerad.com/v1/transfers"
             : "https://sandbox.api.maplerad.com/v1/transfers",
         data: {
-          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
-          requestRef: v4(),
-          data: {
-            account_number: beneficiaryAccountNumber,
-            bank_code: beneficiaryBankCode,
-            amount,
-            reason: "retro-trf: " + comment,
-            currency,
-            reference:
-              process.env.NODE_ENV == "development"
-                ? "test-withdrawal" + v4()
-                : "retro-trf" + v4(),
-            meta: {
-              scheme: "MOBILEMONEY",
-              counterparty: {
-                name: `${recipientInfo?.first_name} ${recipientInfo?.last_name}`,
-              },
+          account_number: beneficiaryAccountNumber,
+          bank_code: beneficiaryBankCode,
+          amount: amount * 100,
+          reason: "retro-trf: " + comment,
+          currency,
+          reference:
+            process.env.NODE_ENV == "development"
+              ? "test-withdrawal" + generateOtp(15)
+              : generateOtp(15),
+          meta: {
+            scheme: "MOBILEMONEY",
+            counterparty: {
+              name: recipientInfo?.name,
             },
           },
         },
@@ -1140,10 +1194,13 @@ class WalletService {
         },
       });
 
+      logger(response.data);
+
+      if (!response) throw new Error("Transfer failed");
+
       const data = response.data;
 
       if (!data.status) throw new Error("Transfer failed");
-      logger(data);
 
       const newTransaction = await walletModel.create({
         fundOriginatorAccount: userId,
@@ -1187,10 +1244,7 @@ class WalletService {
         notify: true,
       });
 
-      throw new Error(
-        translateError(error)[0] ||
-          "Transfer failed - Unable to process transfer."
-      );
+      throw new Error("Transfer failed - Unable to process transfer.");
     }
   }
 
@@ -1219,39 +1273,38 @@ class WalletService {
           process.env.NODE_ENV == "production"
             ? "https://api.maplerad.com/v1/transfers"
             : "https://sandbox.api.maplerad.com/v1/transfers",
+
         data: {
-          serviceType: "VIRTUAL_ACCOUNT_FUND_TRANSFER",
-          requestRef: v4(),
-          data: {
-            account_number: beneficiaryAccountNumber,
-            bank_code: beneficiaryBankCode,
-            amount,
-            reason: "retro-trf: " + comment,
-            currency: "USD",
-            reference:
-              process.env.NODE_ENV == "development"
-                ? "test-withdrawal" + v4()
-                : "retro-trf" + v4(),
-            meta: {
-              scheme: "DOM",
-              sender: {
-                first_name: firstname,
-                last_name: lastname,
-                address,
-                phone_number: phoneNumber,
-                country: countryCode,
-              },
-              counterparty: {
-                first_name: recipientInfo?.first_name,
-                last_name: recipientInfo?.last_name,
-                address,
-                phone_number: phoneNumber,
-                country: countryCode,
-              },
+          account_number: beneficiaryAccountNumber,
+          bank_code: beneficiaryBankCode,
+          amount: amount * 100,
+          reason: "retro-trf: " + comment,
+          currency: "USD",
+          reference:
+            process.env.NODE_ENV == "development"
+              ? "test-withdrawal" + v4()
+              : "retro-trf" + v4(),
+          meta: {
+            scheme: "DOM",
+            sender: {
+              first_name: firstname,
+              last_name: lastname,
+              address,
+              phone_number: phoneNumber,
+              country: countryCode,
+            },
+            counterparty: {
+              first_name: recipientInfo?.first_name,
+              last_name: recipientInfo?.last_name,
+              address,
+              phone_number: phoneNumber,
+              country: countryCode,
             },
           },
         },
         headers: {
+          accept: "application/json",
+          "content-type": "application/json",
           Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
         },
       });
@@ -1437,10 +1490,12 @@ class WalletService {
                 Authorization: `Bearer ${k_token}`,
               },
             });
+
             const data = response.data;
 
             //if axios call is successful but kuda status returns failed e'g 400 errors
-            if (!data.status) throw new Error(data.message);
+            if (!data.status)
+              throw new Error("Unable to resolve bank account. Try again.");
 
             return data.data;
           }
@@ -1451,13 +1506,16 @@ class WalletService {
         case "KES":
         case "NGN_X":
           {
-            return await this.mapleradAccountResolution(
+            const response = await this.mapleradAccountResolution(
               accountNumber,
               bankCode
             );
+
+            return response;
           }
           break;
-        default: throw new Error("Currency not supported.")
+        default:
+          throw new Error("Currency not supported.");
           break;
       }
     } catch (error: any) {
@@ -1465,7 +1523,6 @@ class WalletService {
         translateError(error)[0] || "Unable to resolve account details."
       );
     }
-
   }
 
   private async mapleradAccountResolution(
@@ -1474,7 +1531,7 @@ class WalletService {
   ): Promise<any> {
     try {
       const response = await axios({
-        method: "post",
+        method: "POST",
         url:
           process.env.NODE_ENV == "production"
             ? "https://api.maplerad.com/v1/institutions/resolve"
@@ -1488,15 +1545,12 @@ class WalletService {
         },
       });
 
-      logger(response)
-
-      if (!response.data.status) throw new Error(response.data.message);
+      if (!response)
+        throw new Error("Unable to resolve account details. Try again.");
 
       return response.data.data;
     } catch (error: any) {
-      throw new Error(
-        translateError(error)[0] || "Unable to resolve account details."
-      );
+      throw new Error("Unable to resolve account details.");
     }
   }
 
@@ -1713,6 +1767,8 @@ class WalletService {
         },
       });
 
+      logger(response);
+
       if (!response) throw new Error("Unable to retrieve list of operators.");
 
       return response.data.data;
@@ -1724,7 +1780,6 @@ class WalletService {
 
   public async createCurrencyAccount(
     userId: string,
-    maplerad_customer_id: string,
     k_token: string,
     currency: string,
     meta?: usdAccountMeta
@@ -1743,31 +1798,32 @@ class WalletService {
           "Provide all required documents to create a USD account."
         );
 
-      const payload: {
-        customer_id: string;
-        currency: string;
-        meta?: usdAccountMeta;
-      } = {
-        customer_id: maplerad_customer_id,
-        currency: currency == "NGN_X" ? "NGN" : currency,
-      };
-
       const foundUser = await userModel
         .findById(userId)
         .select(
-          "email firstname referenceId lastname phoneNumber nubanAccountDetails isIdentityVerified"
+          "email firstname referenceId lastname phoneNumber nubanAccountDetails isIdentityVerified mapleradCustomerId"
         );
       logger(foundUser);
-
       if (!foundUser)
         throw new Error(
           "We were unable to create your account, please try again."
         );
 
-      if (!foundUser.isIdentityVerified)
+      if (!foundUser.isIdentityVerified || !foundUser.mapleradCustomerId)
         throw new Error("Complete your KYC to proceed.");
 
+      const payload: {
+        customer_id: string;
+        currency: string;
+        meta?: usdAccountMeta;
+      } = {
+        customer_id: foundUser?.mapleradCustomerId,
+        currency: currency === "NGN_X" ? "NGN" : currency,
+      };
+
       currency === "USD" ? (payload.meta = meta) : "";
+
+      logger(payload);
 
       switch (currency.toUpperCase()) {
         case "USD":
@@ -1786,20 +1842,14 @@ class WalletService {
             });
 
             const responseData = response.data;
-            logger(responseData);
+            logger(responseData.data);
             if (!responseData.status)
               throw new Error(
                 "We were unable to create your account, please try again."
               );
 
-            const {
-              id,
-              bank_name,
-              account_number,
-              account_name,
-              currency,
-              created_at,
-            } = responseData.data;
+            const { id, bank_name, account_number, account_name, created_at } =
+              responseData.data;
 
             const updateUser = await userModel.findOneAndUpdate(
               {
@@ -1829,16 +1879,17 @@ class WalletService {
                     isActive: false,
                   },
                 },
+              },
+              {
+                new: true,
               }
             );
-
-            logger(updateUser?.isModified("currencyAccount"));
 
             if (!updateUser) throw new Error("Account already exists.");
 
             logger(updateUser);
 
-            return;
+            return responseData.data;
           }
           break;
         case "NGN":
@@ -1995,6 +2046,9 @@ class WalletService {
               { new: true }
             );
 
+            if (!updateUser) throw new Error("Account already exists.");
+
+            logger(updateUser);
             return;
           }
           break;
@@ -2003,8 +2057,32 @@ class WalletService {
           break;
       }
     } catch (error: any) {
-      console.error(error);
-      throw new Error(error);
+      logger(error);
+      throw new Error(
+        error.message || "Unable to create your account, please try again."
+      );
+    }
+  }
+
+  public async getCurrencyAccounts(userId: string): Promise<IUser> {
+    try {
+      const accounts = await userModel.findOne(
+        {
+          _id: userId,
+        },
+        {
+          currencyAccounts: 1,
+        }
+      );
+      logger(accounts);
+
+      if (!accounts) throw new Error("No accounts found");
+      return accounts;
+    } catch (error: any) {
+      logger(error);
+      throw new Error(
+        error.message || "Unable to retrieve your accounts, please try again."
+      );
     }
   }
 

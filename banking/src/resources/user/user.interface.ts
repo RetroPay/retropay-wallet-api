@@ -60,6 +60,7 @@ export default interface IUser {
             referenceId: string,
             reason: string
         }[]
+    mapleradCustomerId: string
     
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>

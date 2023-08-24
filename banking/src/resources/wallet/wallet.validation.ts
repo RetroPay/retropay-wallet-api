@@ -54,7 +54,7 @@ const withdrawFundsV2 = Joi.object({
 });
 
 const createCurrencyAccount = Joi.object({
-  currency: Joi.string().required().valid("NGN", "USD", "GHS", "KES", "XAF"),
+  currency: Joi.string().required().valid("NGN", "USD", "GHS", "KES", "XAF", "NGN_X"),
   meta: Joi.object({
     occupation: Joi.string(),
     utility_bill: Joi.string(), //image url or file
