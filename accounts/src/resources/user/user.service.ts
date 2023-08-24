@@ -1088,6 +1088,55 @@ class UserService {
     }
   }
 
+  public async uploadVerificationDocumentV2(
+    userId: string,
+    identificationNumber: string,
+    dateOfBirth: string,
+    country: string,
+    documentType: string,
+    documentNumber: string,
+    address: any,
+    documentFrontPicture: any,
+    documentBackPicture: any,
+    selfiePicture: any
+  ): Promise<void> {
+    try {
+      const updatedUser = await userModel.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            verificationInformation: {
+              identificationNumber,
+              dateOfBirth,
+              country,
+              documentType,
+              documentNumber,
+              address,
+              documentFrontPicture,
+              documentBackPicture,
+              selfiePicture,
+            },
+          },
+          verificationStatus: "pending",
+          isIdentityVerified: false,
+        },
+        { new: true }
+      );
+
+      if (!updatedUser)
+        throw new Error(
+          "Verification document upload failed. Please try again"
+        );
+
+      logger(updatedUser);
+    } catch (error) {
+      throw new Error(
+        translateError(error)[0] ||
+          "Verification document upload failed. Please try again."
+      );
+    }
+  }
+
   public async addCustomCategory(
     userId: string,
     icon: string,
