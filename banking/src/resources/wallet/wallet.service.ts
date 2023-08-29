@@ -227,8 +227,16 @@ class WalletService {
         {
           $match: {
             $or: [
-              { fundOriginatorAccount: new mongoose.Types.ObjectId(userId), status: process.env.NODE_ENV === "production" ? "success" : "pending" },
-              { fundRecipientAccount: new mongoose.Types.ObjectId(userId), status: process.env.NODE_ENV === "production" ? "success" : "pending" },
+              {
+                fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
+                status:
+                  process.env.NODE_ENV === "production" ? "success" : "pending",
+              },
+              {
+                fundRecipientAccount: new mongoose.Types.ObjectId(userId),
+                status:
+                  process.env.NODE_ENV === "production" ? "success" : "pending",
+              },
             ],
           },
         },
@@ -828,6 +836,9 @@ class WalletService {
             logger(errors);
             if (errors.length > 0) throw new Error(errors.toString());
 
+            const { postalCode, street, city, state, country } =
+              foundUser?.verificationInformation.address;
+
             const initializationResponse = await this.initialize_USD_Payment(
               userId,
               beneficiaryAccount,
@@ -839,7 +850,7 @@ class WalletService {
               foundUser.firstname,
               foundUser.lastname,
               foundUser?.phoneNumber,
-              foundUser?.verificationInformation.address,
+              `${postalCode}, ${street}, ${city}, ${state}, ${country},`,
               foundUser?.verificationInformation.country,
               recipientInfo
             );
@@ -1165,7 +1176,6 @@ class WalletService {
   ): Promise<any> {
     /** Method initializes transfer for all mobile money currencies. */
     try {
-
       const response = await axios({
         method: "post",
         url:
