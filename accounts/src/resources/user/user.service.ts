@@ -1098,9 +1098,13 @@ class UserService {
     address: any,
     documentFrontPicture: any,
     documentBackPicture: any,
-    selfiePicture: any
+    selfiePhoto: any
   ): Promise<void> {
     try {
+      if (typeof address === "string") {
+        address = JSON.parse(address);
+      }
+
       const updatedUser = await userModel.findByIdAndUpdate(
         userId,
         {
@@ -1114,7 +1118,7 @@ class UserService {
               address,
               documentFrontPicture,
               documentBackPicture,
-              selfiePicture,
+              selfiePhoto,
             },
           },
           verificationStatus: "pending",
@@ -1176,6 +1180,75 @@ class UserService {
       throw new Error(
         translateError(error)[0] ||
           "Custom category creation failed, please try again."
+      );
+    }
+  }
+
+  public async enrollUsersInMaplerad(userId: string): Promise<{
+    message: any;
+    data: any;
+  }> {
+    try {
+      const user = await userModel.findById(userId);
+
+      if (!user) throw new Error("User does not exist");
+
+      const mapleResponse = await axios.post(
+        `${process.env.MAPLERAD_SANDBOX_URL}/customers/enroll`,
+        {
+          first_name: user.firstname,
+          last_name: user.lastname,
+          email: user.email,
+          dob: user.dateOfBirth,
+          identification_number:
+            user.verificationInformation.identificationNumber,
+          phone: {
+            phone_country_code: user.phoneNumber?.substring(0, 4),
+            phone_number: user.phoneNumber?.substring(
+              4,
+              user.phoneNumber.length - 1
+            ),
+          },
+          identity: {
+            type: user.verificationInformation.documentType,
+            image: user.verificationInformation.documentFrontPicture,
+            number: user.verificationInformation.documentNumber,
+            country: user.verificationInformation.country,
+          },
+          address: {
+            street: user.verificationInformation.address.street,
+            city: user.verificationInformation.address.city,
+            state: user.verificationInformation.address.state,
+            country: user.verificationInformation.address.country,
+            postal_code: user.verificationInformation.address.postalCode,
+          },
+          photo: user.verificationInformation.selfiePhoto,
+        },
+        {
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            Authorization: `Bearer ${process.env.MAPLERAD_SECRET}`,
+          },
+        }
+      );
+
+      if (mapleResponse.data.status === false) {
+        throw new Error(mapleResponse.data.message);
+      }
+
+      await user
+        .updateOne({ $set: { mapleradCustomerId: mapleResponse.data.data.id } })
+        .exec();
+
+      return {
+        message: mapleResponse.data.message,
+        data: mapleResponse.data.data,
+      };
+    } catch (error) {
+      throw new Error(
+        (error as any).response.data.message ??
+          "Failed to enroll user, please try again."
       );
     }
   }
