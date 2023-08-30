@@ -1246,9 +1246,9 @@ class UserService {
         data: mapleResponse.data.data,
       };
     } catch (error) {
-      console.log(error);
       throw new Error(
-        translateError(error)[0] || "Failed to enroll user, please try again."
+        (error as any).response.data.message ??
+          "Failed to enroll user, please try again."
       );
     }
   }

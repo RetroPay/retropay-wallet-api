@@ -45,11 +45,11 @@ const verifyKycMiddleware = async (
   } catch (error) {
     await logsnag.publish({
       channel: "server",
-      event: "Banking Service - KYC documents verification failed",
+      event: "Accounts Service - KYC documents verification failed",
       description: `KYC middleware failed: ${error}`,
       icon: "💥",
     });
-    return next(new HttpException(500, "An error occurred. Try again later"));
+    return next(new HttpException(400, (error as Error).message));
   }
 };
 
