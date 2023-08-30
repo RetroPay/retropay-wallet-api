@@ -228,8 +228,16 @@ class WalletService {
         {
           $match: {
             $or: [
-              { fundOriginatorAccount: new mongoose.Types.ObjectId(userId), status: process.env.NODE_ENV === "production" ? "success" : "pending" },
-              { fundRecipientAccount: new mongoose.Types.ObjectId(userId), status: process.env.NODE_ENV === "production" ? "success" : "pending" },
+              {
+                fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
+                status:
+                  process.env.NODE_ENV === "production" ? "success" : "pending",
+              },
+              {
+                fundRecipientAccount: new mongoose.Types.ObjectId(userId),
+                status:
+                  process.env.NODE_ENV === "production" ? "success" : "pending",
+              },
             ],
           },
         },
@@ -738,6 +746,8 @@ class WalletService {
       if (!foundUser.isIdentityVerified)
         throw new Error(`Verify your identity to proceed.`);
 
+      if(!foundUser.verificationInformation) throw new Error("KYC documents not found.")
+
       if ((await this.validatePin(formPin, userId)) == false)
         throw new Error("Transfer failed - Incorrect transaction pin");
 
@@ -824,6 +834,9 @@ class WalletService {
             logger(errors);
             if (errors.length > 0) throw new Error(errors.toString());
 
+            const { postalCode, street, city, state, country } =
+              foundUser?.verificationInformation.address;
+
             const initializationResponse = await this.initialize_USD_Payment(
               userId,
               beneficiaryAccount,
@@ -835,8 +848,8 @@ class WalletService {
               foundUser.firstname,
               foundUser.lastname,
               foundUser?.phoneNumber,
-              foundUser?.verificationInformation.address,
-              foundUser?.verificationInformation.country,
+              `${postalCode}, ${street}, ${city}, ${state}, ${country},`,
+              country,
               recipientInfo
             );
 
@@ -1161,7 +1174,6 @@ class WalletService {
   ): Promise<any> {
     /** Method initializes transfer for all mobile money currencies. */
     try {
-
       const response = await axios({
         method: "post",
         url:

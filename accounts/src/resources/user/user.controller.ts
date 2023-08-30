@@ -14,6 +14,7 @@ import cloudinaryUpload from "@/services/cloudinary.service";
 import formidable from "formidable";
 import { logsnag } from "../../server";
 import logger from "@/utils/logger";
+import verifyKycMiddleware from "@/middlewares/kyc.middleware";
 
 class UserController implements IController {
   public path = "";
@@ -214,6 +215,14 @@ class UserController implements IController {
       authenticatedMiddleware,
       kudaTokenHandler,
       this.createNubanAccount
+    );
+
+    // Maplerad customer enrollment
+    this.router.post(
+      "/user/maplerad/enroll",
+      authenticatedMiddleware,
+      verifyKycMiddleware,
+      this.enrollUsersInMaplerad
     );
   }
 
@@ -1060,6 +1069,33 @@ class UserController implements IController {
           success: true,
           message: "Verification documents uploaded successfully",
         });
+      });
+    } catch (error: any) {
+      return next(new HttpExeception(400, error.message));
+    }
+  };
+
+  private enrollUsersInMaplerad = async (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const enrolledUser = await this.UserService.enrollUsersInMaplerad(
+        req.user
+      );
+
+      await logsnag.publish({
+        channel: "user-actions",
+        event: "user enrolled in Maplerad",
+        icon: "🎉",
+        notify: true,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: enrolledUser.message,
+        data: enrolledUser.data,
       });
     } catch (error: any) {
       return next(new HttpExeception(400, error.message));
