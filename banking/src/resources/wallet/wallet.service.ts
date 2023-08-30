@@ -15,6 +15,7 @@ import IUser from "../user/user.interface";
 import { calculateFees } from "@/utils/feeCalculator";
 import { checkCurrenciesAvailability } from "@/utils/checkCurrency";
 import generateOtp from "@/services/otp";
+import { transferLimit } from "@/utils/transferLimit";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -723,13 +724,8 @@ class WalletService {
     budgetItemId?: string
   ): Promise<IWallet | any> {
     try {
-      logger(currency);
-      const currencies = ["XAF", "NGN", "USD", "GHS", "KES", "NGN_X"];
-
-      currency = currency.toUpperCase();
-
-      if (!currencies.includes(currency))
-        throw new Error("Currency not supported.");
+      await checkCurrenciesAvailability(currency)
+      await transferLimit(currency, amount)
 
       const foundUser = await userModel
         .findOne({
@@ -749,6 +745,8 @@ class WalletService {
 
       if (!foundUser.isIdentityVerified)
         throw new Error(`Verify your identity to proceed.`);
+
+      if(!foundUser.verificationInformation) throw new Error("KYC documents not found.")
 
       if ((await this.validatePin(formPin, userId)) == false)
         throw new Error("Transfer failed - Incorrect transaction pin");
@@ -851,7 +849,7 @@ class WalletService {
               foundUser.lastname,
               foundUser?.phoneNumber,
               `${postalCode}, ${street}, ${city}, ${state}, ${country},`,
-              foundUser?.verificationInformation.country,
+              country,
               recipientInfo
             );
 

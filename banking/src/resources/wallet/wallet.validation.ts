@@ -34,7 +34,7 @@ const withdrawFunds = Joi.object({
 });
 
 const withdrawFundsV2 = Joi.object({
-  currency: Joi.string().required().valid("NGN", "XAF", "USD", "KES", "GHS"),
+  currency: Joi.string().required().valid("NGN", "XAF", "USD", "KES", "GHS", "NGN_X"),
   pin: Joi.string().required().min(4).max(4),
   amount: Joi.number().required(),
   beneficiaryAccount: Joi.string().required(),
