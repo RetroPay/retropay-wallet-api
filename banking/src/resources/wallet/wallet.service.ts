@@ -15,6 +15,7 @@ import IUser from "../user/user.interface";
 import { calculateFees } from "@/utils/feeCalculator";
 import { checkCurrenciesAvailability } from "@/utils/checkCurrency";
 import generateOtp from "@/services/otp";
+import { transferLimit } from "@/utils/transferLimit";
 
 class WalletService {
   public async getTransactionsByMonthandYear(
@@ -715,13 +716,8 @@ class WalletService {
     budgetItemId?: string
   ): Promise<IWallet | any> {
     try {
-      logger(currency);
-      const currencies = ["XAF", "NGN", "USD", "GHS", "KES", "NGN_X"];
-
-      currency = currency.toUpperCase();
-
-      if (!currencies.includes(currency))
-        throw new Error("Currency not supported.");
+      await checkCurrenciesAvailability(currency)
+      await transferLimit(currency, amount)
 
       const foundUser = await userModel
         .findOne({
