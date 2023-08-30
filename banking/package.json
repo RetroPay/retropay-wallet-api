@@ -56,7 +56,7 @@
     "logsnag": "^0.1.6",
     "module-alias": "^2.2.2",
     "moment": "^2.29.4",
-    "mongoose": "^6.11.1",
+    "mongoose": "^6.12.0",
     "morgan": "^1.10.0",
     "nodemailer": "^6.8.0",
     "redis": "^4.5.1",
