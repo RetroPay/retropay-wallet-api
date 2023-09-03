@@ -27,7 +27,7 @@ class SwapController implements IController {
         try {
             const { sourceCurrency, targetCurrency, amount } = req.body
             const quote = await this.swapService.generateSwapQuote(sourceCurrency, targetCurrency, amount, req.user)
-            
+
             res.status(200).json({
                 success: true,
                 message: "Swap quote generated",
