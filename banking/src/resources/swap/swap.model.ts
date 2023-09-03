@@ -23,6 +23,7 @@ const SwapSchema = new Schema({
     amount: Number,
     human_readable_amount: Number,
   },
+  rate: { type: String },
   isInitiated: {
     type: Boolean,
     default: false
@@ -34,4 +35,4 @@ const SwapSchema = new Schema({
 });
 
 
-export default model<ISwap>('swap', SwapSchema)
+export default model<ISwap>('Swap', SwapSchema)

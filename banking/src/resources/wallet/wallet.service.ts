@@ -724,8 +724,8 @@ class WalletService {
     budgetItemId?: string
   ): Promise<IWallet | any> {
     try {
-      await checkCurrenciesAvailability(currency)
-      await transferLimit(currency, amount)
+      await checkCurrenciesAvailability(currency);
+      await transferLimit(currency, amount);
 
       const foundUser = await userModel
         .findOne({
@@ -746,7 +746,8 @@ class WalletService {
       if (!foundUser.isIdentityVerified)
         throw new Error(`Verify your identity to proceed.`);
 
-      if(!foundUser.verificationInformation) throw new Error("KYC documents not found.")
+      if (!foundUser.verificationInformation)
+        throw new Error("KYC documents not found.");
 
       if ((await this.validatePin(formPin, userId)) == false)
         throw new Error("Transfer failed - Incorrect transaction pin");
@@ -1152,7 +1153,8 @@ class WalletService {
       });
 
       throw new Error(
-        translateError(error)[0] ||
+        error?.response?.data?.message ||
+          translateError(error)[0] ||
           "Transfer failed - Unable to process transfer."
       );
     }
@@ -1251,8 +1253,12 @@ class WalletService {
         icon: "😭",
         notify: true,
       });
-
-      throw new Error("Transfer failed - Unable to process transfer.");
+      throw new Error(
+        error?.response?.data?.message ||
+          translateError(error)[0] ||
+          "Transfer failed - Unable to process transfer."
+      );
+      // throw new Error("Transfer failed - Unable to process transfer.");
     }
   }
 
@@ -1363,11 +1369,15 @@ class WalletService {
         icon: "😭",
         notify: true,
       });
-
       throw new Error(
-        translateError(error)[0] ||
+        error?.response?.data?.message ||
+          translateError(error)[0] ||
           "Transfer failed - Unable to process transfer."
       );
+      // throw new Error(
+      //   translateError(error)[0] ||
+      //     "Transfer failed - Unable to process transfer."
+      // );
     }
   }
 
@@ -1782,7 +1792,7 @@ class WalletService {
       return response.data.data;
     } catch (error: any) {
       logger(error);
-      throw new Error("Unable to retrieve list of operators.");
+      throw new Error("Unable to retrieve list of operators. please try again");
     }
   }
 
@@ -2067,8 +2077,13 @@ class WalletService {
     } catch (error: any) {
       logger(error);
       throw new Error(
-        error.message || "Unable to create your account, please try again."
+        error?.response?.data?.message ||
+          translateError(error)[0] ||
+          "Unable to create your account, please try again."
       );
+      // throw new Error(
+      //   error.message || "Unable to create your account, please try again."
+      // );
     }
   }
 

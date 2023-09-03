@@ -8,10 +8,10 @@ const WalletSchema = new Schema(
     transactionType: {
       type: String,
       trim: true,
-      enum: ['funding', 'withdrawal', 'transfer'],
+      enum: ['funding', 'withdrawal', 'transfer', 'swap'],
       required: true
     },
-    currency: {type: String, enum: ['NGN', 'USD', 'GHS', 'KES', 'XAF']},
+    currency: {type: String, enum: ['NGN', 'USD', 'GHS', 'KES', 'XAF', "NGN_X"]},
     fundRecipientAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     fundOriginatorAccount: { type: Schema.Types.ObjectId, ref: 'User' },
     status: {
@@ -49,7 +49,8 @@ const WalletSchema = new Schema(
       default: false
     },
     budgetUniqueId: { type: String },
-    budgetItemId: String
+    budgetItemId: String,
+    swapQuoteReference: { type: String }
   },
   {
     timestamps: true

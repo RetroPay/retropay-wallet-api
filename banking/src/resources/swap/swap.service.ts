@@ -5,7 +5,9 @@ import userModel from "../user/user.model";
 import translateError from "@/helpers/mongod.helper";
 import { checkCurrenciesAvailability } from "@/utils/checkCurrency";
 import { transferLimit } from "@/utils/transferLimit";
+import { v4 } from "uuid";
 import ISwap from "./swap.interface";
+import walletModel from "../wallet/wallet.model";
 
 class SwapService {
   public async generateSwapQuote(
@@ -18,7 +20,7 @@ class SwapService {
       await checkCurrenciesAvailability(source_currency);
       await checkCurrenciesAvailability(target_currency);
 
-      await transferLimit(source_currency, amount)
+      await transferLimit(source_currency, amount);
 
       const foundUser = await userModel.findOne({
         _id: userId,
@@ -43,11 +45,6 @@ class SwapService {
           `Create an active ${source_currency} or ${target_currency} account to swap funds.`
         );
 
-      source_currency =
-        source_currency.toUpperCase() == "NGN_X" ? "NGN" : source_currency;
-      target_currency =
-        target_currency.toUpperCase() == "NGN_X" ? "NGN" : target_currency;
-
       const response = await axios({
         method: "POST",
         url:
@@ -55,8 +52,10 @@ class SwapService {
             ? "https://api.maplerad.com/v1/fx/quote"
             : "https://sandbox.api.maplerad.com/v1/fx/quote",
         data: {
-          source_currency,
-          target_currency,
+          source_currency:
+            source_currency.toUpperCase() == "NGN_X" ? "NGN" : source_currency,
+          target_currency:
+            target_currency.toUpperCase() == "NGN_X" ? "NGN" : target_currency,
           amount: amount * 100,
         },
         headers: {
@@ -66,7 +65,7 @@ class SwapService {
 
       const quote = response.data.data;
 
-      const { reference, source, target } = quote;
+      const { reference, source, target, rate } = quote;
 
       const newQuote = await swapModel.create({
         reference,
@@ -78,17 +77,20 @@ class SwapService {
         target: {
           currency: target_currency,
           amount: target.amount,
-          human_readable_amount: source.human_readable_amount,
+          human_readable_amount: target.human_readable_amount,
         },
+        rate,
         userId: userId,
         isInitiated: false,
       });
 
+      logger(newQuote);
+
       if (!newQuote) throw new Error("Unable to retrieve fx quote, try again.");
 
-      return quote;
+      return newQuote;
     } catch (error: any) {
-      logger(error)
+      logger(error);
       throw new Error(
         error?.response?.data?.message ||
           translateError(error)[0] ||
@@ -99,19 +101,19 @@ class SwapService {
 
   public async swapFunds(reference: string, userId: string): Promise<ISwap> {
     try {
-      const quote = await swapModel
-        .findOne({
-          reference,
-        })
-        .select("userId isInitiated");
+      const quote = await swapModel.findOne({
+        reference,
+      });
 
       if (!quote) throw new Error("Exchange quote not found.");
 
       if (quote.userId != userId)
-        throw new Error("Unable to swap funds. try againnnn");
+        throw new Error("Unable to swap funds. try again");
 
       if (quote.isInitiated)
         throw new Error("Quote expired, generate a new exchange quote.");
+
+      const { source, target } = quote;
 
       const response = await axios({
         method: "POST",
@@ -142,7 +144,30 @@ class SwapService {
         { new: true }
       );
 
-      return exchangedQuote;
+      await walletModel.insertMany([
+        {
+          transactionType: "swap",
+          currency: target.currency,
+          fundRecipientAccount: userId,
+          status: "success",
+          amount: target.human_readable_amount,
+          referenceId: "swap" + v4(),
+          swapQuoteReference: reference,
+        },
+        {
+          transactionType: "swap",
+          currency: source.currency,
+          fundOriginatorAccount: userId,
+          status: "success",
+          amount: source.human_readable_amount,
+          referenceId: "swap" + v4(),
+          swapQuoteReference: reference,
+        },
+      ]); 
+      
+      if(!updatedQuote) throw new Error("Funds exchange pending.")
+
+      return updatedQuote;
     } catch (error: any) {
       logger(error);
       throw new Error(
