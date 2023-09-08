@@ -37,11 +37,13 @@ class WalletController implements IController {
 
         //wallet transfers
         this.router.post("/wallet/transfer", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.transferFunds), this.transferFunds)
+        this.router.post("/wallet/transfer/v2", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.transferFundsV2), this.transferFundsV2)
         this.router.post("/wallet/tag/resolve-account", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.resolveAccountTag), this.resolveAccountTag)
+        this.router.post("/wallet/tag/resolve-account/v2", authenticatedMiddleware, kudaTokenHandler, validationMiddleware(validate.resolveAccountTagV2), this.resolveAccountTagV2)
 
         //wallet withdrawals
         this.router.post("/wallet/bank/resolve-account", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccount)
-        this.router.post("/wallet/bank/resolve-account/v2", authenticatedMiddleware, validationMiddleware(validate.resolveAccount), kudaTokenHandler, this.resolveBankAccountV2)
+        this.router.post("/wallet/bank/resolve-account/v2", authenticatedMiddleware, validationMiddleware(validate.resolveAccountV2), kudaTokenHandler, this.resolveBankAccountV2)
 
         this.router.get("/wallet/banks/list", authenticatedMiddleware, kudaTokenHandler, this.getBankList)
         this.router.get("/wallet/banks/list/v2", authenticatedMiddleware, kudaTokenHandler, this.getBankListV2)
@@ -177,7 +179,23 @@ class WalletController implements IController {
         }
     }
 
-    
+    private transferFundsV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const { pin, amount, recipientTag, comment, beneficiaryName, currency } = req.body
+            const transaction = await this.walletService.transferFundsV2(pin, amount, currency, recipientTag, comment, req.user, req.username, req.referenceId, req.k_token, beneficiaryName)
+
+            res.status(201).json({
+                success: true,
+                message: "Transaction successful",
+                data: {
+                    transaction
+                }
+            })
+        } catch (error: any) {
+            return next(new HttpException(400, error.message))  
+        }
+    }
+
     private withdrawFunds = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const { pin, amount, beneficiaryAccount, comment, beneficiaryBankCode, beneficiaryName, beneficiaryBank, nameEnquiryId } = req.body
@@ -248,6 +266,23 @@ class WalletController implements IController {
     private resolveAccountTag = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
         try {
             const accountDetails = await this.walletService.confirmTransferRecipientByAccountTag(req.body.accountTag, req.k_token, req.referenceId)
+            res.status(200).json({
+                success: true,
+                message: "User account resolved successfully.",
+                data: {
+                    accountDetails
+                }
+            })
+        } catch (error :any) {
+            return next(new HttpException(400, error.message))
+        }
+    }
+
+    private resolveAccountTagV2 = async (req: Request | any, res: Response, next: NextFunction): Promise<IWallet | void> => {
+        try {
+            const { accountTag, currency } = req.body;
+            const accountDetails = await this.walletService.resolveAccountTag(accountTag, currency, req.k_token, req.referenceId, req.user)
+            
             res.status(200).json({
                 success: true,
                 message: "User account resolved successfully.",

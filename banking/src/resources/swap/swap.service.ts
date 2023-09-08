@@ -153,6 +153,7 @@ class SwapService {
           amount: target.human_readable_amount,
           referenceId: "swap" + v4(),
           swapQuoteReference: reference,
+          comment: `Swap ${source.currency} to ${target.currency}`
         },
         {
           transactionType: "swap",
@@ -162,6 +163,7 @@ class SwapService {
           amount: source.human_readable_amount,
           referenceId: "swap" + v4(),
           swapQuoteReference: reference,
+          comment: `Swap ${source.currency} to ${target.currency}`
         },
       ]); 
       
