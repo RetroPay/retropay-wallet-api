@@ -1118,7 +1118,71 @@ class WalletService {
           case "GHS":
           case "XAF":
           case "KES": {
+            const balance = await walletModel.aggregate([
+              {
+                $match: {
+                  $or: [
+                    {
+                      fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
+                      status:
+                        process.env.NODE_ENV === "production" ? "success" : "pending",
+                      currency,
+                    },
+                    {
+                      fundRecipientAccount: new mongoose.Types.ObjectId(userId),
+                      status:
+                        process.env.NODE_ENV === "production" ? "success" : "pending",
+                      currency,
+                    },
+                  ],
+                },
+              },
+              {
+                $group: {
+                  _id: 0,
+                  totalDebits: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $eq: [
+                            "$fundOriginatorAccount",
+                            new mongoose.Types.ObjectId(userId),
+                          ],
+                        },
+                        "$amount",
+                        0,
+                      ],
+                    },
+                  },
+                  totalCredits: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $eq: [
+                            "$fundRecipientAccount",
+                            new mongoose.Types.ObjectId(userId),
+                          ],
+                        },
+                        "$amount",
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                $project: {
+                  _id: 0,
+                  balance: { $subtract: ["$totalCredits", "$totalDebits"] },
+                },
+              },
+            ]);
+
+            logger(balance)
+
+            return balance
             // get balance
+            // log transaction
           }
         default: throw new Error("Currency not supported.")
           break;
