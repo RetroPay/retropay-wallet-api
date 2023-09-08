@@ -294,69 +294,6 @@ class WalletService {
     }
   }
 
-  public async getCurrencyAccountBalanceV2(
-    userId: string,
-    currency: string
-  ): Promise<any> {
-    try {
-      const balance = await walletModel.aggregate([
-        {
-          $match: {
-            $or: [
-              {
-                fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
-                status:
-                  process.env.NODE_ENV === "production" ? "success" : "pending",
-              },
-              {
-                fundRecipientAccount: new mongoose.Types.ObjectId(userId),
-                status:
-                  process.env.NODE_ENV === "production" ? "success" : "pending",
-              },
-            ],
-            currency: currency.toUpperCase(),
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            debits: {
-              $sum: {
-                $cond: [
-                  { $ifNull: ["$fundOriginatorAccount", false] },
-                  "$amount",
-                  0,
-                ],
-              },
-            },
-            credits: {
-              $sum: {
-                $cond: [
-                  { $ifNull: ["$fundRecipientAccount", false] },
-                  "$amount",
-                  0,
-                ],
-              },
-            },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            balance: { $subtract: ["$credits", "$debits"] },
-          },
-        },
-      ]);
-
-      return balance[0].balance;
-    } catch (error) {
-      throw new Error(
-        translateError(error)[0] ||
-          "Unable to retrieve your balance, please try again."
-      );
-    }
-  }
-
   public async getAccountBalance(
     referenceId: string, // tracking reference
     k_token: string,
@@ -397,42 +334,6 @@ class WalletService {
         translateError(error)[0] ||
           "Unable to retrieve your balance, please try again."
       );
-    }
-  }
-
-  public async getOneCurrencyAccountBalanceV2({
-    userId,
-    currency,
-    referenceId,
-    k_token,
-  }: {
-    userId: string;
-    currency: string;
-    referenceId: string;
-    k_token: string;
-  }) {
-    try {
-      switch (currency.toLowerCase()) {
-        case "ngn":
-          const nairaBalance: number = await this.getAccountBalance(
-            referenceId,
-            k_token,
-            userId
-          );
-
-          return nairaBalance;
-
-        default:
-          const currencyBalance = await this.getCurrencyAccountBalanceV2(
-            userId,
-            currency
-          );
-
-          return currencyBalance;
-      }
-    } catch (error) {
-      translateError(error)[0] ||
-        "Unable to retrieve your balance, please try again.";
     }
   }
 
