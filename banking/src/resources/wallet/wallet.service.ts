@@ -970,6 +970,8 @@ class WalletService {
     budgetItemId?: string
   ): Promise<any> {
     try {
+      currency = currency.toUpperCase()
+
       await checkCurrenciesAvailability(currency);
       await transferLimit(currency, amount);
 
@@ -1002,16 +1004,15 @@ class WalletService {
         "currencyAccounts.isActive": true,
       });
 
-      logger(fundsRecipient);
-
       if (!fundsRecipient) throw new Error("Invalid recipient account.");
 
-      if (!fundsRecipient?.nubanAccountDetails?.nuban) throw new Error("Invalid recipient account.");
+      if (fundsRecipient._id == userId)
+      throw new Error("Unable to process transaction.");
+
+      if (currency == "NGN" && !fundsRecipient?.nubanAccountDetails?.nuban) throw new Error("Invalid recipient account.");
 
       if ((await this.validatePin(formPin, userId)) == false)
         throw new Error("Transfer failed - Incorrect transaction pin");
-
-      const { nubanAccountDetails } = fundsRecipient
 
       switch (currency) {
         case "NGN":
@@ -1027,12 +1028,13 @@ class WalletService {
                 requestRef: v4(),
                 data: {
                   trackingReference: referenceId, //Unique identifier of user with Kuda
-                  beneficiaryAccount: nubanAccountDetails?.nuban,
+                  beneficiaryAccount: fundsRecipient.nubanAccountDetails?.nuban,
                   amount: amount * 100, //amount in Kobo
                   narration: "retro-trf: " + comment,
                   beneficiaryBankCode: await redisClient.get("kudaBankCode"),
                   beneficiaryName,
                   senderName: foundUser.lastname + " " + foundUser.firstname,
+                  clientFeeCharge: 10 * 100,
                 },
               },
               headers: {
@@ -1041,7 +1043,6 @@ class WalletService {
             });
       
             const data = response.data;
-            logger(data);
       
             //if axios call is successful but kuda status returns failed e'g 400 errors
             if (!data.status) {
@@ -1118,72 +1119,49 @@ class WalletService {
           case "GHS":
           case "XAF":
           case "KES": {
-            const balance = await walletModel.aggregate([
-              {
-                $match: {
-                  $or: [
-                    {
-                      fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
-                      status:
-                        process.env.NODE_ENV === "production" ? "success" : "pending",
-                      currency,
-                    },
-                    {
-                      fundRecipientAccount: new mongoose.Types.ObjectId(userId),
-                      status:
-                        process.env.NODE_ENV === "production" ? "success" : "pending",
-                      currency,
-                    },
-                  ],
-                },
-              },
-              {
-                $group: {
-                  _id: 0,
-                  totalDebits: {
-                    $sum: {
-                      $cond: [
-                        {
-                          $eq: [
-                            "$fundOriginatorAccount",
-                            new mongoose.Types.ObjectId(userId),
-                          ],
-                        },
-                        "$amount",
-                        0,
-                      ],
-                    },
-                  },
-                  totalCredits: {
-                    $sum: {
-                      $cond: [
-                        {
-                          $eq: [
-                            "$fundRecipientAccount",
-                            new mongoose.Types.ObjectId(userId),
-                          ],
-                        },
-                        "$amount",
-                        0,
-                      ],
-                    },
-                  },
-                },
-              },
-              {
-                $project: {
-                  _id: 0,
-                  balance: { $subtract: ["$totalCredits", "$totalDebits"] },
-                },
-              },
-            ]);
 
-            logger(balance)
+            const balance = await this.calculateMapleardCurrencyBalance(currency, userId)
 
-            return balance
-            // get balance
-            // log transaction
+            if(amount >= balance) throw new Error("Transfer failed - Insufficient funds")
+
+            const transactionId = process.env.NODE_ENV == "development"
+            ? "test-transfer" + v4()
+            : v4()
+
+            const newTransaction = await walletModel.create({
+              fundRecipientAccount: fundsRecipient._id,
+              fundOriginatorAccount: userId,
+              amount,
+              transactionType: "transfer",
+              status: "success",
+              referenceId: transactionId,
+              comment,
+              recepientTag: fundRecipientAccountTag,
+              senderTag,
+              beneficiaryName,
+              currency,
+              processingFees: amount * (3/100),
+              senderProfile: foundUser.profilePhoto?.url,
+              recipientProfile: fundsRecipient.profilePhoto?.url,
+              isBudgetTransaction,
+              budgetUniqueId,
+              budgetItemId,
+            });
+
+            if(!newTransaction) throw new Error("Unable to process transaction. Please try again.")
+      
+            // if transfer is successful, charge transaction fee
+            // this.chargeTransactionFees("transfer", referenceId, userId, k_token);
+      
+            return {
+              amount,
+              transactionId: transactionId,
+              fundRecipientAccountTag,
+              transactionType: "Transfer",
+              createdAt: newTransaction?.createdAt,
+            };
           }
+          break; 
         default: throw new Error("Currency not supported.")
           break;
       }
@@ -1200,6 +1178,80 @@ class WalletService {
       throw new Error(
         translateError(error)[0] || "Unable to process transaction."
       );
+    }
+  }
+
+  private async calculateMapleardCurrencyBalance(currency: string, userId: string): Promise<number> {
+    try {
+      const balance = await walletModel.aggregate([
+        {
+          $match: {
+            $or: [
+              {
+                fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
+                // status:
+                //   process.env.NODE_ENV === "production" ? "success" : "pending",
+                currency,
+              },
+              {
+                fundRecipientAccount: new mongoose.Types.ObjectId(userId),
+                // status:
+                //   process.env.NODE_ENV === "production" ? "success" : "pending",
+                currency,
+              },
+            ],
+          },
+        },
+        {
+          $group: {
+            _id: 0,
+            totalDebits: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: [
+                      "$fundOriginatorAccount",
+                      new mongoose.Types.ObjectId(userId),
+                    ],
+                  },
+                  "$amount",
+                  0,
+                ],
+              },
+            },
+            totalCredits: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: [
+                      "$fundRecipientAccount",
+                      new mongoose.Types.ObjectId(userId),
+                    ],
+                  },
+                  "$amount",
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            balance: { $subtract: ["$totalCredits", "$totalDebits"] },
+          },
+        },
+      ]);
+
+      logger(balance)
+
+      if(!balance) throw new Error("Unable to retrieve account balance. Please try again.")
+
+      if(balance.length == 0) return 0
+
+      return balance[0].balance
+    } catch (error: any) {
+      throw new Error("Unable to retrieve account balance. Please try again.")
     }
   }
 
