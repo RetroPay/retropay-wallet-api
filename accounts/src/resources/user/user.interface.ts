@@ -35,7 +35,7 @@ export default interface IUser {
   }[];
   verificationInformation: {
     identificationNumber: string;
-    dateOfBirth: Date;
+    dateOfBirth: string;
     country: string;
     documentType: string;
     documentNumber: string;

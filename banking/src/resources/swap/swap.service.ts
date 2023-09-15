@@ -8,8 +8,11 @@ import { transferLimit } from "@/utils/transferLimit";
 import { v4 } from "uuid";
 import ISwap from "./swap.interface";
 import walletModel from "../wallet/wallet.model";
+import WalletService from "../wallet/wallet.service";
 
 class SwapService {
+  private walletService = new WalletService()
+
   public async generateSwapQuote(
     source_currency: string,
     target_currency: string,
@@ -115,6 +118,10 @@ class SwapService {
 
       const { source, target } = quote;
 
+      const sourceBalance = await this.walletService.calculateMapleradCurrencyBalance(source.currency, userId)
+      
+      if (sourceBalance >= source.human_readable_amount) throw new Error("Insufficient funds.")
+
       const response = await axios({
         method: "POST",
         url:
@@ -153,6 +160,7 @@ class SwapService {
           amount: target.human_readable_amount,
           referenceId: "swap" + v4(),
           swapQuoteReference: reference,
+          comment: `Swap ${source.currency} to ${target.currency}`
         },
         {
           transactionType: "swap",
@@ -162,6 +170,7 @@ class SwapService {
           amount: source.human_readable_amount,
           referenceId: "swap" + v4(),
           swapQuoteReference: reference,
+          comment: `Swap ${source.currency} to ${target.currency}`
         },
       ]); 
       

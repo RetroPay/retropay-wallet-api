@@ -1193,13 +1193,21 @@ class UserService {
 
       if (!user) throw new Error("User does not exist");
 
+      const date: Date = new Date(user.verificationInformation.dateOfBirth)
+
       const mapleResponse = await axios.post(
-        `${process.env.MAPLERAD_SANDBOX_URL}/customers/enroll`,
+        process.env.NODE_ENV == "production"
+          ? "https://api.maplerad.com/v1/customers/enroll"
+          : "https://sandbox.api.maplerad.com/v1/customers/enroll",
         {
           first_name: user.firstname,
           last_name: user.lastname,
           email: user.email,
-          dob: user.dateOfBirth,
+          dob: new Intl.DateTimeFormat("en-us", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+          }).format(date).replace(/\//g, '-'),
           identification_number:
             user.verificationInformation.identificationNumber,
           phone: {
@@ -1228,7 +1236,7 @@ class UserService {
           headers: {
             accept: "application/json",
             "content-type": "application/json",
-            Authorization: `Bearer ${process.env.MAPLERAD_SECRET}`,
+            Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
           },
         }
       );
@@ -1246,9 +1254,10 @@ class UserService {
         data: mapleResponse.data.data,
       };
     } catch (error) {
+      // logger(error);
       throw new Error(
-        (error as any).response.data.message ??
-          "Failed to enroll user, please try again."
+        (error as any).response?.data?.message ??
+          "Failed to setup your account, please try again."
       );
     }
   }
