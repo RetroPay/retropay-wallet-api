@@ -176,7 +176,7 @@ class BudgetService {
 
       const { currency } = budget;
 
-      switch (currency.toLocaleLowerCase()) {
+      switch (currency.toLowerCase()) {
         case "ngn":
           {
             const updatedBudget = await this.topUpNairaBudgetItem(
@@ -372,10 +372,11 @@ class BudgetService {
           "Transfer failed - Insufficient funds on this budget category."
         );
 
-      switch (currency.toLocaleLowerCase()) {
+      switch (currency.toLowerCase()) {
         case "ngn":
           {
             const response = await this.transferFromNairaBudget(
+              currency,
               k_token,
               budgetUniqueId,
               budgetItemId,
@@ -501,6 +502,7 @@ class BudgetService {
   }
 
   private async transferFromNairaBudget(
+    currency: string,
     k_token: string,
     budgetUniqueId: string,
     budgetItemId: string,
@@ -560,9 +562,10 @@ class BudgetService {
         )
         .select("-budgetOwnerId");
 
-      const transaction = await this.walletService.transferFunds(
+      const transaction = await this.walletService.transferFundsV2(
         formPin,
         amount,
+        currency,
         fundRecipientAccountTag,
         `Budget Spend - ${comment}`,
         userId,
@@ -654,7 +657,8 @@ class BudgetService {
               beneficiaryBank,
               beneficiaryName,
               nameEnquiryId,
-              k_token
+              k_token,
+              currency
             );
 
             logger(response);
@@ -688,7 +692,8 @@ class BudgetService {
     beneficiaryBank: string,
     beneficiaryName: string,
     nameEnquiryId: string,
-    k_token: string
+    k_token: string,
+    currency: string
   ) {
     try {
       const response = await axios({
@@ -737,7 +742,8 @@ class BudgetService {
         )
         .select("-budgetOwnerId");
 
-      const transaction = await this.walletService.withdrawFunds(
+      const transaction = await this.walletService.withdrawFunds_v2(
+        currency,
         formPin,
         referenceId,
         userId,
@@ -746,9 +752,10 @@ class BudgetService {
         comment,
         beneficiaryBankCode,
         beneficiaryBank,
+        k_token,
         beneficiaryName,
         nameEnquiryId,
-        k_token,
+        undefined,
         true,
         budgetUniqueId,
         budgetItemId

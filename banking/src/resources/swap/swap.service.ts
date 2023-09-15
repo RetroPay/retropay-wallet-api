@@ -8,8 +8,11 @@ import { transferLimit } from "@/utils/transferLimit";
 import { v4 } from "uuid";
 import ISwap from "./swap.interface";
 import walletModel from "../wallet/wallet.model";
+import WalletService from "../wallet/wallet.service";
 
 class SwapService {
+  private walletService = new WalletService()
+
   public async generateSwapQuote(
     source_currency: string,
     target_currency: string,
@@ -114,6 +117,10 @@ class SwapService {
         throw new Error("Quote expired, generate a new exchange quote.");
 
       const { source, target } = quote;
+
+      const sourceBalance = await this.walletService.calculateMapleradCurrencyBalance(source.currency, userId)
+      
+      if (sourceBalance >= source.human_readable_amount) throw new Error("Insufficient funds.")
 
       const response = await axios({
         method: "POST",

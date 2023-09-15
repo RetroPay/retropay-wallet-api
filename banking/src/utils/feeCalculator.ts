@@ -11,6 +11,9 @@ export const calculateFees = async (
     case "NGN_X":
       return 20; // 20 naira
       break;
+    case "NGN":
+      return 30;
+      break;
     case "GHS":
       return amount * (3 / 100);
       break;

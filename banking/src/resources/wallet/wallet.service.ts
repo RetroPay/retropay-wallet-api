@@ -576,6 +576,114 @@ class WalletService {
     }
   }
 
+  private async chargeTransactionFeesV2(
+    transactionType: string,
+    currency: string,
+    userId: string,
+    amount: number,
+    transactionDate: string,
+    referenceId: string,
+    k_token: string,
+    beneficiaryName: string
+  ): Promise<void> {
+    try {
+      switch (currency.toUpperCase()) {
+        case "NGN_X":
+        case "XAF":
+        case "KES":
+        case "GHS":
+          {
+            const transactionFee = await walletModel.create({
+              fundOriginatorAccount: userId,
+              currency,
+              amount: await calculateFees(currency, amount),
+              transactionType,
+              status: "success",
+              referenceId: "charges-" + v4(),
+              comment: `Transaction fee for ${currency}${amount} sent to ${beneficiaryName}. Date: ${transactionDate}`,
+            });
+
+            logger(transactionFee);
+
+            return;
+          }
+          break;
+        case "NGN": {
+          const response = await axios({
+            method: "post",
+            url:
+              process.env.NODE_ENV == "production"
+                ? "https://kuda-openapi.kuda.com/v2.1"
+                : "https://kuda-openapi-uat.kudabank.com/v2.1",
+            data: {
+              serviceType: "WITHDRAW_VIRTUAL_ACCOUNT",
+              requestRef: v4(),
+              data: {
+                trackingReference: referenceId, // Unique identifier of user with Kuda
+                amount: 10 * 100,
+                narration: "Transaction fee",
+              },
+            },
+            headers: {
+              Authorization: `Bearer ${k_token}`,
+            },
+          });
+
+          const data = response.data;
+
+          //if axios call is successful but kuda status returns failed e'g 400 errors
+          if (!data.status) {
+            const { responseCode } = data;
+
+            switch (responseCode) {
+              case "06":
+                throw new Error("Transfer failed - processing error.");
+                break;
+              case "52":
+                throw new Error(
+                  "Transfer failed - Inactive recipient account."
+                );
+                break;
+              case "23":
+                throw new Error(
+                  "Transfer failed - A PND is active on your account. Kindly contact support."
+                );
+                break;
+              case "51":
+                throw new Error(
+                  "Transfer failed - Insufficient funds on account."
+                );
+                break;
+              case "93":
+                throw new Error(
+                  "Transfer failed - Cash limit exceeded for your account tier."
+                );
+                break;
+              case "k91":
+                throw new Error(
+                  "Transfer error - Transaction timeout, Kindly contact support to confirm transaction status."
+                );
+                break;
+              default:
+                throw new Error("Transfer failed - processing error.");
+            }
+          }
+        }
+        default:
+          throw new Error("Currency not supported");
+          break;
+      }
+    } catch (error: any) {
+      await logsnag.publish({
+        channel: "failed-requests",
+        event: "Charge transaction fee failed",
+        description: `The service to handle charging of transfer fees has failed. err: ${error}`,
+        icon: "⚠👀",
+        notify: true,
+      });
+    }
+  }
+
   public async withdrawFunds(
     formPin: string,
     referenceId: string,
@@ -812,6 +920,17 @@ class WalletService {
               budgetItemId
             );
 
+            this.chargeTransactionFeesV2(
+              "withdrawal",
+              currency,
+              userId,
+              amount,
+              response?.createdAt || new Date().toISOString(),
+              referenceId,
+              k_token,
+              beneficiaryName
+            );
+
             return response;
           }
           break;
@@ -837,10 +956,18 @@ class WalletService {
             logger(errors);
             if (errors.length > 0) throw new Error(errors.toString());
 
+            const balance = await this.calculateMapleradCurrencyBalance(
+              currency,
+              userId
+            );
+
+            if (amount >= balance)
+              throw new Error("Transfer failed - Insufficient funds");
+
             const { postalCode, street, city, state, country } =
               foundUser?.verificationInformation.address;
 
-            const initializationResponse = await this.initialize_USD_Payment(
+            const response = await this.initialize_USD_Payment(
               userId,
               beneficiaryAccount,
               beneficiaryBankCode,
@@ -856,9 +983,20 @@ class WalletService {
               recipientInfo
             );
 
-            logger(initializationResponse);
+            logger(response);
 
-            return initializationResponse;
+            this.chargeTransactionFeesV2(
+              "withdrawal",
+              currency,
+              userId,
+              amount,
+              response?.createdAt || new Date().toISOString(),
+              referenceId,
+              k_token,
+              beneficiaryName
+            );
+
+            return response;
           }
           break;
         case "XAF":
@@ -885,6 +1023,14 @@ class WalletService {
             logger(errors);
             if (errors.length > 0) throw new Error(errors.toString());
 
+            const balance = await this.calculateMapleradCurrencyBalance(
+              currency,
+              userId
+            );
+
+            if (amount >= balance)
+              throw new Error("Transfer failed - Insufficient funds");
+
             const response = await this.initialize_mobile_money_payment(
               currency,
               userId,
@@ -895,6 +1041,17 @@ class WalletService {
               amount,
               comment,
               recipientInfo
+            );
+
+            this.chargeTransactionFeesV2(
+              "withdrawal",
+              currency,
+              userId,
+              amount,
+              response?.createdAt || new Date().toISOString(),
+              referenceId,
+              k_token,
+              beneficiaryName
             );
 
             return response;
@@ -920,7 +1077,15 @@ class WalletService {
           logger(errors);
           if (errors.length > 0) throw new Error(errors.toString());
 
-          const initializationResponse = await this.initialize_NGN_X_payment(
+          const balance = await this.calculateMapleradCurrencyBalance(
+            currency,
+            userId
+          );
+
+          if (amount >= balance)
+            throw new Error("Transfer failed - Insufficient funds");
+
+          const response = await this.initialize_NGN_X_payment(
             currency,
             userId,
             beneficiaryAccount,
@@ -931,11 +1096,22 @@ class WalletService {
             comment
           );
 
-          logger(initializationResponse);
+          logger(response);
+          this.chargeTransactionFeesV2(
+            "withdrawal",
+            currency,
+            userId,
+            amount,
+            response?.createdAt || new Date().toISOString(),
+            referenceId,
+            k_token,
+            beneficiaryName
+          );
 
-          return initializationResponse;
+          return response;
         }
         default:
+          throw new Error("Currency not supported.");
           break;
       }
     } catch (error) {
@@ -970,7 +1146,7 @@ class WalletService {
     budgetItemId?: string
   ): Promise<any> {
     try {
-      currency = currency.toUpperCase()
+      currency = currency.toUpperCase();
 
       await checkCurrenciesAvailability(currency);
       await transferLimit(currency, amount);
@@ -1007,9 +1183,10 @@ class WalletService {
       if (!fundsRecipient) throw new Error("Invalid recipient account.");
 
       if (fundsRecipient._id == userId)
-      throw new Error("Unable to process transaction.");
+        throw new Error("Unable to process transaction.");
 
-      if (currency == "NGN" && !fundsRecipient?.nubanAccountDetails?.nuban) throw new Error("Invalid recipient account.");
+      if (currency == "NGN" && !fundsRecipient?.nubanAccountDetails?.nuban)
+        throw new Error("Invalid recipient account.");
 
       if ((await this.validatePin(formPin, userId)) == false)
         throw new Error("Transfer failed - Incorrect transaction pin");
@@ -1041,19 +1218,21 @@ class WalletService {
                 Authorization: `Bearer ${k_token}`,
               },
             });
-      
+
             const data = response.data;
-      
+
             //if axios call is successful but kuda status returns failed e'g 400 errors
             if (!data.status) {
               const { responseCode } = data;
-      
+
               switch (String(responseCode)) {
                 case "06":
                   throw new Error("Transfer failed - processing error.");
                   break;
                 case "52":
-                  throw new Error("Transfer failed - Inactive recipient account.");
+                  throw new Error(
+                    "Transfer failed - Inactive recipient account."
+                  );
                   break;
                 case "23":
                   throw new Error(
@@ -1061,7 +1240,9 @@ class WalletService {
                   );
                   break;
                 case "51":
-                  throw new Error("Transfer failed - Insufficient funds on account.");
+                  throw new Error(
+                    "Transfer failed - Insufficient funds on account."
+                  );
                   break;
                 case "93":
                   throw new Error(
@@ -1077,7 +1258,7 @@ class WalletService {
                   throw new Error(data.message);
               }
             }
-      
+
             //Log new transaction
             const newTransaction = await walletModel.create({
               fundRecipientAccount: fundsRecipient._id,
@@ -1102,10 +1283,19 @@ class WalletService {
               budgetUniqueId,
               budgetItemId,
             });
-      
+
             // if transfer is successful, charge transaction fee
-            this.chargeTransactionFees("transfer", referenceId, userId, k_token);
-      
+            this.chargeTransactionFeesV2(
+              "transfer",
+              currency,
+              userId,
+              amount,
+              newTransaction?.createdAt || new Date().toISOString(),
+              referenceId,
+              k_token,
+              fundRecipientAccountTag
+            );
+
             return {
               amount,
               transactionId: data.transactionReference,
@@ -1116,17 +1306,22 @@ class WalletService {
             };
           }
           break;
-          case "GHS":
-          case "XAF":
-          case "KES": {
+        case "GHS":
+        case "XAF":
+        case "KES":
+          {
+            const balance = await this.calculateMapleradCurrencyBalance(
+              currency,
+              userId
+            );
 
-            const balance = await this.calculateMapleardCurrencyBalance(currency, userId)
+            if (amount >= balance)
+              throw new Error("Transfer failed - Insufficient funds");
 
-            if(amount >= balance) throw new Error("Transfer failed - Insufficient funds")
-
-            const transactionId = process.env.NODE_ENV == "development"
-            ? "test-transfer" + v4()
-            : v4()
+            const transactionId =
+              process.env.NODE_ENV == "development"
+                ? "test-transfer" + v4()
+                : v4();
 
             const newTransaction = await walletModel.create({
               fundRecipientAccount: fundsRecipient._id,
@@ -1140,7 +1335,7 @@ class WalletService {
               senderTag,
               beneficiaryName,
               currency,
-              processingFees: amount * (3/100),
+              processingFees: await calculateFees(currency, amount),
               senderProfile: foundUser.profilePhoto?.url,
               recipientProfile: fundsRecipient.profilePhoto?.url,
               isBudgetTransaction,
@@ -1148,11 +1343,23 @@ class WalletService {
               budgetItemId,
             });
 
-            if(!newTransaction) throw new Error("Unable to process transaction. Please try again.")
-      
+            if (!newTransaction)
+              throw new Error(
+                "Unable to process transaction. Please try again."
+              );
+
             // if transfer is successful, charge transaction fee
-            // this.chargeTransactionFees("transfer", referenceId, userId, k_token);
-      
+            this.chargeTransactionFeesV2(
+              "transfer",
+              currency,
+              userId,
+              amount,
+              newTransaction?.createdAt || new Date().toISOString(),
+              referenceId,
+              k_token,
+              fundRecipientAccountTag
+            );
+
             return {
               amount,
               transactionId: transactionId,
@@ -1161,8 +1368,109 @@ class WalletService {
               createdAt: newTransaction?.createdAt,
             };
           }
-          break; 
-        default: throw new Error("Currency not supported.")
+          break;
+        case "NGN_X":
+          {
+            const balance = await this.calculateMapleradCurrencyBalance(
+              currency,
+              userId
+            );
+
+            if (amount >= balance)
+              throw new Error("Transfer failed - Insufficient funds");
+
+            const accountDetails = fundsRecipient.currencyAccounts.find(
+              (obj) => {
+                return obj.currency === "NGN_X";
+              }
+            );
+
+            if (!accountDetails) throw new Error("Invalid recipient account.");
+
+            const { accountNumber, bankName, accountName } = accountDetails;
+
+            const bankList = await this.getBankListV2(k_token, currency);
+            const bank = bankList.find((obj: any) => {
+              return obj.name === bankName;
+            });
+            await redisClient.set("ngnXBankCode", bank.code);
+
+            const response = await axios({
+              method: "post",
+              url:
+                process.env.NODE_ENV == "production"
+                  ? "https://api.maplerad.com/v1/transfers"
+                  : "https://sandbox.api.maplerad.com/v1/transfers",
+              data: {
+                account_number: accountNumber,
+                bank_code: bank.code,
+                amount: amount * 100,
+                reason: "retro-trf: " + comment,
+                currency: "NGN",
+                reference:
+                  process.env.NODE_ENV == "development"
+                    ? "test-withdrawal" + v4()
+                    : "retro-trf" + v4(),
+              },
+              headers: {
+                Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
+              },
+            });
+
+            const data = response.data;
+            logger(data);
+
+            if (!data.status) throw new Error("Transfer failed");
+
+            //Log new transaction
+            const newTransaction = await walletModel.create({
+              fundRecipientAccount: fundsRecipient._id,
+              fundOriginatorAccount: userId,
+              amount,
+              transactionType: "transfer",
+              status: "pending",
+              referenceId:
+                process.env.NODE_ENV == "development"
+                  ? "test-transfer" + v4()
+                  : data.transactionReference,
+              comment,
+              recepientTag: fundRecipientAccountTag,
+              senderTag,
+              responseCode: data.responseCode,
+              beneficiaryName,
+              currency,
+              processingFees: await calculateFees(currency, amount),
+              senderProfile: foundUser.profilePhoto?.url,
+              recipientProfile: fundsRecipient.profilePhoto?.url,
+              isBudgetTransaction,
+              budgetUniqueId,
+              budgetItemId,
+            });
+
+            // if transfer is successful, charge transaction fee
+            this.chargeTransactionFeesV2(
+              "transfer",
+              currency,
+              userId,
+              amount,
+              newTransaction?.createdAt || new Date().toISOString(),
+              referenceId,
+              k_token,
+              fundRecipientAccountTag
+            );
+
+            return {
+              amount,
+              transactionId: data.transactionReference,
+              fundRecipientAccountTag,
+              transactionType: "Transfer",
+              currency,
+              createdAt: newTransaction?.createdAt,
+            };
+          }
+          break;
+        default:
+          throw new Error("Currency not supported.");
           break;
       }
     } catch (error) {
@@ -1181,7 +1489,10 @@ class WalletService {
     }
   }
 
-  private async calculateMapleardCurrencyBalance(currency: string, userId: string): Promise<number> {
+  public async calculateMapleradCurrencyBalance(
+    currency: string,
+    userId: string
+  ): Promise<number> {
     try {
       const balance = await walletModel.aggregate([
         {
@@ -1243,15 +1554,18 @@ class WalletService {
         },
       ]);
 
-      logger(balance)
+      logger(balance);
 
-      if(!balance) throw new Error("Unable to retrieve account balance. Please try again.")
+      if (!balance)
+        throw new Error(
+          "Unable to retrieve account balance. Please try again."
+        );
 
-      if(balance.length == 0) return 0
+      if (balance.length == 0) return 0;
 
-      return balance[0].balance
+      return balance[0].balance;
     } catch (error: any) {
-      throw new Error("Unable to retrieve account balance. Please try again.")
+      throw new Error("Unable to retrieve account balance. Please try again.");
     }
   }
 
@@ -1425,7 +1739,7 @@ class WalletService {
           process.env.NODE_ENV == "development"
             ? "test-withdrawal" + v4()
             : data.transactionReference,
-        processingFees: await calculateFees("USD", amount),
+        processingFees: await calculateFees(currency, amount),
         comment,
         beneficiaryBankCode,
         beneficiaryBank,
@@ -1825,10 +2139,10 @@ class WalletService {
               bankCode
             );
 
-            const { account_number, account_name } = response
+            const { account_number, account_name } = response;
             return {
               beneficiaryAccountNumber: account_number,
-              beneficiaryName: account_name
+              beneficiaryName: account_name,
             };
           }
           break;
@@ -1880,9 +2194,9 @@ class WalletService {
     userId: string
   ): Promise<any> {
     try {
-      await checkCurrenciesAvailability(currency)
+      await checkCurrenciesAvailability(currency);
 
-      currency = currency.toUpperCase()
+      currency = currency.toUpperCase();
 
       const recipient = await userModel
         .findOne({
@@ -1972,10 +2286,13 @@ class WalletService {
           }
           break;
         default:
+          throw new Error("Currency not supported");
           break;
       }
     } catch (error: any) {
-      throw new Error(translateError(error)[0] || "Unable to resolve recipient account.")
+      throw new Error(
+        translateError(error)[0] || "Unable to resolve recipient account."
+      );
     }
   }
 
@@ -1993,9 +2310,7 @@ class WalletService {
 
       /*Check if user exists and has created a nuban to receive funds in*/
       if (!foundRecipient || !foundRecipient.transferPermission)
-        throw new Error(
-          "Invalid recipient account"
-        );
+        throw new Error("Invalid recipient account");
 
       const response = await axios({
         method: "POST",
@@ -2042,10 +2357,7 @@ class WalletService {
         beneficiaryName,
       };
     } catch (error: any) {
-      throw new Error(
-        translateError(error)[0] ||
-          "Invalid recipient account."
-      );
+      throw new Error(translateError(error)[0] || "Invalid recipient account.");
     }
   }
 
@@ -2157,6 +2469,7 @@ class WalletService {
           break;
 
         default:
+          throw new Error("Currency not supported");
           break;
       }
     } catch (error: any) {
