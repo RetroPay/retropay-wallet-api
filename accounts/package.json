@@ -55,7 +55,7 @@
     "express-rate-limit": "^6.7.0",
     "formidable": "^2.1.2",
     "helmet": "^6.0.0",
-    "joi": "^17.6.2",
+    "joi": "^17.10.0",
     "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.21",
     "logsnag": "^0.1.6",
