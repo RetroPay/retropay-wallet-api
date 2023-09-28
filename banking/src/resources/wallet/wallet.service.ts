@@ -10,11 +10,8 @@ import billModel from "../bills/bill.model";
 import IBill from "../bills/bill.interface";
 import BillService from "../bills/bill.service";
 import logger from "@/utils/logger";
-import { usdAccountMeta } from "./wallet.type";
-import IUser from "../user/user.interface";
 
 class WalletService {
-
   public async getTransactionsByMonthandYear(
     month: number,
     year: number,
@@ -255,7 +252,7 @@ class WalletService {
     } catch (error) {
       throw new Error(
         translateError(error)[0] ||
-        "Sorry. We were unable to retrieve your balance, please try again."
+          "Sorry. We were unable to retrieve your balance, please try again."
       );
     }
   }
@@ -623,7 +620,7 @@ class WalletService {
 
       throw new Error(
         translateError(error)[0] ||
-        "Transfer failed - Unable to process transfer."
+          "Transfer failed - Unable to process transfer."
       );
     }
   }
@@ -787,7 +784,7 @@ class WalletService {
     } catch (error: any) {
       throw new Error(
         translateError(error)[0] ||
-        "Network Error - We're unable to the recipient account at the moment."
+          "Network Error - We're unable to the recipient account at the moment."
       );
     }
   }
@@ -828,126 +825,6 @@ class WalletService {
         notify: true,
       });
       throw new Error("Unable to retrieve list of banks.");
-    }
-  }
-
-  public async createCurrencyAccount(userId: string, maplerad_customer_id: string, currency: string, meta?: usdAccountMeta): Promise<any> {
-    try {
-      const currencies = ["XAF", "NGN", "USD", "GHC", "KES"]
-
-      currency = currency.toUpperCase()
-
-      if (!currencies.includes(currency)) throw new Error("Currency not supported.")
-
-      if (currency === "USD" && meta === undefined) throw new Error("Please provide all required documents to create a USD account.")
-
-      const payload: {
-        customer_id: string;
-        currency: string;
-        meta?: usdAccountMeta
-      } = {
-        customer_id: maplerad_customer_id,
-        currency,
-      }
-
-      currency === "USD" ? payload.meta = meta : ''
-
-      switch (currency.toUpperCase()) {
-        case "USD": {
-          const response = await axios({
-            method: "post",
-            url:
-              process.env.NODE_ENV == "production"
-                ? "https://api.maplerad.com"
-                : "https://sandbox.api.maplerad.com/v1",
-            data: payload,
-            headers: {
-              Authorization: `Bearer ${process.env.MAPLERAD_SECRET_KEY}`,
-            },
-          });
-
-          const responseData = response.data;
-          logger(responseData)
-          if (!responseData.status) throw new Error("We were unable to create your account, please try again.");
-
-          const {
-            id,
-            bank_name,
-            account_number,
-            account_name,
-            currency,
-            created_at,
-          } = responseData.data
-
-          const updateUser = await userModel.findOneAndUpdate(
-            { id: userId },
-            {
-              $push: {
-                currencyAccounts: {
-                  bankName: bank_name,
-                  accountNumber: account_number,
-                  accountName: account_name,
-                  referenceId: id,
-                  creationDate: created_at,
-                  currency,
-                  status: "pending",
-                }
-              }
-            }
-          )
-
-          if (!updateUser) throw new Error("We were unable to create your account, please try again.");
-
-          logger(updateUser)
-
-          return;
-        }
-          break;
-        case "NGN": {
-
-        }
-          break;
-        case "GHC":
-        case "KES":
-        case "XAF": {
-
-        };
-          break;
-
-        default: throw new Error("Currency not supported.")
-          break;
-      }
-
-
-
-      // save
-
-
-      /**
-       * NGN
-       * "data": {
-          "id": "05859dd9-494e-4378-bb11-09aaea98558e",
-          "bank_name": "WEMA BANK",
-          "account_number": "9003001001",
-          "account_name": "JOHN DOE",
-          "currency": "NGN",
-          "created_at": "2022-03-17T23:26:48.73051-05:00"
-        }
-
-
-        USD
-          "data": {
-            "id": "d8736275-df44-45d7-8e43-d70590edddc1",
-            "bank_name": "Blacktron finance",
-            "account_name": "Jane Doe",
-            "currency": "USD",
-            "status": "PENDING",
-            "created_at": "2023-02-15T12:02:47.171025+01:00"
-          }
-       */
-
-    } catch (error: any) {
-
     }
   }
 
@@ -1064,18 +941,18 @@ class WalletService {
         { $set: { senderWebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
-
+      
       // Check transaction is a bill payment
       const billTransaction: IBill | null = await billModel.findOne({
         transactionReference,
       })
 
-
+      
       // If incoming transaction is not payment or bill purchase, kill webhook processing
-      if (!transaction && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");
+      if (!transaction  && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");
 
       // if incoming transaction is a bill transaction not payment
-      if (billTransaction && !transaction) {
+      if(billTransaction && !transaction) {
         // process bill purchase transaction
         const billService = new BillService;
         const processedTransaction = await billService.updateBillPurchase(k_token, payingBank, transactionReference, narrations, instrumentNumber)
@@ -1083,7 +960,7 @@ class WalletService {
         return processedTransaction;
       }
 
-      if (!transaction) throw new Error("Invalid transaction: Payment record not found")
+      if(!transaction) throw new Error("Invalid transaction: Payment record not found")
 
 
       // continue processing webhook if incoming transaction is payment and not bill transaction
@@ -1122,7 +999,7 @@ class WalletService {
         senderPhoneNumber: foundSender?.phoneNumber,
         oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
       };
-
+      
     } catch (error) {
       await logsnag.publish({
         channel: "failed-requests",

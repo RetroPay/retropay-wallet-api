@@ -26,7 +26,7 @@ class BudgetService {
     budgetIcon?: string
   ): Promise<IBudget> {
     try {
-      switch (currency.toLowerCase()) {
+      switch (currency.toLocaleLowerCase()) {
         case "ngn":
           {
             const newBudget = this.createNairaBudgetAccount(
@@ -168,13 +168,12 @@ class BudgetService {
   ): Promise<any> {
     try {
       const budget: IBudget | null = await budgetModel
-        .findOne({ budgetUniqueId, "budgetItems._id": budgetItemId }).select("currency budgetItems")
-
-      logger(budget)
+        .findOne({ budgetUniqueId, "budgetItems._id": budgetItemId })
+        .select("currency budgetOwnerId");
 
       if (!budget) throw new Error("Budget not found.");
 
-      const { currency } = budget;
+      const { currency, budgetOwnerId } = budget;
 
       switch (currency.toLocaleLowerCase()) {
         case "ngn":
@@ -183,7 +182,7 @@ class BudgetService {
               k_token,
               amount,
               budgetUniqueId,
-              budgetItemId,
+              budgetItemId
             );
 
             return updatedBudget;
@@ -207,7 +206,7 @@ class BudgetService {
     k_token: string,
     amount: number,
     budgetUniqueId: string,
-    budgetItemId: string,
+    budgetItemId: string
   ): Promise<any> {
     try {
       const response = await axios({
@@ -257,6 +256,7 @@ class BudgetService {
         )
         .select("-budgetOwnerId");
 
+      logger(updatedBudget);
       if (!updatedBudget) throw new Error("Unable to update this budget.");
 
       return updatedBudget;
@@ -308,9 +308,6 @@ class BudgetService {
         createdAt: 1,
         budgetBalance: {
           $subtract: ["$totalBudgetAmount", "$budgetAmountSpent"],
-        },
-        budgetPercentageSpent: {
-          $multiply: [ { $divide: ["$budgetAmountSpent", "$totalBudgetAmount"]}, 100]
         },
       }).select("-budgetOwnerId").sort({ createdAt: -1 });
 
@@ -770,8 +767,7 @@ class BudgetService {
   public async getBudgetTransactionsByMonthAndYear(
     month: number,
     year: number,
-    userId: string,
-    budgetUniqueId: string
+    userId: string
   ): Promise<any | null> {
     try {
       const creditTransactions: any = await walletModel
@@ -779,7 +775,6 @@ class BudgetService {
           {
             fundRecipientAccount: userId,
             isBudgetTransaction: true,
-            budgetUniqueId,
             // status: "success",
             $and: [
               { $expr: { $eq: [{ $month: "$createdAt" }, Number(month)] } },
@@ -792,9 +787,6 @@ class BudgetService {
             WebhookAcknowledgement: 0,
             senderWebhookAcknowledgement: 0,
             fundsReceivedbyRecipient: 0,
-            responseCode: 0,
-            isBudgetTransaction: 0,
-            __v: 0
           }
         )
         .sort({ createdAt: -1 });
@@ -804,7 +796,6 @@ class BudgetService {
           {
             fundOriginatorAccount: userId,
             isBudgetTransaction: true,
-            budgetUniqueId,
             // status: "success",
             $and: [
               { $expr: { $eq: [{ $month: "$createdAt" }, Number(month)] } },
@@ -817,9 +808,6 @@ class BudgetService {
             WebhookAcknowledgement: 0,
             senderWebhookAcknowledgement: 0,
             fundsReceivedbyRecipient: 0,
-            responseCode: 0,
-            isBudgetTransaction: 0,
-            __v: 0
           }
         )
         .sort({ createdAt: -1 });
