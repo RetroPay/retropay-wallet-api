@@ -198,6 +198,9 @@ class BillService {
       });
 
       const data = response.data;
+      
+      console.log(response)
+      console.log(data)
 
       if (!data.status) {
         const { responseCode } = data;
