@@ -38,7 +38,6 @@ class WebhookController implements IController {
     ): Promise<IWallet | void> => {
         try {
             await webhookModel.create(req.body);
-            console.log(req.body)
 
             res.sendStatus(200);
             const { transactionType } = req.body;
@@ -52,7 +51,8 @@ class WebhookController implements IController {
                 senderName,
                 recipientName,
                 sessionId,
-                instrumentNumber
+                instrumentNumber,
+                clientRequestRef
             } = req.body;
 
             // Don't process webhooks for transaction fees.
@@ -197,7 +197,8 @@ class WebhookController implements IController {
                                     sessionId,
                                     instrumentNumber,
                                     payingBank,
-                                    req.k_token
+                                    req.k_token,
+                                    clientRequestRef
                                 );
                             const { transactionType } = transaction;
 
@@ -365,8 +366,6 @@ class WebhookController implements IController {
         next: NextFunction): Promise<void> => {
         try {
             await billsHookModel.create(req.body);
-
-            console.log(req.body)
 
             res.sendStatus(200);
             const { transactionType } = req.body;

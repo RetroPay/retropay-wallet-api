@@ -336,7 +336,7 @@ class WalletService {
       });
 
       const data = response.data;
-      logger(data)
+      logger(data);
 
       //if axios call is successful but kuda status returns failed e'g 400 errors
       if (!data.status) {
@@ -394,7 +394,7 @@ class WalletService {
         recipientProfile: foundRecipient.profilePhoto?.url,
         isBudgetTransaction,
         budgetUniqueId,
-        budgetItemId
+        budgetItemId,
       });
 
       // if transfer is successful, charge transaction fee
@@ -408,7 +408,7 @@ class WalletService {
         createdAt: newTransaction?.createdAt,
       };
     } catch (error) {
-      logger(error)
+      logger(error);
       await logsnag.publish({
         channel: "failed-requests",
         event: "Transfer failed",
@@ -593,10 +593,10 @@ class WalletService {
         currency: "NGN",
         isBudgetTransaction,
         budgetUniqueId,
-        budgetItemId
+        budgetItemId,
       });
 
-      logger(newTransaction)
+      logger(newTransaction);
       // if transfer is successful, charge transaction fee
       this.chargeTransactionFees("withdraw", referenceId, userId, k_token);
 
@@ -927,7 +927,8 @@ class WalletService {
     sessionId: string,
     instrumentNumber: string,
     payingBank: string,
-    k_token: string
+    k_token: string,
+    clientRequestRef?: string
   ): Promise<any> {
     try {
       // Check transaction is a payment transaction
@@ -941,27 +942,36 @@ class WalletService {
         { $set: { senderWebhookAcknowledgement: true }, status: "success" },
         { new: true }
       );
-      
+
       // Check transaction is a bill payment
       const billTransaction: IBill | null = await billModel.findOne({
-        transactionReference,
-      })
+        $or: [{ transactionReference }, { clientRequestRef }],
+      });
 
-      
       // If incoming transaction is not payment or bill purchase, kill webhook processing
-      if (!transaction  && !billTransaction) throw new Error("Invalid Transaction: Payment and Bill transaction not found");
+      if (!transaction && !billTransaction)
+        throw new Error(
+          "Invalid Transaction: Payment and Bill transaction not found"
+        );
 
       // if incoming transaction is a bill transaction not payment
-      if(billTransaction && !transaction) {
+      if (billTransaction && !transaction) {
         // process bill purchase transaction
-        const billService = new BillService;
-        const processedTransaction = await billService.updateBillPurchase(k_token, payingBank, transactionReference, narrations, instrumentNumber)
+        const billService = new BillService();
+        const processedTransaction = await billService.updateBillPurchase(
+          k_token,
+          payingBank,
+          transactionReference,
+          narrations,
+          instrumentNumber,
+          clientRequestRef
+        );
 
         return processedTransaction;
       }
 
-      if(!transaction) throw new Error("Invalid transaction: Payment record not found")
-
+      if (!transaction)
+        throw new Error("Invalid transaction: Payment record not found");
 
       // continue processing webhook if incoming transaction is payment and not bill transaction
 
@@ -983,7 +993,7 @@ class WalletService {
           senderEmail: foundSender?.email,
           senderPhoneNumber: foundSender?.phoneNumber,
           transactionType: "Withdrawal",
-          oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
+          oneSignalPlayerId: foundSender?.oneSignalDeviceId || null,
         };
       }
 
@@ -997,9 +1007,8 @@ class WalletService {
         transactionId: transaction.referenceId,
         senderEmail: foundSender?.email,
         senderPhoneNumber: foundSender?.phoneNumber,
-        oneSignalPlayerId: foundSender?.oneSignalDeviceId || null
+        oneSignalPlayerId: foundSender?.oneSignalDeviceId || null,
       };
-      
     } catch (error) {
       await logsnag.publish({
         channel: "failed-requests",

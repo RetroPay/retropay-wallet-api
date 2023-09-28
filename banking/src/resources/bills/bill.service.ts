@@ -165,15 +165,15 @@ class BillService {
       /**
        * Debit budget account and fund naira spend balance if purchase is from budget
        */
-      if(budgetUniqueId && budgetItemId) {
+      if (budgetUniqueId && budgetItemId) {
         const updatedBudget = await this.budgetService.debitNairaBudgetAccount(
           budgetUniqueId,
           amount,
           budgetItemId,
           k_token
-        )
+        );
       }
-      const requestRef = generateOtp(25)
+      const requestRef = generateOtp(25);
 
       const response = await axios({
         method: "POST",
@@ -199,9 +199,6 @@ class BillService {
       });
 
       const data = response.data;
-
-      console.log(response)
-      console.log(data)
 
       if (!data.status) {
         const { responseCode } = data;
@@ -244,7 +241,7 @@ class BillService {
         billCategory,
         billerName,
         billerImageUrl,
-        narrations
+        narrations,
       });
 
       return {
@@ -252,7 +249,7 @@ class BillService {
         phoneNumber,
         customerIdentifier: CustomerIdentification,
         transactionReference: newBillPurchase.transactionReference,
-        narrations
+        narrations,
       };
 
       // return data.data;
@@ -269,7 +266,8 @@ class BillService {
     payingBank: string,
     transactionReference: string,
     narrations: string,
-    instrumentNumber: string
+    instrumentNumber: string,
+    clientRequestRef?: string
   ): Promise<any> {
     try {
       //Get bill purchase status
@@ -294,7 +292,7 @@ class BillService {
       const data = response.data;
 
       const transaction: IBill | null = await billModel.findOneAndUpdate(
-        { transactionReference },
+        { $or: [{ transactionReference }, { clientRequestRef }] },
         {
           narrations,
           payingBank,
@@ -337,7 +335,8 @@ class BillService {
           fundOriginatorAccount: userId,
           billCategory,
           // $or: [{ status: "success" }, { status: "reversed" }],
-        }).select("-fundOriginatorAccount")
+        })
+        .select("-fundOriginatorAccount");
 
       if (!billHistory)
         throw new Error("Failed to retrieve bill history, please try again.");

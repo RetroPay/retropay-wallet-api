@@ -15,6 +15,7 @@ const billSchema = new Schema({
     payingBank: { type: String },
     billerName: { type: String },
     billerImageUrl: { type: String },
+    clientRequestRef: String
 }, {
     timestamps: true
 });
