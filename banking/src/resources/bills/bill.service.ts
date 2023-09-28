@@ -173,6 +173,7 @@ class BillService {
           k_token
         )
       }
+      const requestRef = generateOtp(25)
 
       const response = await axios({
         method: "POST",
@@ -183,7 +184,7 @@ class BillService {
         data: {
           ServiceType: "PURCHASE_BILL",
           // RequestRef: v4(),
-          RequestRef: generateOtp(25),
+          RequestRef: requestRef,
           Data: {
             TrackingReference: referenceId,
             Amount: amount * 100,
@@ -198,7 +199,7 @@ class BillService {
       });
 
       const data = response.data;
-      
+
       console.log(response)
       console.log(data)
 
@@ -238,7 +239,7 @@ class BillService {
         billItemIdentifier: KudaBillItemIdentifier,
         phoneNumber,
         customerIdentifier: CustomerIdentification,
-        transactionReference: data.data.reference,
+        transactionReference: data.data?.reference || requestRef,
         status: "pending",
         billCategory,
         billerName,
