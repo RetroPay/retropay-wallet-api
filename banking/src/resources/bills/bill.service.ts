@@ -199,6 +199,8 @@ class BillService {
 
       const data = response.data;
 
+      logger(data)
+
       if (!data.status) {
         const { responseCode } = data;
 
