@@ -33,25 +33,6 @@ export default interface IUser {
     favoritedRecipients?: string[]
     isAccountActive: boolean
     oneSignalDeviceId: string
-    currencyAccounts: 
-        {
-            bankName: string
-            accountNumber: string
-            accountName: string
-            currency:  string
-            isActive: Boolean
-            status: string
-            address: string,
-            bankShortCode: string,
-            bankSwiftCode: string,
-            checkNumber: string,
-            iBan: string,
-            reference: string,
-            sortCode: string,
-            creationDate: Date,
-            referenceId: string,
-            reason: string
-        }[]
     
     isValidPassword(password: string): Promise<Error | boolean>
     isValidPin(pin: string): Promise<Error | boolean>

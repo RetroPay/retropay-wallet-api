@@ -10,7 +10,7 @@
     "build": "tsc",
     "postinstall": "npm run build"
   },
-  "author": "Retrostack Technologies",
+  "author": "RetroPay Technologies",
   "license": "ISC",
   "dependencies": {
     "compression": "^1.7.4",
@@ -22,7 +22,7 @@
     "express-rate-limit": "^6.7.0",
     "helmet": "^6.0.1",
     "logsnag": "^0.1.8",
-    "module-alias": "^2.2.3",
+    "module-alias": "^2.2.2",
     "morgan": "^1.10.0",
     "typescript": "^4.9.5"
   },
