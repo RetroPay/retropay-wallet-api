@@ -242,6 +242,8 @@ class WalletService {
         },
       });
 
+      console.log(response)
+
       const data = response.data;
 
       if (!data.status) throw new Error(data.message);
@@ -251,8 +253,7 @@ class WalletService {
       // return this.calculateWalletBalance(userId)
     } catch (error) {
       throw new Error(
-        translateError(error)[0] ||
-          "Sorry. We were unable to retrieve your balance, please try again."
+          "Unable to retrieve your balance."
       );
     }
   }
@@ -805,6 +806,8 @@ class WalletService {
           Authorization: `Bearer ${kuda_token}`,
         },
       });
+
+      console.log(response)
 
       if (!response) throw new Error("Unable to retrieve list of banks.");
 
