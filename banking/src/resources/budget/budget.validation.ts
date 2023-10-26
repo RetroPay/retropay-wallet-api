@@ -7,7 +7,7 @@ export const createBudget = joi.object({
   endDate: joi.date().required(),
   budgetName: joi.string().required(),
   budgetItems: joi.array().required(),
-  currency: joi.string().valid("NGN", "USD", "GHC", "KSH", "XAF").required(),
+  currency: joi.string().valid("NGN", "USD", "GHS", "KSH", "XAF").required(),
 });
 
 export const addFundsToBudget = joi.object({
