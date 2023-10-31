@@ -34,12 +34,12 @@ class App {
         this.express.use(express.urlencoded({ extended: true }))
         this.express.use(compression())
         //300 requests in an hour
-        this.express.use(rateLimit({
-            windowMs: 60*60*1000,
-            max: 100,
-            standardHeaders: false,
-            legacyHeaders: false,
-        }))
+        // this.express.use(rateLimit({
+        //     windowMs: 60*60*1000,
+        //     max: 300,
+        //     standardHeaders: false,
+        //     legacyHeaders: false,
+        // }))
     }
 
     private initialiseControllers(controllers: IController[]): void {
