@@ -230,13 +230,13 @@ class WalletService {
             $or: [
               {
                 fundOriginatorAccount: new mongoose.Types.ObjectId(userId),
-                status:
-                  process.env.NODE_ENV === "production" ? "success" : "pending",
+                // status:
+                //   process.env.NODE_ENV === "production" ? "success" : "pending",
               },
               {
                 fundRecipientAccount: new mongoose.Types.ObjectId(userId),
-                status:
-                  process.env.NODE_ENV === "production" ? "success" : "pending",
+                // status:
+                //   process.env.NODE_ENV === "production" ? "success" : "pending",
               },
             ],
           },

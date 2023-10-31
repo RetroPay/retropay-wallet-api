@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: retropay-wallet-proxy
+    name: proxy
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
@@ -13,7 +13,7 @@ services:
     startCommand: npm start
 
   - type: web
-    name: retro-wallet-proxy-staging
+    name: proxy-staging
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
@@ -26,7 +26,7 @@ services:
     startCommand: npm start
 
   - type: web
-    name: retropay-wallet-accounts-serivce-prod
+    name: retropay-accounts-prod
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
@@ -42,12 +42,12 @@ services:
       - key: REDIS_CONNECTION_STRING
         fromService:
           type: redis
-          name: retropay-wallet-redis
+          name: retropay-redis
           property: connectionString
-      - fromGroup: retropay-wallet-account-envs
+      - fromGroup: retropay-account-envs
 
   - type: web
-    name: retropay-wallet-accounts-serivce-staging
+    name: retropay-accounts-staging
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
@@ -63,12 +63,12 @@ services:
       - key: REDIS_CONNECTION_STRING
         fromService:
           type: redis
-          name: retropay-wallet-redis
+          name: retropay-redis
           property: connectionString
-      - fromGroup: retropay-wallet-account-envs-staging
+      - fromGroup: retropay-account-envs-staging
 
   - type: web
-    name: retropay-wallet-banking-serivce-staging
+    name: retropay-banking-serivce-staging
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: staging
@@ -84,12 +84,12 @@ services:
       - key: REDIS_CONNECTION_STRING
         fromService:
           type: redis
-          name: retropay-wallet-redis
+          name: retropay-redis
           property: connectionString
-      - fromGroup: retropay-wallet-banking-envs-staging
+      - fromGroup: retropay-banking-envs-staging
 
   - type: web
-    name: retropay-wallet-banking-serivce-prod
+    name: retropay-banking-prod
     env: node
     repo: https://github.com/RetroPay/retropay-wallet-api.git
     branch: master
@@ -105,11 +105,11 @@ services:
       - key: REDIS_CONNECTION_STRING
         fromService:
           type: redis
-          name: retropay-wallet-redis
+          name: retropay-redis
           property: connectionString
-      - fromGroup: retropay-wallet-banking-envs
+      - fromGroup: retropay-banking-envs
 
   - type: redis
-    name: retropay-wallet-redis
+    name: retropay-redis
     plan: free
     ipAllowList: []
